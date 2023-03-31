@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>org.scijava</groupId>
+    <artifactId>pom-scijava</artifactId>
+    <version>34.0.0</version>
+    <relativePath />
+  </parent>
+
+  <groupId>uk.ac.sussex.gdsc</groupId>                  <!-- FIXME: Your organization groupId here -->
+  <artifactId>gdsc-smlm-ij-example-plugin_</artifactId> <!-- FIXME: Your project artifactId here   -->
+  <version>0.1.0-SNAPSHOT</version>
+
+  <name>GDSC SMLM IJ Plugin</name>         <!-- FIXME: Your project name here      -->
+  <description>Example project for an ImageJ 1.x plugin using the GDSC SMLM library.</description> <!-- FIXME: Your project description here   -->
+  <url>http://www.sussex.ac.uk/gdsc/</url> <!-- FIXME: Your project website here     -->
+  <inceptionYear>2023</inceptionYear>      <!-- FIXME: Your project starting year here -->
+  <organization>
+    <name>Genome Damage and Stability Centre</name> <!-- FIXME: Your organization name here  -->
+    <url>http://www.sussex.ac.uk/gdsc/</url>        <!-- FIXME: Your organization website here -->
+  </organization>
+  <licenses>
+    <license>
+      <!-- FIXME: Your license here -->
+      <name>bsd_2</name>
+      <url>https://www.freebsd.org/internal/software-license/</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
+
+  <developers>
+    <developer>
+      <id>aherbert</id>         <!-- FIXME: Your GitHub handle here -->
+      <name>Alex Herbert</name> <!-- FIXME: Your name here      -->
+      <url></url>               <!-- FIXME: Your website here     -->
+      <roles>
+        <!-- See https://imagej.net/contribute/governance#scijava-team-roles -->
+        <role>developer</role>
+      </roles>
+    </developer>
+  </developers>
+  <contributors>
+    <contributor>
+      <name>None</name>
+    </contributor>
+  </contributors>
+
+  <mailingLists>
+    <mailingList>
+      <name>Image.sc Forum</name>
+      <archive>https://forum.image.sc/</archive>
+    </mailingList>
+  </mailingLists>
+
+  <scm>
+    <!-- FIXME: Your scm information here -->
+    <connection>scm:git:git://github.com/aherbert/gdsc-smlm-ij-example-plugin.git</connection>
+    <developerConnection>scm:git:ssh://github.com/aherbert/gdsc-smlm-ij-example-plugin.git</developerConnection>
+    <url>https://github.com/aherbert/gdsc-smlm-ij-example-plugin</url>
+  </scm>
+  <issueManagement>
+    <!-- FIXME: Your issue management information here -->
+    <system>GitHub Issues</system>
+    <url>https://github.com/aherbert/gdsc-smlm-ij-example-plugin/issues</url>
+  </issueManagement>
+  <ciManagement>
+    <system>None</system>
+  </ciManagement>
+
+  <properties>
+	  <scijava.app.directory> C:\Users\yw525\Desktop\desktop_files\superrescode\fiji-win64-GDSCSMLM2\Fiji.app </scijava.app.directory>
+    <license.licenseName>bsd_2</license.licenseName>         <!-- FIXME: Your license-maven-plugin license code here -->
+    <license.copyrightOwners>GDSC</license.copyrightOwners>  <!-- FIXME: Your organization legal entity name here -->
+    <gdsc.smlm.ij.version>1.0.2</gdsc.smlm.ij.version>
+  </properties>
+
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>org.junit</groupId>
+        <artifactId>junit-bom</artifactId>
+        <!-- Use version from scijava pom -->
+        <version>${junit-jupiter.version}</version>
+        <scope>import</scope>
+        <type>pom</type>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
+  <dependencies>
+	  <dependency>
+      <groupId>com.googlecode.efficient-java-matrix-library</groupId>
+      <artifactId>ejml</artifactId>
+      <version>0.24</version>
+    </dependency>
+    <dependency>
+      <groupId>net.imagej</groupId>
+      <artifactId>ij</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>uk.ac.sussex.gdsc</groupId>
+      <artifactId>gdsc-smlm-ij_</artifactId>
+      <version>${gdsc.smlm.ij.version}</version>
+      <!-- Exclude the 3D viewer.
+           The version in pom-scijava is not in maven central and is not required anyway. -->
+      <exclusions>
+        <exclusion>
+          <groupId>sc.fiji</groupId>
+          <artifactId>3D_Viewer</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+        <groupId>org.junit.jupiter</groupId>
+        <artifactId>junit-jupiter</artifactId>
+        <scope>test</scope>
+    </dependency>
+  </dependencies>
+</project>
