@@ -140,7 +140,7 @@ public class DHPSFU implements PlugIn {
 	    gd.addNumericField("Distance deviation", distanceDev, 1);	    
 	    gd.addCheckbox("Enable filter intensity ratio", enableFilterIntensityRatio);
 	    gd.addNumericField("Intensity deviation", intensityDev, 1);
-	    
+	    // HI
 
 	    gd.showDialog();
 
@@ -176,8 +176,8 @@ public class DHPSFU implements PlugIn {
 	    intensityDev = gd.getNextNumber();
 
 	    // Update the general parameters and the filtering parameters   
-	   // name1 = input;
-	    //name2 = input2;
+	    name1 = input;
+	    name2 = input2;
 	    
 	    generalParas.setPxSize(pxSize);
 	    generalParas.setCalibStep(calibStep);
@@ -798,7 +798,7 @@ public class DHPSFU implements PlugIn {
  */
   private void DH_calibration() {
 	// Processing the calibration data
-    MemoryPeakResults results = ResultsManager.loadInputResults("Calibration", false, null, null);
+    MemoryPeakResults results = ResultsManager.loadInputResults(name1, false, null, null);
     System.out.println(name1);
     if (MemoryPeakResults.isEmpty(results)) {
       IJ.error(TITLE, "No calibration results could be loaded");
@@ -823,7 +823,7 @@ public class DHPSFU implements PlugIn {
     FittingParas fittingParas =  polyFitting(filteredData, generalParas);
     
    // Processing the peakfit data
-    MemoryPeakResults PeakfitData = ResultsManager.loadInputResults("Peakfit_data", false, null, null);
+    MemoryPeakResults PeakfitData = ResultsManager.loadInputResults(name2, false, null, null);
     if (MemoryPeakResults.isEmpty(PeakfitData)) {
         IJ.error(TITLE, "No peakfit results could be loaded");
         return;
