@@ -98,6 +98,9 @@ public class DHPSFU implements PlugIn {
   // Data paths
   private static String calibPath = "E:/Fiji_sampledata/badcalib.xls";  		 // Path for the calibration file
   private static String dataPath = "E:/Fiji_sampledata/slice0.tif.results.xls";  // Data path
+  private static String savePath;
+  //private boolean saveToFile = true; 
+  private String savingFormat = ".3d";
   
   
   // Extra options
@@ -141,7 +144,12 @@ public class DHPSFU implements PlugIn {
 	    gd.addCheckbox("Enable filter intensity ratio", enableFilterIntensityRatio);
 	    gd.addNumericField("Intensity deviation", intensityDev, 1);
 	    // HI
-
+	    gd.addMessage("File output:");
+	    gd.addCheckbox("Saving to file", saveToFile);
+	    
+	    gd.addDirectoryField("Save_directory", "");
+	    String[] formats = {".3d", ".csv"};
+	    gd.addChoice("Saving_format", formats, formats[0]);
 	    gd.showDialog();
 
 	    if (gd.wasCanceled()) {
@@ -174,6 +182,9 @@ public class DHPSFU implements PlugIn {
 	    distanceDev = gd.getNextNumber();
 	    enableFilterIntensityRatio = gd.getNextBoolean();
 	    intensityDev = gd.getNextNumber();
+	    saveToFile = gd.getNextBoolean();
+	    savePath = gd.getNextString();
+	    savingFormat = gd.getNextChoice();
 
 	    // Update the general parameters and the filtering parameters   
 	    name1 = input;
@@ -714,8 +725,11 @@ public class DHPSFU implements PlugIn {
     /* 
      * Save the final filtered result to .3D file
      */ 
-    private void saveTo3D(List<List<Double>> filteredPeakResult, String fileName) {
-        Path outputPath = Paths.get(fileName);
+    private void saveTo3D(List<List<Double>> filteredPeakResult, String fileName, String savingFormat) {
+        //Path outputPath = Paths.get(fileName);
+    	Path outputPath;
+        if (savingFormat == ".3d") {
+        	outputPath = Paths.get(savePath, fileName + savingFormat);
         try (BufferedWriter writer = Files.newBufferedWriter(outputPath)) {
             for (List<Double> row : filteredPeakResult) {
                 String csvRow = row.stream()
@@ -728,6 +742,23 @@ public class DHPSFU implements PlugIn {
             System.err.println("Error writing to file: " + fileName);
             e.printStackTrace();
         }
+        } else { 
+        	outputPath = Paths.get(savePath, fileName + savingFormat);
+        	try (BufferedWriter writer = Files.newBufferedWriter(outputPath)) {
+            for (List<Double> row : filteredPeakResult) {
+                String csvRow = row.stream()
+                        .map(Object::toString)
+                        .collect(Collectors.joining(","));
+                writer.write(csvRow);
+                writer.newLine();
+            }
+        } catch (IOException e) {
+            System.err.println("Error writing to file: " + fileName);
+            e.printStackTrace();
+        }
+        	
+        }
+        
     }   // End of saveTo3D
     
     /* 
@@ -835,8 +866,9 @@ public class DHPSFU implements PlugIn {
     List<List<Double>> filteredPeakResult = filterPeakfitData(processedResult, xyzN, filterParas, fittingParas); 
     
     // Save files
-    String savePath = getSavePath(dataPath);
-    saveTo3D(filteredPeakResult, savePath);
+    if (saveToFile = true) {
+        saveTo3D(filteredPeakResult, input2, savingFormat);
+        }
     
     
     
