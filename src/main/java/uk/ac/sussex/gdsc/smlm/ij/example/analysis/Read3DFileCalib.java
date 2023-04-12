@@ -67,7 +67,7 @@ public class Read3DFileCalib {
 
 	        List<List<Double>> data = new ArrayList<>();
 
-	        for (int i = linesToSkip + 1; i < lines.size(); i++) {
+	        for (int i = linesToSkip; i < lines.size(); i++) {
 	            String line = lines.get(i);
 	            String[] values = line.split("\t");
 	            List<Double> row = new ArrayList<>();
@@ -104,7 +104,7 @@ public class Read3DFileCalib {
 
 	        List<List<Double>> data = new ArrayList<>();
 
-	        for (int i = linesToSkip + 1; i < lines.size(); i++) {
+	        for (int i = linesToSkip; i < lines.size(); i++) {
 	            String line = lines.get(i);
 	            String[] values = line.split(",");
 	            List<Double> row = new ArrayList<>();
