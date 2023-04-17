@@ -571,8 +571,6 @@ public class OverlayResults implements PlugIn {
     private transient Function<String, String> displayConverter = Function.identity();
     private transient Runnable settingsAction;
 
-    private transient LocalKeyAdapter keyAdapter = new LocalKeyAdapter();
-
     /**
      * Class to respond to key press events in the window.
      */
@@ -606,9 +604,9 @@ public class OverlayResults implements PlugIn {
      */
     SelectionWindow(String title, List<String> results) {
       super(title);
+      final LocalKeyAdapter keyAdapter = new LocalKeyAdapter();
+      add(buildPanel(results, keyAdapter));
       addKeyListener(keyAdapter);
-      add(buildPanel(results));
-      this.addKeyListener(keyAdapter);
       pack();
       WindowManager.addWindow(this);
     }
@@ -682,15 +680,16 @@ public class OverlayResults implements PlugIn {
      * Builds the main panel for the dialog.
      *
      * @param results the results
+     * @param keyAdapter the key adapter
      * @return the panel
      */
-    private Panel buildPanel(List<String> results) {
+    private Panel buildPanel(List<String> results, LocalKeyAdapter keyAdapter) {
       final Panel p = new Panel();
       final BorderLayout layout = new BorderLayout();
       layout.setVgap(3);
       p.setLayout(layout);
-      p.add(buildResultsList(results), BorderLayout.CENTER, 0);
-      p.add(buildButtonPanel(), BorderLayout.SOUTH, 1);
+      p.add(buildResultsList(results, keyAdapter), BorderLayout.CENTER, 0);
+      p.add(buildButtonPanel(keyAdapter), BorderLayout.SOUTH, 1);
       return p;
     }
 
@@ -698,9 +697,10 @@ public class OverlayResults implements PlugIn {
      * Builds the results list component for the dialog.
      *
      * @param results the results
+     * @param keyAdapter the key adapter
      * @return the component
      */
-    private Component buildResultsList(List<String> results) {
+    private Component buildResultsList(List<String> results, LocalKeyAdapter keyAdapter) {
       list = new JList<>(results.toArray(new String[0]));
       list.setCellRenderer(new DefaultListCellRenderer() {
         private static final long serialVersionUID = 1L;
@@ -729,9 +729,10 @@ public class OverlayResults implements PlugIn {
     /**
      * Builds the button panel for the dialog.
      *
+     * @param keyAdapter the key adapter
      * @return the panel
      */
-    private Panel buildButtonPanel() {
+    private Panel buildButtonPanel(LocalKeyAdapter keyAdapter) {
       final Panel buttons = new Panel();
       buttons.setLayout(new FlowLayout(FlowLayout.CENTER, 5, 0));
       settings = new Button("Settings");
@@ -778,7 +779,6 @@ public class OverlayResults implements PlugIn {
       in.defaultReadObject();
       // Create all instance fields
       displayConverter = Function.identity();
-      keyAdapter = new LocalKeyAdapter();
     }
   }
 
