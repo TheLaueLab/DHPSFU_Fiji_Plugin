@@ -713,6 +713,7 @@ public class OverlayResults implements PlugIn {
         }
       });
       list.addKeyListener(keyAdapter);
+      list.setDoubleBuffered(true);
       return list;
     }
 
