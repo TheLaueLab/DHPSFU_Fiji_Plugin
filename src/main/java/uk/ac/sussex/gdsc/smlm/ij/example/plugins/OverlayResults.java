@@ -303,7 +303,7 @@ public class OverlayResults implements PlugIn {
      * @param frame the frame
      * @return the index
      */
-    private int binarySearch(MemoryPeakResults results, int frame) {
+    private static int binarySearch(MemoryPeakResults results, int frame) {
       int lo = 0;
       int hi = results.size() - 1;
       while (lo <= hi) {
