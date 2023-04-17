@@ -13,12 +13,14 @@ import ij.text.TextPanel;
 import ij.text.TextWindow;
 import java.awt.BorderLayout;
 import java.awt.Button;
+import java.awt.Choice;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.FlowLayout;
 import java.awt.Frame;
 import java.awt.Panel;
 import java.awt.Point;
+import java.awt.TextField;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyAdapter;
@@ -101,6 +103,15 @@ public class OverlayResults implements PlugIn {
     RoiOptions setPointType(int pointType) {
       this.pointType = pointType;
       return this;
+    }
+
+    /**
+     * Gets the point type.
+     *
+     * @return the point type
+     */
+    int getPointType() {
+      return pointType;
     }
 
     /**
@@ -943,14 +954,22 @@ public class OverlayResults implements PlugIn {
     // Update the ROI options.
     if (!names.isEmpty()) {
       gd.addMessage("Set ROI color to empty to reset");
+      final ArrayList<TextField> textFields = new ArrayList<>(names.size());
+      final ArrayList<Choice> choiceFields = new ArrayList<>(names.size());
       // Note: This only lists the current datasets in their specified order
       for (int i = 0; i < names.size(); i++) {
         final String name = names.get(i);
         final RoiOptions roiOptions = ROI_OPTIONS.getOrDefault(name, RoiOptions.INSTANCE);
-        gd.addStringField(name + "_color",
-            String.format("#%06x", roiOptions.color.getRGB() & 0xffffff));
-        gd.addChoice(name + "_point", PointRoi.types, roiOptions.pointType);
+        textFields.add(gd.addAndGetStringField(name + "_color",
+            String.format("#%06x", roiOptions.color.getRGB() & 0xffffff)));
+        choiceFields
+            .add(gd.addAndGetChoice(name + "_point", PointRoi.types, roiOptions.getPointType()));
       }
+      gd.addAndGetButton("Reset ROI options", e -> {
+        ROI_OPTIONS.clear();
+        textFields.forEach(f -> f.setText(""));
+        choiceFields.forEach(f -> f.select(RoiOptions.INSTANCE.getPointType()));
+      });
     }
 
     gd.showDialog();
