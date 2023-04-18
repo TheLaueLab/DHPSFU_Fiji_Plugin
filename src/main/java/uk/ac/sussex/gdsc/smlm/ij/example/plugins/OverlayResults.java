@@ -917,8 +917,8 @@ public class OverlayResults implements PlugIn {
    */
   private static List<String> listResults() {
     return MemoryPeakResults.getAllResults().stream()
-        .filter(r -> r.getCalibrationReader().getDistanceConverterSafe(DistanceUnit.PIXEL)
-            .to() == DistanceUnit.PIXEL)
+        .filter(r -> r.getCalibrationReader() != null && r.getCalibrationReader()
+            .getDistanceConverterSafe(DistanceUnit.PIXEL).to() == DistanceUnit.PIXEL)
         .map(MemoryPeakResults::getName).collect(Collectors.toList());
   }
 
