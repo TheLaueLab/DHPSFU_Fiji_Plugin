@@ -24,6 +24,7 @@ import java.util.stream.IntStream;
 import java.util.concurrent.atomic.AtomicInteger;
 import uk.ac.sussex.gdsc.core.ij.gui.ExtendedGenericDialog;
 import uk.ac.sussex.gdsc.core.utils.SimpleArrayUtils;
+import uk.ac.sussex.gdsc.smlm.data.config.CalibrationWriter;
 import uk.ac.sussex.gdsc.smlm.data.config.ResultsProtos.ResultsTableSettings;
 import uk.ac.sussex.gdsc.smlm.data.config.UnitProtos.DistanceUnit;
 import uk.ac.sussex.gdsc.smlm.data.config.UnitProtos.IntensityUnit;
@@ -876,6 +877,14 @@ public class DHPSFU implements PlugIn {
     view3DResult(filteredPeakResult);
     MemoryPeakResults finalResult = saveToMemory(filteredPeakResult);
     MemoryPeakResults.addResults(finalResult);
+    CalibrationWriter cw = finalResult.getCalibrationWriterSafe();
+
+    cw.setNmPerPixel(pxSize);
+
+    cw.setDistanceUnit(DistanceUnit.NM);
+    cw.setIntensityUnit(IntensityUnit.PHOTON);
+
+    finalResult.setCalibration(cw.getCalibration());
     System.out.println("No. of localisation left: " + filteredPeakResult.size());
   //System.out.println("No. of localisation left: " + processedResultWithZN.get(0).size());
 }  // End of DH_calibration
