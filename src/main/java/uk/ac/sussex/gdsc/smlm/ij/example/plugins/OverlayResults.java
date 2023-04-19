@@ -76,6 +76,9 @@ public class OverlayResults implements PlugIn {
       {51, 187, 238}, // Cyan
       {238, 51, 119}, // Magenta
   };
+  
+  //static final List<String> COLOR_NAMES = Arrays.asList("Blue", "Orange", "Teal", "Red", "Cyan", "Magenta");
+  static final String[] COLOR_NAMES = {"Blue", "Orange", "Teal", "Red", "Cyan", "Magenta"};
 
   /** The ROI options for each named dataset. */
   static final ConcurrentHashMap<String, RoiOptions> ROI_OPTIONS = new ConcurrentHashMap<>();
@@ -950,19 +953,21 @@ public class OverlayResults implements PlugIn {
   private static boolean updateSettings(List<String> names, TableWorker table) {
     final ExtendedGenericDialog gd = new ExtendedGenericDialog(TITLE);
     final boolean showTable = table.isVisible();
-    gd.addCheckbox("Show_table", showTable);
+    gd.addCheckbox("Show result table", showTable);
 
     // Update the ROI options.
     if (!names.isEmpty()) {
-      gd.addMessage("Set ROI color to empty to reset");
+      //gd.addMessage("Set ROI color to empty to reset");
       final ArrayList<TextField> textFields = new ArrayList<>(names.size());
       final ArrayList<Choice> choiceFields = new ArrayList<>(names.size());
       // Note: This only lists the current datasets in their specified order
       for (int i = 0; i < names.size(); i++) {
         final String name = names.get(i);
         final RoiOptions roiOptions = ROI_OPTIONS.getOrDefault(name, RoiOptions.INSTANCE);
-        textFields.add(gd.addAndGetStringField(name + "_color",
-            String.format("#%06x", roiOptions.color.getRGB() & 0xffffff)));
+//        textFields.add(gd.addAndGetStringField(name + "_color",
+//            String.format("#%06x", roiOptions.color.getRGB() & 0xffffff)));
+        gd.addChoice("Colour", COLOR_NAMES, 1);
+        
         choiceFields
             .add(gd.addAndGetChoice(name + "_point", PointRoi.types, roiOptions.getPointType()));
       }
@@ -993,23 +998,33 @@ public class OverlayResults implements PlugIn {
 
     for (int i = 0; i < names.size(); i++) {
       final String name = names.get(i);
-      final String rgb = gd.getNextString();
+      //final String rgb = gd.getNextString();
+      final String colour = gd.getNextChoice();
       final int pointType = gd.getNextChoiceIndex();
-      if (rgb.isEmpty()) {
-        // Reset
-        ROI_OPTIONS.remove(name);
-      } else {
-        // Note that if this method runs in the ForkJoinPool then exceptions are consumed so
-        // explicitly display them
-        int v;
-        try {
-          v = Integer.decode(rgb);
-        } catch (final NumberFormatException ignored) {
-          IJ.error(TITLE, "Invalid color: " + rgb);
-          break;
-        }
-        ROI_OPTIONS.put(name, new RoiOptions().setColor(new Color(v)).setPointType(pointType));
-      }
+      int index = -1;
+      
+      for (int j = 0; i < COLOR_NAMES.length; j++) {
+    	    if (COLOR_NAMES[j].equals(colour)) {
+    	        index = j;
+    	        break;
+    	    }
+    	}
+//      if (rgb.isEmpty()) {
+//        // Reset
+//        ROI_OPTIONS.remove(name);
+//      } else {
+//        // Note that if this method runs in the ForkJoinPool then exceptions are consumed so
+//        // explicitly display them
+//        int v;
+//        try {
+//          v = Integer.decode(rgb);
+//        } catch (final NumberFormatException ignored) {
+//          IJ.error(TITLE, "Invalid color: " + rgb);
+//          break;
+//        }
+    	  
+        ROI_OPTIONS.put(name, new RoiOptions().setColor(new Color(COLORS[index][0],COLORS[index][1],COLORS[index][2])).setPointType(pointType));
+  //    }
       updated = true;
     }
     // Signal a change occurred

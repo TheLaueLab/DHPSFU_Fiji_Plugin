@@ -155,24 +155,24 @@ public class LoadLocalisationFIle implements PlugIn {
   
   public boolean showDialog() {
 	    ExtendedGenericDialog gd = new ExtendedGenericDialog(TITLE);
-	    //gd.addMessage("File directory:");
-	    //gd.addFileField("File directory", "");
+	    gd.addMessage("File directory:");
+	    gd.addFilenameField("File_directory", "");
 	    
-	    String filePath = selectFile();
-	    if (filePath == null) {
-	        return false;
-	    }
-	    Label filePathLabel = new Label(filePath);
-	    //gd.addMessage("Selected file:");
-	    gd.add(filePathLabel);
+//	    String filePath = selectFile();
+//	    if (filePath == null) {
+//	        return false;
+//	    }
+//	    Label filePathLabel = new Label(filePath);
+//	    //gd.addMessage("Selected file:");
+//	    gd.add(filePathLabel);
 	    
 	    
-	    gd.addStringField("File name", "Localisations");
+	    gd.addStringField("File_name", "Localisations");
 	    String[] formats2 = {"Peakfit", "DHPSFU"};
-	    gd.addChoice("File format", formats2, formats2[0]);
+	    gd.addChoice("Data_format", formats2, formats2[0]);
 	    
 	    String[] formats = {".3d", ".csv", ".xls"};
-	    gd.addChoice("File format", formats, formats[2]);
+	    gd.addChoice("File_format", formats, formats[2]);
 	    gd.addNumericField("Pixel size (nm)", pxSize, 1);
 	    gd.addCheckbox("Manually set column Index", ifSetOwnIndex);
 	    
@@ -190,8 +190,8 @@ public class LoadLocalisationFIle implements PlugIn {
 	    if (gd.wasCanceled()) {
 	      return false;
 	    }
-        dataPath = filePath;
-	    //dataPath = gd.getNextString();		    
+        //dataPath = filePath;
+	    dataPath = gd.getNextString();		    
 	    name = gd.getNextString();
 	    fileType = gd.getNextChoice();
 	    savingFormat = gd.getNextChoice();
@@ -403,9 +403,9 @@ public class LoadLocalisationFIle implements PlugIn {
 		      .setCameraType(CameraType.EMCCD).setBias(100).setQuantumEfficiency(0.95).setReadNoise(1.6);
 		    results.setCalibration(cw.getCalibration());
 
-		    PSF.Builder psf = PsfProtosHelper.DefaultOneAxisGaussian2dPsf.INSTANCE.toBuilder();
-		    psf.getParametersBuilder(0).setValue(1);
-		    results.setPsf(psf.build());       
+		    //PSF.Builder psf = PsfProtosHelper.DefaultOneAxisGaussian2dPsf.INSTANCE.toBuilder();
+		    //psf.getParametersBuilder(0).setValue(1);
+		    //results.setPsf(psf.build());       
 		    return results;      	
         }
         return results;
