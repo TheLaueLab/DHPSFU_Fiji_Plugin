@@ -331,9 +331,9 @@ public class LoadLocalisationFIle implements PlugIn {
 			      .setCameraType(CameraType.EMCCD).setBias(100).setQuantumEfficiency(0.95).setReadNoise(1.6);
 			    results.setCalibration(cw.getCalibration());
 	
-			    PSF.Builder psf = PsfProtosHelper.DefaultOneAxisGaussian2dPsf.INSTANCE.toBuilder();
-			    psf.getParametersBuilder(0).setValue(1);
-			    results.setPsf(psf.build());       
+			    //PSF.Builder psf = PsfProtosHelper.DefaultOneAxisGaussian2dPsf.INSTANCE.toBuilder();
+			    //psf.getParametersBuilder(0).setValue(1);
+			    //results.setPsf(psf.build());       
 			    return results;
         } else if (fileType == "DHPSFU") {
         	if (savingFormat == ".3d") {

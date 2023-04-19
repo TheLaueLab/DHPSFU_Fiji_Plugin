@@ -102,16 +102,13 @@
     </dependency>
     <dependency>
       <groupId>uk.ac.sussex.gdsc</groupId>
+      <artifactId>gdsc-smlm</artifactId>
+      <version>${gdsc.smlm.ij.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>uk.ac.sussex.gdsc</groupId>
       <artifactId>gdsc-smlm-ij_</artifactId>
       <version>${gdsc.smlm.ij.version}</version>
-      <!-- Exclude the 3D viewer.
-           The version in pom-scijava is not in maven central and is not required anyway. -->
-      <exclusions>
-        <exclusion>
-          <groupId>sc.fiji</groupId>
-          <artifactId>3D_Viewer</artifactId>
-        </exclusion>
-      </exclusions>
     </dependency>
     <dependency>
         <groupId>org.junit.jupiter</groupId>
