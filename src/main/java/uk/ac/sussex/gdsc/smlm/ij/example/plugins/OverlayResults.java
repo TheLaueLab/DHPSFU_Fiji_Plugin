@@ -20,7 +20,6 @@ import java.awt.FlowLayout;
 import java.awt.Frame;
 import java.awt.Panel;
 import java.awt.Point;
-import java.awt.TextField;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyAdapter;
@@ -33,11 +32,14 @@ import java.io.ObjectInputStream;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.BitSet;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -69,16 +71,21 @@ public class OverlayResults implements PlugIn {
    * <p>This is Paul Tol's Vibrant colour scheme (color-blind safe). It has been reordered for
    * contrast between the initial colors. See https://personal.sron.nl/~pault/.
    */
-  static final int[][] COLORS = {{0, 119, 187}, // Blue
-      {238, 119, 51}, // Orange
-      {0, 153, 136}, // Teal
-      {204, 51, 17}, // Red
-      {51, 187, 238}, // Cyan
-      {238, 51, 119}, // Magenta
-  };
-  
-  //static final List<String> COLOR_NAMES = Arrays.asList("Blue", "Orange", "Teal", "Red", "Cyan", "Magenta");
-  static final String[] COLOR_NAMES = {"Blue", "Orange", "Teal", "Red", "Cyan", "Magenta"};
+  static final List<Color> COLORS = Arrays.asList(new Color(0, 119, 187), // Blue
+      new Color(238, 119, 51), // Orange
+      new Color(0, 153, 136), // Teal
+      new Color(204, 51, 17), // Red
+      new Color(51, 187, 238), // Cyan
+      new Color(238, 51, 119) // Magenta
+  );
+
+  /**
+   * The names of the colours. Note this has an automatic option. If more datasets are selected than
+   * the available colours then the default is 'null' which will render using the ImageJ ROI default
+   * color. Otherwise the colors are assigned in order of selection.
+   */
+  private static final String[] COLOR_NAMES =
+      {"Auto", "Blue", "Orange", "Teal", "Red", "Cyan", "Magenta"};
 
   /** The ROI options for each named dataset. */
   static final ConcurrentHashMap<String, RoiOptions> ROI_OPTIONS = new ConcurrentHashMap<>();
@@ -126,6 +133,15 @@ public class OverlayResults implements PlugIn {
     RoiOptions setColor(Color color) {
       this.color = color;
       return this;
+    }
+
+    /**
+     * Gets the color.
+     *
+     * @return the color
+     */
+    Color getColor() {
+      return color;
     }
 
     /**
@@ -458,11 +474,12 @@ public class OverlayResults implements PlugIn {
      */
     private static RoiOptions getRoiOptions(String key) {
       return ROI_OPTIONS.computeIfAbsent(key, k -> {
-        // Get the next colour, or use the default
-        final int i = ROI_OPTIONS.size();
-        if (i < COLORS.length) {
-          final int[] rgb = COLORS[i];
-          return new RoiOptions().setColor(new Color(rgb[0], rgb[1], rgb[2]));
+        // Get the next unused colour, or use the default
+        final Set<Color> taken =
+            ROI_OPTIONS.values().stream().map(RoiOptions::getColor).collect(Collectors.toSet());
+        final Optional<Color> next = COLORS.stream().filter(c -> !taken.contains(c)).findFirst();
+        if (next.isPresent()) {
+          return new RoiOptions().setColor(next.get());
         }
         return RoiOptions.INSTANCE;
       });
@@ -953,28 +970,28 @@ public class OverlayResults implements PlugIn {
   private static boolean updateSettings(List<String> names, TableWorker table) {
     final ExtendedGenericDialog gd = new ExtendedGenericDialog(TITLE);
     final boolean showTable = table.isVisible();
-    gd.addCheckbox("Show result table", showTable);
+    gd.addCheckbox("Show_result_table", showTable);
 
     // Update the ROI options.
     if (!names.isEmpty()) {
-      //gd.addMessage("Set ROI color to empty to reset");
-      final ArrayList<TextField> textFields = new ArrayList<>(names.size());
-      final ArrayList<Choice> choiceFields = new ArrayList<>(names.size());
+      final ArrayList<Choice> colorFields = new ArrayList<>(names.size());
+      final ArrayList<Choice> pointFields = new ArrayList<>(names.size());
       // Note: This only lists the current datasets in their specified order
       for (int i = 0; i < names.size(); i++) {
         final String name = names.get(i);
         final RoiOptions roiOptions = ROI_OPTIONS.getOrDefault(name, RoiOptions.INSTANCE);
-//        textFields.add(gd.addAndGetStringField(name + "_color",
-//            String.format("#%06x", roiOptions.color.getRGB() & 0xffffff)));
-        gd.addChoice("Colour", COLOR_NAMES, 1);
-        
-        choiceFields
+        // Since the color names has an auto entry we add 1 to the index
+        colorFields.add(gd.addAndGetChoice(name + "_colour", COLOR_NAMES,
+            COLORS.indexOf(roiOptions.getColor()) + 1));
+        pointFields
             .add(gd.addAndGetChoice(name + "_point", PointRoi.types, roiOptions.getPointType()));
       }
       gd.addAndGetButton("Reset ROI options", e -> {
-        ROI_OPTIONS.clear();
-        textFields.forEach(f -> f.setText(""));
-        choiceFields.forEach(f -> f.select(RoiOptions.INSTANCE.getPointType()));
+        // Remove non-displayed
+        ROI_OPTIONS.keySet().removeIf(k -> !names.contains(k));
+        // Reset displayed
+        colorFields.forEach(f -> f.select(0));
+        pointFields.forEach(f -> f.select(RoiOptions.INSTANCE.getPointType()));
       });
     }
 
@@ -996,37 +1013,41 @@ public class OverlayResults implements PlugIn {
       }
     }
 
+    // List of auto colours
+    final List<RoiOptions> auto = new ArrayList<>();
+    final BitSet taken = new BitSet(COLORS.size());
     for (int i = 0; i < names.size(); i++) {
       final String name = names.get(i);
-      //final String rgb = gd.getNextString();
-      final String colour = gd.getNextChoice();
+      final int colorIndex = gd.getNextChoiceIndex();
       final int pointType = gd.getNextChoiceIndex();
-      int index = -1;
-      
-      for (int j = 0; i < COLOR_NAMES.length; j++) {
-    	    if (COLOR_NAMES[j].equals(colour)) {
-    	        index = j;
-    	        break;
-    	    }
-    	}
-//      if (rgb.isEmpty()) {
-//        // Reset
-//        ROI_OPTIONS.remove(name);
-//      } else {
-//        // Note that if this method runs in the ForkJoinPool then exceptions are consumed so
-//        // explicitly display them
-//        int v;
-//        try {
-//          v = Integer.decode(rgb);
-//        } catch (final NumberFormatException ignored) {
-//          IJ.error(TITLE, "Invalid color: " + rgb);
-//          break;
-//        }
-    	  
-        ROI_OPTIONS.put(name, new RoiOptions().setColor(new Color(COLORS[index][0],COLORS[index][1],COLORS[index][2])).setPointType(pointType));
-  //    }
+      final RoiOptions options = ROI_OPTIONS.getOrDefault(name, RoiOptions.INSTANCE);
+      options.setPointType(pointType);
+      if (colorIndex > 0) {
+        // Non-default color
+        options.setColor(COLORS.get(colorIndex - 1));
+        taken.set(colorIndex - 1);
+      } else {
+        // Auto
+        auto.add(options);
+        options.setColor(null);
+      }
       updated = true;
     }
+    // Assign auto color from those remaining if possible.
+    // Note: This is different from the assignment in the OverlayWorker which gets the next
+    // unused colour from all entries in the Map. Here we know which colors have been used
+    // from the datasets on display and just pick the first available color (this color may
+    // already be used by a dataset that is not currently selected). The idea is that resetting
+    // to auto will pick a color that does not clash with the current display.
+    if (!auto.isEmpty()) {
+      int index = 0;
+      for (int colorIndex = taken.nextClearBit(0);
+          index < auto.size() && colorIndex < COLORS.size();
+          colorIndex = taken.nextClearBit(colorIndex + 1), index++) {
+        auto.get(index).setColor(COLORS.get(colorIndex));
+      }
+    }
+
     // Signal a change occurred
     return updated;
   }
