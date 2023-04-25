@@ -25,9 +25,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 import uk.ac.sussex.gdsc.core.ij.gui.ExtendedGenericDialog;
 import uk.ac.sussex.gdsc.core.utils.SimpleArrayUtils;
 import uk.ac.sussex.gdsc.smlm.data.config.CalibrationWriter;
+import uk.ac.sussex.gdsc.smlm.data.config.CalibrationProtos.CameraType;
 import uk.ac.sussex.gdsc.smlm.data.config.ResultsProtos.ResultsTableSettings;
 import uk.ac.sussex.gdsc.smlm.data.config.UnitProtos.DistanceUnit;
 import uk.ac.sussex.gdsc.smlm.data.config.UnitProtos.IntensityUnit;
+import uk.ac.sussex.gdsc.smlm.data.config.UnitProtos.TimeUnit;
 import uk.ac.sussex.gdsc.smlm.ij.example.analysis.CalibData;
 import uk.ac.sussex.gdsc.smlm.ij.gui.PeakResultTableModel;
 import uk.ac.sussex.gdsc.smlm.ij.gui.PeakResultTableModelFrame;
@@ -244,7 +246,7 @@ public class DHPSFU implements PlugIn {
     t.setValues("Y (px)", SimpleArrayUtils.toDouble(y));
     t.setValues("Intensity (photon)", SimpleArrayUtils.toDouble(intensity));
     t.setValues("Precision (nm)", precisions);
-    t.show("My results table");   //need to change table name 
+    t.show("DHPSFU results");   //need to change table name 
   }
   
   
@@ -782,7 +784,7 @@ public class DHPSFU implements PlugIn {
         t.setValues("Z (px)", z);
         t.setValues("Intensity (photon)", intensity);
         t.setValues("Frame", frame);
-        t.show("My results table");
+        t.show("DHPSFU results");
     	}  // End of view3DResult
     
     
@@ -877,14 +879,22 @@ public class DHPSFU implements PlugIn {
     view3DResult(filteredPeakResult);
     MemoryPeakResults finalResult = saveToMemory(filteredPeakResult);
     MemoryPeakResults.addResults(finalResult);
+    
+    
+    
+    
     CalibrationWriter cw = finalResult.getCalibrationWriterSafe();
-
-    cw.setNmPerPixel(pxSize);
-
-    cw.setDistanceUnit(DistanceUnit.NM);
     cw.setIntensityUnit(IntensityUnit.PHOTON);
-
+    cw.setDistanceUnit(DistanceUnit.NM);
+    cw.setTimeUnit(TimeUnit.FRAME);
+    cw.setExposureTime(50);
+    cw.setNmPerPixel(pxSize);
+    cw.setCountPerPhoton(45);
+    cw.getBuilder().getCameraCalibrationBuilder()
+      .setCameraType(CameraType.EMCCD).setBias(100).setQuantumEfficiency(0.95).setReadNoise(1.6);
     finalResult.setCalibration(cw.getCalibration());
+    
+    
     System.out.println("No. of localisation left: " + filteredPeakResult.size());
   //System.out.println("No. of localisation left: " + processedResultWithZN.get(0).size());
 }  // End of DH_calibration

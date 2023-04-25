@@ -8,6 +8,8 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.SplittableRandom;
+import java.util.prefs.BackingStoreException;
+import java.util.prefs.Preferences;
 
 import javax.swing.JFileChooser;
 
@@ -83,8 +85,9 @@ public class LoadLocalisationFIle implements PlugIn {
   @Override
   public void run(String arg) {
 	  SmlmUsageTracker.recordPlugin(this.getClass(), arg);
-	  showDialog();
+	  if (showDialog()) {
 	  Load();
+	  }
 //	    }
   }
   
@@ -125,7 +128,7 @@ public class LoadLocalisationFIle implements PlugIn {
 	    t.setValues("Z", SimpleArrayUtils.toDouble(z));
 	    t.setValues("Intensity (photon)", SimpleArrayUtils.toDouble(intensity));
 	    
-	    t.show("My results table");   //need to change table name 
+	    t.show("Loaded localisations");   //need to change table name 
 	    } else { 
 	    	
 	    PrecisionResultProcedure p = new PrecisionResultProcedure(results);
@@ -148,7 +151,7 @@ public class LoadLocalisationFIle implements PlugIn {
 	    t.setValues("Y", SimpleArrayUtils.toDouble(y));
 	    t.setValues("Intensity (photon)", SimpleArrayUtils.toDouble(intensity));
 	    t.setValues("Precision (nm)", precisions);
-	    t.show("My results table");   //need to change table name     	
+	    t.show("Loaded localisations");   //need to change table name     	
 	    }
 	  }
   
@@ -156,16 +159,11 @@ public class LoadLocalisationFIle implements PlugIn {
   public boolean showDialog() {
 	    ExtendedGenericDialog gd = new ExtendedGenericDialog(TITLE);
 	    gd.addMessage("File directory:");
-	    gd.addFilenameField("File_directory", "");
-	    
-//	    String filePath = selectFile();
-//	    if (filePath == null) {
-//	        return false;
-//	    }
-//	    Label filePathLabel = new Label(filePath);
-//	    //gd.addMessage("Selected file:");
-//	    gd.add(filePathLabel);
-	    
+	    Preferences preferences = Preferences.userNodeForPackage(LoadLocalisationFIle.class);
+	    String defaultDirectory = preferences.get("defaultDirectory", "");
+	    gd.addFilenameField("File_directory", defaultDirectory);
+	    //gd.addFilenameField("File_directory", "");
+
 	    
 	    gd.addStringField("File_name", "Localisations");
 	    String[] formats2 = {"Peakfit", "DHPSFU"};
@@ -191,7 +189,23 @@ public class LoadLocalisationFIle implements PlugIn {
 	      return false;
 	    }
         //dataPath = filePath;
-	    dataPath = gd.getNextString();		    
+	    dataPath = gd.getNextString();
+	    
+	    
+	    // Check if file exists
+	      final File file = new File(dataPath);
+	      if (!file.exists()) {
+	    	  IJ.error(TITLE, "File does not exist.");	
+	    	  return false;
+	      }
+	    
+	    preferences.put("defaultDirectory", dataPath);
+	  try {
+		  preferences.flush();
+		} catch (BackingStoreException e) {
+		    e.printStackTrace();
+		}
+	    		    
 	    name = gd.getNextString();
 	    fileType = gd.getNextChoice();
 	    savingFormat = gd.getNextChoice();
