@@ -19,7 +19,7 @@ import uk.ac.sussex.gdsc.smlm.results.AttributePeakResult;
 
 public class CalibData {
 	 static String filePath = "E:/Fiji_sampledata/calib.xls";
-     static int skipLines = 8;
+     static int skipLines = 9;
 	  /** No instances. */
 	  private CalibData() {}
 

@@ -1791,7 +1791,7 @@ public class ResultManager implements PlugIn {
   /**
    * Batch load a set of results files.
    */
-  private void batchLoad() {
+  public List<String> batchLoad() {
     // Adapted from ij.io.Opener.openMultiple
 
     Java2.setSystemLookAndFeel();
@@ -1823,16 +1823,20 @@ public class ResultManager implements PlugIn {
       // Ignore
     }
     if (omDirectory == null) {
-      return;
+      return new ArrayList<>();
     }
     OpenDialog.setDefaultDirectory(omDirectory);
+    List<String> dataNames = new ArrayList<>();
+
     for (final File file : omFiles) {
-      final String path = omDirectory + file.getName();
-      load(path);
+        final String path = omDirectory + file.getName();
+        String DataName = load(path);
+        dataNames.add(DataName);
     }
+    return dataNames;
   }
 
-  private static void load(String path) {
+  private static String load(String path) {
     // Record this as a single load of the results manager.
     // This should support any dialogs that are presented in loadInputResults(...)
     // to get the calibration.
@@ -1845,8 +1849,7 @@ public class ResultManager implements PlugIn {
       Recorder.recordOption("results_file", "[]");
       Recorder.recordOption("save_to_memory");
     }
-    final MemoryPeakResults results =
-        loadInputResults(INPUT_FILE, true, null, null, new FilenameLoadOption(path));
+    final MemoryPeakResults results = loadInputResults(INPUT_FILE, true, null, null, new FilenameLoadOption(path));
     if (MemoryPeakResults.isEmpty(results)) {
       IJ.error(TITLE, "No results could be loaded from " + path);
     } else {
@@ -1854,6 +1857,7 @@ public class ResultManager implements PlugIn {
         Recorder.saveCommand();
       }
     }
+    return results.getName();
   }
 
   /**

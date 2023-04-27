@@ -176,7 +176,7 @@ public class LoadLocalisationFIle implements PlugIn {
 	    
 	    gd.addMessage("Column index:");
 	    gd.addNumericField("Header", skipLines, 1);
-	    gd.addNumericField("Frame", fileIndex.getIntensityIndex(), 1);
+	    gd.addNumericField("Frame", fileIndex.getFrameIndex(), 1);
 	    gd.addNumericField("X", fileIndex.getxIndex(), 1);
 	    gd.addNumericField("Y", fileIndex.getyIndex(), 1);
 	    gd.addNumericField("Z", fileIndex.getzIndex(), 1);
@@ -268,7 +268,10 @@ public class LoadLocalisationFIle implements PlugIn {
     	
     	 MemoryPeakResults results = new MemoryPeakResults();
     	 results.setName(name);
-           
+    	 
+//    	 final String msg = "Loaded " + TextUtils.pleural(fileIndex.getPrecisionIndex(), "Precision");
+//		 IJ.showStatus(msg);
+//    	 ImageJUtils.log(msg);
         
         if (fileType == "Peakfit") {   
 	        if (savingFormat == ".xls") {
@@ -428,7 +431,7 @@ public class LoadLocalisationFIle implements PlugIn {
 
   
 	  public void Load() {
-		  FileIndex fileIndex = getColumnIndex(fileType);
+		  //FileIndex fileIndex = getColumnIndex(fileType);
 		  MemoryPeakResults localisations = LoadLocalisations(dataPath, fileIndex, savingFormat, skipLines);		    
 		    if (localisations == null) {
 		      // Cancelled
