@@ -527,9 +527,7 @@ public class DriftCorrection implements PlugIn {
             intensity[i] = results.get(i).getIntensity();
         }
 
-        if(frame == null){
-            IJ.log("abcd"+ frame.length);
-        }
+
 
         ResultsTable t = new ResultsTable();
         t.setValues("Frame", SimpleArrayUtils.toDouble(frame));
@@ -2047,11 +2045,11 @@ public class DriftCorrection implements PlugIn {
         String filename = file.getName();
         ArrayList<double[][]> fs = new ArrayList<>();
         if (!memoryWL) {
-            IJ.log("load from file" + wl_path);
+//            IJ.log("load from file" + wl_path);
             wlArray = loadtifFile(wl_path, false);
 
         } else {
-            IJ.log("load from window" + selectedTitle);
+//            IJ.log("load from window" + selectedTitle);
             wlArray = loadtifFile(selectedTitle, true);
 
         }

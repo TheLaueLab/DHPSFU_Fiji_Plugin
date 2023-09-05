@@ -4,34 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="32a29315-d0c5-4459-b136-4af97bf49b37" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/analysis/ArrayUtils.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/analysis/ArrayUtils.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/analysis/CalibData.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/analysis/CalibData.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/analysis/FileIndex.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/analysis/FileIndex.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/analysis/FilterParas.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/analysis/FilterParas.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/analysis/FittingParas.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/analysis/FittingParas.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/analysis/GeneralParas.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/analysis/GeneralParas.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/analysis/LoadLocalisationFromFile.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/analysis/LoadLocalisationFromFile.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/analysis/LocalisationGDSC.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/analysis/LocalisationGDSC.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/analysis/Localisations.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/analysis/Localisations.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/analysis/PeakResultDHPSFU.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/analysis/PeakResultDHPSFU.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/analysis/PeakResultDataGDSC.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/analysis/PeakResultDataGDSC.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/analysis/PeakResultDataParameterConverterGDSC.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/analysis/PeakResultDataParameterConverterGDSC.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/analysis/PeakResultDataPrecisionGDSC.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/analysis/PeakResultDataPrecisionGDSC.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/analysis/Read3DFileCalib.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/analysis/Read3DFileCalib.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/analysis/getData_GDSC.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/analysis/getData_GDSC.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/analysis/package-info.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/analysis/package-info.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/DHPSFU.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/DHPSFU.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/LoadLocalisationFIle.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/LoadLocalisationFIle.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/MultiBeadsDHPSFU.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/MultiBeadsDHPSFU.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/OverlayResults.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/OverlayResults.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/ResultManager.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/ResultManager.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/package-info.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/package-info.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/plugins.config" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/plugins.config" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/java/uk/ac/cam/dhpsfu/analysis/LocalisationsTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/uk/ac/cam/dhpsfu/analysis/LocalisationsTest.java" afterDir="false" />
-    </list>
+    <list default="true" id="32a29315-d0c5-4459-b136-4af97bf49b37" name="Changes" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -179,7 +152,7 @@
       <workItem from="1692959035101" duration="2644000" />
       <workItem from="1692961970507" duration="61981000" />
       <workItem from="1693497197656" duration="14469000" />
-      <workItem from="1693853270042" duration="13936000" />
+      <workItem from="1693853270042" duration="14242000" />
     </task>
     <servers />
   </component>
@@ -229,67 +202,67 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/DriftCorrection.java</url>
-          <line>1759</line>
+          <line>1754</line>
           <option name="timeStamp" value="101" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/DriftCorrection.java</url>
-          <line>1768</line>
+          <line>1763</line>
           <option name="timeStamp" value="102" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/DriftCorrection.java</url>
-          <line>1803</line>
+          <line>1798</line>
           <option name="timeStamp" value="103" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/DriftCorrection.java</url>
-          <line>1804</line>
+          <line>1799</line>
           <option name="timeStamp" value="104" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/DriftCorrection.java</url>
-          <line>1805</line>
+          <line>1800</line>
           <option name="timeStamp" value="105" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/DriftCorrection.java</url>
-          <line>1811</line>
+          <line>1806</line>
           <option name="timeStamp" value="106" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/DriftCorrection.java</url>
-          <line>1820</line>
+          <line>1815</line>
           <option name="timeStamp" value="107" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/DriftCorrection.java</url>
-          <line>2795</line>
+          <line>2790</line>
           <option name="timeStamp" value="114" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/DriftCorrection.java</url>
-          <line>1752</line>
+          <line>1747</line>
           <option name="timeStamp" value="122" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/DriftCorrection.java</url>
-          <line>1753</line>
+          <line>1748</line>
           <option name="timeStamp" value="123" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/DriftCorrection.java</url>
-          <line>1754</line>
+          <line>1749</line>
           <option name="timeStamp" value="124" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/DriftCorrection.java</url>
-          <line>1747</line>
+          <line>1742</line>
           <option name="timeStamp" value="125" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/DriftCorrection.java</url>
-          <line>1726</line>
+          <line>1721</line>
           <option name="timeStamp" value="129" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
@@ -299,32 +272,32 @@
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/DriftCorrection.java</url>
-          <line>2766</line>
+          <line>2761</line>
           <option name="timeStamp" value="148" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/DriftCorrection.java</url>
-          <line>2135</line>
+          <line>2130</line>
           <option name="timeStamp" value="158" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/DriftCorrection.java</url>
-          <line>2134</line>
+          <line>2129</line>
           <option name="timeStamp" value="186" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/DriftCorrection.java</url>
-          <line>2123</line>
+          <line>2118</line>
           <option name="timeStamp" value="188" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/DriftCorrection.java</url>
-          <line>2124</line>
+          <line>2119</line>
           <option name="timeStamp" value="189" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/DriftCorrection.java</url>
-          <line>2125</line>
+          <line>2120</line>
           <option name="timeStamp" value="190" />
         </line-breakpoint>
       </breakpoints>
