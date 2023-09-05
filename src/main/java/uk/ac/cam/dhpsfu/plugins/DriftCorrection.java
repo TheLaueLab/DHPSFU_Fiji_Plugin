@@ -392,7 +392,7 @@ public class DriftCorrection implements PlugIn {
             double[] frame = ArrayUtils.getColumn(arr,4);
             returnArray = new double[][]{x, y, z, intensity, frame};
 
-            IJ.log("size" + x.length);
+//            IJ.log("size" + x.length);
 
             results.begin();
             for(int i = 0; i < arr.length; i++){
@@ -1877,7 +1877,7 @@ public class DriftCorrection implements PlugIn {
         domainAxis.setTickUnit(new NumberTickUnit(100));
         NumberAxis rangeAxis = (NumberAxis) plot.getRangeAxis() ;
         rangeAxis.setTickUnit(new NumberTickUnit(50));
-        IJ.log("series: " + dataset.getSeriesCount());
+//        IJ.log("series: " + dataset.getSeriesCount());
 
         renderer = new XYLineAndShapeRenderer(true, false) {
             @Override
