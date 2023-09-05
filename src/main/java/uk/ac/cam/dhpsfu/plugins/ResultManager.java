@@ -2,25 +2,30 @@ package uk.ac.cam.dhpsfu.plugins;
 
 /*-
  * #%L
- * Genome Damage and Stability Centre SMLM ImageJ Plugins
- *
- * Software for single molecule localisation microscopy (SMLM)
+ * Double Helix PSF SMLM analysis tool.
  * %%
- * Copyright (C) 2011 - 2022 Alex Herbert
+ * Copyright (C) 2023 Laue Lab
  * %%
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as
- * published by the Free Software Foundation, either version 3 of the
- * License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public
- * License along with this program.  If not, see
- * <http://www.gnu.org/licenses/gpl-3.0.html>.
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ * 
+ * 1. Redistributions of source code must retain the above copyright notice,
+ *    this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDERS OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
  * #L%
  */
 
@@ -122,21 +127,21 @@ import uk.ac.sussex.gdsc.smlm.results.procedures.StandardResultProcedure;
 /**
  * Opens peaks results and displays/converts them.
  */
-public class ResultManager implements PlugIn {
+ class ResultManager implements PlugIn {
   /** Use this to add extra options to the dialog. */
-  public static final int FLAG_EXTRA_OPTIONS = 0x00000001;
+  static final int FLAG_EXTRA_OPTIONS = 0x00000001;
   /** Use this to add the results directory to the file results dialog. */
-  public static final int FLAG_RESULTS_DIRECTORY = 0x00000002;
+  static final int FLAG_RESULTS_DIRECTORY = 0x00000002;
   /** Use this to add the results file to the file results dialog. */
-  public static final int FLAG_RESULTS_FILE = 0x00000004;
+   static final int FLAG_RESULTS_FILE = 0x00000004;
   /** Use this to avoid adding the section header to the dialog. */
-  public static final int FLAG_NO_SECTION_HEADER = 0x00000008;
+   static final int FLAG_NO_SECTION_HEADER = 0x00000008;
   /** Use this to add a choice of table format to the dialog. */
-  public static final int FLAG_TABLE_FORMAT = 0x00000010;
+   static final int FLAG_TABLE_FORMAT = 0x00000010;
   /** Use this to remove the None option from the results image options. */
-  public static final int FLAG_IMAGE_REMOVE_NONE = 0x00000020;
+   static final int FLAG_IMAGE_REMOVE_NONE = 0x00000020;
   /** Use this to avoid adding the LUT option to the results image options. */
-  public static final int FLAG_IMAGE_NO_LUT = 0x00000040;
+   static final int FLAG_IMAGE_NO_LUT = 0x00000040;
 
   private static final String TITLE = "Results Manager";
   private static final Logger logger = ImageJPluginLoggerHelper.getLogger(ResultsManager.class);
@@ -232,39 +237,39 @@ public class ResultManager implements PlugIn {
   /**
    * Specify the results input source to be added to a dialog.
    */
-  public enum InputSource {
+   enum InputSource {
     //@formatter:off
     /** File input. If specified then an addition field is added to the dialog for the filename. */
     FILE{ @Override
-    public String getName() { return "File"; }},
+     String getName() { return "File"; }},
 
     /** Memory input. */
     MEMORY{ @Override
-    public String getName() { return "Memory"; }},
+     String getName() { return "Memory"; }},
 
     /** Memory input with at least one result spanning frames (linked using ID). */
     MEMORY_MULTI_FRAME{ @Override
-    public String getName() { return "Memory (Multi-Frame)"; }},
+     String getName() { return "Memory (Multi-Frame)"; }},
 
     /** Memory input with no results spanning frames (linked using ID). */
     MEMORY_SINGLE_FRAME{ @Override
-    public String getName() { return "Memory (Single-Frame)"; }},
+     String getName() { return "Memory (Single-Frame)"; }},
 
     /** Memory input with identified results (ID above zero). */
     MEMORY_CLUSTERED{ @Override
-    public String getName() { return "Memory (Id)"; }},
+     String getName() { return "Memory (Id)"; }},
 
     /** Memory input with categorised results (category above zero). */
     MEMORY_CATEGORY{ @Override
-    public String getName() { return "Memory (Category)"; }},
+     String getName() { return "Memory (Category)"; }},
 
     /** No input. */
     NONE{ @Override
-    public String getName() { return "None"; }};
+     String getName() { return "None"; }};
     //@formatter:on
 
     @Override
-    public String toString() {
+     public String toString() {
       return getName();
     }
 
@@ -273,7 +278,7 @@ public class ResultManager implements PlugIn {
      *
      * @return the name
      */
-    public abstract String getName();
+     abstract String getName();
   }
 
   /**
@@ -313,14 +318,14 @@ public class ResultManager implements PlugIn {
   /**
    * Specifies an option for the loading of results.
    */
-  public interface LoadOption {
+   interface LoadOption {
     // Marker interface
   }
 
   /**
    * Specifies a filename load option.
    */
-  public static class FilenameLoadOption implements LoadOption {
+   static class FilenameLoadOption implements LoadOption {
     /** The filename. */
     private final String filename;
 
@@ -329,7 +334,7 @@ public class ResultManager implements PlugIn {
      *
      * @param filename the filename
      */
-    public FilenameLoadOption(String filename) {
+     FilenameLoadOption(String filename) {
       this.filename = filename;
     }
 
@@ -338,7 +343,7 @@ public class ResultManager implements PlugIn {
      *
      * @return the filename
      */
-    public String getFilename() {
+     String getFilename() {
       return filename;
     }
   }
@@ -451,7 +456,7 @@ public class ResultManager implements PlugIn {
    * @param title the dialog title
    * @return the dialog
    */
-  public static MultiDialog createMultiDialog(String title) {
+   static MultiDialog createMultiDialog(String title) {
     return createMultiDialog(title, results -> true);
   }
 
@@ -462,7 +467,7 @@ public class ResultManager implements PlugIn {
    * @param filter the filter to select results
    * @return the dialog
    */
-  public static MultiDialog createMultiDialog(String title, Predicate<MemoryPeakResults> filter) {
+   static MultiDialog createMultiDialog(String title, Predicate<MemoryPeakResults> filter) {
     final MemoryResultsList items = new MemoryResultsList(filter);
     final MultiDialog md = new MultiDialog(title, items);
     md.setDisplayConverter(items.getDisplayConverter());
@@ -568,7 +573,7 @@ public class ResultManager implements PlugIn {
    * @param showCategory the show category
    * @return the IJ table peak results
    */
-  public static ImageJTablePeakResults addTableResults(PeakResultsList resultsList,
+   static ImageJTablePeakResults addTableResults(PeakResultsList resultsList,
       ResultsTableSettings resultsSettings, boolean showDeviations, boolean showEndFrame,
       boolean showZ, boolean showId, boolean showCategory) {
     if (resultsSettings.getShowTable()) {
@@ -606,7 +611,7 @@ public class ResultManager implements PlugIn {
    * @param results the results
    * @param resultsTableSettings the results table settings
    */
-  public static void showInteractiveTable(MemoryPeakResults results,
+   static void showInteractiveTable(MemoryPeakResults results,
       ResultsTableSettings resultsTableSettings) {
     final PeakResultTableModel model =
         new PeakResultTableModel(results, true, resultsTableSettings);
@@ -633,7 +638,7 @@ public class ResultManager implements PlugIn {
    * @param bounds the bounds
    * @param flags the flags
    */
-  public static void addImageResults(PeakResultsList resultsList,
+   static void addImageResults(PeakResultsList resultsList,
       ResultsImageSettings resultsSettings, Rectangle bounds, int flags) {
     if (resultsSettings.getImageTypeValue() > 0) {
       final ResultsImageSettings.Builder builder = resultsSettings.toBuilder();
@@ -684,7 +689,7 @@ public class ResultManager implements PlugIn {
    * @param showCategory the show category
    * @return the peak results
    */
-  public static PeakResults addFileResults(PeakResultsList resultsList,
+   static PeakResults addFileResults(PeakResultsList resultsList,
       ResultsFileSettings resultsSettings, String resultsFilename, boolean showDeviations,
       boolean showEndFrame, boolean showId, boolean showCategory, String fileType) {
     if (resultsSettings.getFileFormatValue() > 0 && resultsFilename != null) {
@@ -815,7 +820,7 @@ public class ResultManager implements PlugIn {
    * @param resultsSettings the results settings
    * @param flags the flags
    */
-  public static void addFileResultsOptions(final ExtendedGenericDialog gd,
+   static void addFileResultsOptions(final ExtendedGenericDialog gd,
       final Builder resultsSettings, final int flags) {
     if (BitFlagUtils.anyNotSet(flags, FLAG_NO_SECTION_HEADER)) {
       gd.addMessage("--- File output ---");
@@ -825,13 +830,13 @@ public class ResultManager implements PlugIn {
     String[] formats = {"None", "DHPSFU(.3d)", "Peakfit(.xls)"};
     gd.addChoice("Results_format", formats, 0, new OptionListener<Integer>() {
           @Override
-          public boolean collectOptions(Integer field) {
+           public boolean collectOptions(Integer field) {
             fileSettings.setFileFormatValue(field);
             return collectOptions(false);
           }
 
           @Override
-          public boolean collectOptions() {
+           public boolean collectOptions() {
             return collectOptions(true);
           }
 
@@ -892,7 +897,7 @@ public class ResultManager implements PlugIn {
    * @param gd the dialog
    * @param resultsSettings the results settings
    */
-  public static void addTableResultsOptions(final ExtendedGenericDialog gd,
+   static void addTableResultsOptions(final ExtendedGenericDialog gd,
       final Builder resultsSettings) {
     addTableResultsOptions(gd, resultsSettings, 0);
   }
@@ -904,7 +909,7 @@ public class ResultManager implements PlugIn {
    * @param resultsSettings the results settings
    * @param flags the flags
    */
-  public static void addTableResultsOptions(final ExtendedGenericDialog gd,
+   static void addTableResultsOptions(final ExtendedGenericDialog gd,
       final Builder resultsSettings, final int flags) {
     if (BitFlagUtils.anyNotSet(flags, FLAG_NO_SECTION_HEADER)) {
       gd.addMessage("--- Table output ---");
@@ -915,13 +920,13 @@ public class ResultManager implements PlugIn {
       gd.addChoice("Table", SettingsManager.getResultsTableFormatNames(),
           tableSettings.getResultsTableFormatValue(), new OptionListener<Integer>() {
             @Override
-            public boolean collectOptions(Integer field) {
+             public boolean collectOptions(Integer field) {
               tableSettings.setResultsTableFormatValue(field);
               return collectOptions(false);
             }
 
             @Override
-            public boolean collectOptions() {
+             public boolean collectOptions() {
               return collectOptions(true);
             }
 
@@ -960,13 +965,13 @@ public class ResultManager implements PlugIn {
           new OptionListener<Boolean>() {
 
             @Override
-            public boolean collectOptions(Boolean field) {
+             public boolean collectOptions(Boolean field) {
               tableSettings.setShowTable(field);
               return collectOptions(false);
             }
 
             @Override
-            public boolean collectOptions() {
+             public boolean collectOptions() {
               return collectOptions(true);
             }
 
@@ -1027,7 +1032,7 @@ public class ResultManager implements PlugIn {
    * @param resultsSettings the results settings
    * @param flags the flags
    */
-  public static void addImageResultsOptions(final ExtendedGenericDialog gd,
+   static void addImageResultsOptions(final ExtendedGenericDialog gd,
       final Builder resultsSettings, final int flags) {
     if (BitFlagUtils.anyNotSet(flags, FLAG_NO_SECTION_HEADER)) {
       gd.addMessage("--- Image output ---");
@@ -1049,13 +1054,13 @@ public class ResultManager implements PlugIn {
     gd.addChoice("Image", names, imageSettings.getImageTypeValue() - offset,
         new OptionListener<Integer>() {
           @Override
-          public boolean collectOptions(Integer field) {
+           public boolean collectOptions(Integer field) {
             imageSettings.setImageTypeValue(field + offset);
             return collectOptions(false);
           }
 
           @Override
-          public boolean collectOptions() {
+           public boolean collectOptions() {
             return collectOptions(true);
           }
 
@@ -1155,7 +1160,7 @@ public class ResultManager implements PlugIn {
    * @param gd the dialog
    * @param resultsSettings the results settings
    */
-  public static void addInMemoryResultsOptions(final ExtendedGenericDialog gd,
+   static void addInMemoryResultsOptions(final ExtendedGenericDialog gd,
       final Builder resultsSettings) {
     addInMemoryResultsOptions(gd, resultsSettings, 0);
   }
@@ -1167,7 +1172,7 @@ public class ResultManager implements PlugIn {
    * @param resultsSettings the results settings
    * @param flags the flags
    */
-  public static void addInMemoryResultsOptions(final ExtendedGenericDialog gd,
+   static void addInMemoryResultsOptions(final ExtendedGenericDialog gd,
       final Builder resultsSettings, int flags) {
     if (BitFlagUtils.anyNotSet(flags, FLAG_NO_SECTION_HEADER)) {
       gd.addMessage("--- Memory output ---");
@@ -1188,7 +1193,7 @@ public class ResultManager implements PlugIn {
    * @param inputOption the input option
    * @param inputs the inputs
    */
-  public static void addInput(ExtendedGenericDialog gd, String inputOption, InputSource... inputs) {
+   static void addInput(ExtendedGenericDialog gd, String inputOption, InputSource... inputs) {
     addInput(gd, INPUT_NAME, inputOption, inputs);
   }
 
@@ -1204,7 +1209,7 @@ public class ResultManager implements PlugIn {
    * @param inputOption the input option
    * @param inputs the inputs
    */
-  public static void addInput(ExtendedGenericDialog gd, String inputName, String inputOption,
+   static void addInput(ExtendedGenericDialog gd, String inputName, String inputOption,
       InputSource... inputs) {
     addInput(gd, inputName, inputOption, EMPTY_LOAD_OPTIONS, inputs);
   }
@@ -1222,7 +1227,7 @@ public class ResultManager implements PlugIn {
    * @param extraOptions the extra options
    * @param inputs the inputs
    */
-  public static void addInput(ExtendedGenericDialog gd, String inputName, String inputOption,
+   static void addInput(ExtendedGenericDialog gd, String inputName, String inputOption,
       LoadOption[] extraOptions, InputSource... inputs) {
     final Set<String> source = new LinkedHashSet<>();
     String filename = null;
@@ -1401,7 +1406,7 @@ public class ResultManager implements PlugIn {
    * @param memoryResults the memory results
    * @return True if at least one result spanning frames
    */
-  public static boolean isMultiFrame(MemoryPeakResults memoryResults) {
+   static boolean isMultiFrame(MemoryPeakResults memoryResults) {
     return memoryResults
         .forEach((PeakResultProcedureX) result -> result.getFrame() < result.getEndFrame());
   }
@@ -1412,7 +1417,7 @@ public class ResultManager implements PlugIn {
    * @param memoryResults the memory results
    * @return True if any results have IDs above zero
    */
-  public static boolean hasId(MemoryPeakResults memoryResults) {
+   static boolean hasId(MemoryPeakResults memoryResults) {
     return memoryResults.forEach((PeakResultProcedureX) result -> result.getId() > 0);
   }
 
@@ -1422,7 +1427,7 @@ public class ResultManager implements PlugIn {
    * @param memoryResults the memory results
    * @return True if all results have IDs above zero
    */
-  public static boolean isId(MemoryPeakResults memoryResults) {
+   static boolean isId(MemoryPeakResults memoryResults) {
     return memoryResults.forEach((PeakResultProcedureX) result -> result.getId() <= 0);
   }
 
@@ -1432,7 +1437,7 @@ public class ResultManager implements PlugIn {
    * @param memoryResults the memory results
    * @return True if any results have categories above zero
    */
-  public static boolean hasCategory(MemoryPeakResults memoryResults) {
+   static boolean hasCategory(MemoryPeakResults memoryResults) {
     return memoryResults.forEach((PeakResultProcedureX) result -> result.getCategory() > 0);
   }
 
@@ -1442,7 +1447,7 @@ public class ResultManager implements PlugIn {
    * @param memoryResults the memory results
    * @return True if all are an ExtendedPeakResult
    */
-  public static boolean isExtended(MemoryPeakResults memoryResults) {
+   static boolean isExtended(MemoryPeakResults memoryResults) {
     return memoryResults
         .forEach((PeakResultProcedureX) result -> !(result instanceof ExtendedPeakResult));
   }
@@ -1453,7 +1458,7 @@ public class ResultManager implements PlugIn {
    * @param gd the dialog
    * @return the input source
    */
-  public static String getInputSource(GenericDialog gd) {
+   static String getInputSource(GenericDialog gd) {
     final String source = gd.getNextChoice();
     return removeFormatting(source);
   }
@@ -1468,7 +1473,7 @@ public class ResultManager implements PlugIn {
    * @param distanceUnit the required distance unit for the results
    * @return the results
    */
-  public static MemoryPeakResults loadInputResults(String inputOption, boolean checkCalibration,
+   static MemoryPeakResults loadInputResults(String inputOption, boolean checkCalibration,
       DistanceUnit distanceUnit) {
     return loadInputResults(inputOption, checkCalibration, distanceUnit, null);
   }
@@ -1483,7 +1488,7 @@ public class ResultManager implements PlugIn {
    * @param intensityUnit the required intensity unit for the results
    * @return the results
    */
-  public static MemoryPeakResults loadInputResults(String inputOption, boolean checkCalibration,
+   static MemoryPeakResults loadInputResults(String inputOption, boolean checkCalibration,
       IntensityUnit intensityUnit) {
     return loadInputResults(inputOption, checkCalibration, null, intensityUnit);
   }
@@ -1500,7 +1505,7 @@ public class ResultManager implements PlugIn {
    * @param extraOptions the extra options
    * @return the results
    */
-  public static MemoryPeakResults loadInputResults(String inputOption, boolean checkCalibration,
+   static MemoryPeakResults loadInputResults(String inputOption, boolean checkCalibration,
       DistanceUnit distanceUnit, IntensityUnit intensityUnit, LoadOption... extraOptions) {
     MemoryPeakResults results;
     if (INPUT_NONE.equals(inputOption)) {
@@ -1646,7 +1651,7 @@ public class ResultManager implements PlugIn {
    * @param results The results
    * @return True if OK; false if calibration dialog cancelled
    */
-  public static boolean checkCalibration(MemoryPeakResults results) {
+   static boolean checkCalibration(MemoryPeakResults results) {
     // Check for Calibration
     final String msg = (results.hasCalibration()) ? "partially calibrated" : "uncalibrated";
     final CalibrationWriter calibration = results.getCalibrationWriterSafe();
@@ -1785,7 +1790,7 @@ public class ResultManager implements PlugIn {
   /**
    * Batch load a set of results files.
    */
-  public List<String> batchLoad() {
+   List<String> batchLoad() {
     // Adapted from ij.io.Opener.openMultiple
 
     Java2.setSystemLookAndFeel();

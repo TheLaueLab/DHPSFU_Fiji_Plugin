@@ -4,11 +4,45 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="32a29315-d0c5-4459-b136-4af97bf49b37" name="Changes" comment="" />
+    <list default="true" id="32a29315-d0c5-4459-b136-4af97bf49b37" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/analysis/ArrayUtils.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/analysis/ArrayUtils.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/analysis/CalibData.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/analysis/CalibData.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/analysis/FileIndex.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/analysis/FileIndex.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/analysis/FilterParas.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/analysis/FilterParas.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/analysis/FittingParas.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/analysis/FittingParas.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/analysis/GeneralParas.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/analysis/GeneralParas.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/analysis/LoadLocalisationFromFile.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/analysis/LoadLocalisationFromFile.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/analysis/LocalisationGDSC.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/analysis/LocalisationGDSC.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/analysis/Localisations.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/analysis/Localisations.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/analysis/PeakResultDHPSFU.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/analysis/PeakResultDHPSFU.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/analysis/PeakResultDataGDSC.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/analysis/PeakResultDataGDSC.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/analysis/PeakResultDataParameterConverterGDSC.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/analysis/PeakResultDataParameterConverterGDSC.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/analysis/PeakResultDataPrecisionGDSC.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/analysis/PeakResultDataPrecisionGDSC.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/analysis/Read3DFileCalib.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/analysis/Read3DFileCalib.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/analysis/getData_GDSC.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/analysis/getData_GDSC.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/analysis/package-info.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/analysis/package-info.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/DHPSFU.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/DHPSFU.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/LoadLocalisationFIle.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/LoadLocalisationFIle.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/MultiBeadsDHPSFU.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/MultiBeadsDHPSFU.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/OverlayResults.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/OverlayResults.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/ResultManager.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/ResultManager.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/package-info.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/package-info.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/plugins.config" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/plugins.config" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/java/uk/ac/cam/dhpsfu/analysis/LocalisationsTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/uk/ac/cam/dhpsfu/analysis/LocalisationsTest.java" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Class" />
+      </list>
+    </option>
   </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
@@ -28,29 +62,30 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "RunOnceActivity.OpenProjectViewOnStart": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "WebServerToolWindowFactoryState": "true",
-    "last_opened_file_path": "/Users/liusiqi/job/fiji-plugin/code/DHPSFU_Fiji_plugin",
-    "node.js.detected.package.eslint": "true",
-    "node.js.detected.package.tslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "node.js.selected.package.tslint": "(autodetect)",
-    "nodejs_package_manager_path": "npm",
-    "project.structure.last.edited": "Modules",
-    "project.structure.proportion": "0.15",
-    "project.structure.side.proportion": "0.2"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;WebServerToolWindowFactoryState&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;/Users/liusiqi/job/fiji-plugin/code/DHPSFU_Fiji_plugin&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;project.structure.last.edited&quot;: &quot;Modules&quot;,
+    &quot;project.structure.proportion&quot;: &quot;0.15&quot;,
+    &quot;project.structure.side.proportion&quot;: &quot;0.2&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.editor&quot;
   }
-}]]></component>
-  <component name="RunManager">
-    <configuration name="DHPSFU" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
-      <option name="MAIN_CLASS_NAME" value="uk.ac.sussex.gdsc.smlm.ij.example.plugins.DHPSFU" />
+}</component>
+  <component name="RunManager" selected="Application.DriftCorrection">
+    <configuration name="DriftCorrection" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
+      <option name="MAIN_CLASS_NAME" value="uk.ac.cam.dhpsfu.plugins.DriftCorrection" />
       <module name="gdsc-smlm-ij-example-plugin_" />
       <extension name="coverage">
         <pattern>
-          <option name="PATTERN" value="uk.ac.sussex.gdsc.smlm.ij.example.plugins.*" />
+          <option name="PATTERN" value="uk.ac.cam.dhpsfu.plugins.*" />
           <option name="ENABLED" value="true" />
         </pattern>
       </extension>
@@ -58,9 +93,73 @@
         <option name="Make" enabled="true" />
       </method>
     </configuration>
+    <configuration name="Test" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
+      <option name="MAIN_CLASS_NAME" value="uk.ac.cam.dhpsfu.plugins.Test" />
+      <module name="gdsc-smlm-ij-example-plugin_" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="uk.ac.cam.dhpsfu.plugins.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="LocalisationsTest" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
+      <module name="gdsc-smlm-ij-example-plugin_" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="uk.ac.cam.dhpsfu.analysis.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <option name="PACKAGE_NAME" value="uk.ac.cam.dhpsfu.analysis" />
+      <option name="MAIN_CLASS_NAME" value="uk.ac.cam.dhpsfu.analysis.LocalisationsTest" />
+      <option name="TEST_OBJECT" value="class" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="LocalisationsTest.interpTest2" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
+      <module name="gdsc-smlm-ij-example-plugin_" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="uk.ac.cam.dhpsfu.analysis.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <option name="PACKAGE_NAME" value="uk.ac.cam.dhpsfu.analysis" />
+      <option name="MAIN_CLASS_NAME" value="uk.ac.cam.dhpsfu.analysis.LocalisationsTest" />
+      <option name="METHOD_NAME" value="interpTest2" />
+      <option name="TEST_OBJECT" value="method" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="LocalisationsTest.interpTest3" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
+      <module name="gdsc-smlm-ij-example-plugin_" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="uk.ac.cam.dhpsfu.analysis.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <option name="PACKAGE_NAME" value="uk.ac.cam.dhpsfu.analysis" />
+      <option name="MAIN_CLASS_NAME" value="uk.ac.cam.dhpsfu.analysis.LocalisationsTest" />
+      <option name="METHOD_NAME" value="interpTest3" />
+      <option name="TEST_OBJECT" value="method" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
     <recent_temporary>
       <list>
-        <item itemvalue="Application.DHPSFU" />
+        <item itemvalue="Application.DriftCorrection" />
+        <item itemvalue="Application.Test" />
+        <item itemvalue="JUnit.LocalisationsTest" />
+        <item itemvalue="JUnit.LocalisationsTest.interpTest3" />
+        <item itemvalue="JUnit.LocalisationsTest.interpTest2" />
       </list>
     </recent_temporary>
   </component>
@@ -72,7 +171,15 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1681780744037</updated>
-      <workItem from="1681780748137" duration="10425000" />
+      <workItem from="1681780748137" duration="78586000" />
+      <workItem from="1689686555605" duration="53000" />
+      <workItem from="1689692563503" duration="142846000" />
+      <workItem from="1692711684688" duration="2640000" />
+      <workItem from="1692715050777" duration="29309000" />
+      <workItem from="1692959035101" duration="2644000" />
+      <workItem from="1692961970507" duration="61981000" />
+      <workItem from="1693497197656" duration="14469000" />
+      <workItem from="1693853270042" duration="13936000" />
     </task>
     <servers />
   </component>
@@ -101,6 +208,125 @@
           <properties class="java.nio.file.NoSuchFileException" package="java.nio.file" />
           <option name="timeStamp" value="2" />
         </breakpoint>
+        <breakpoint enabled="true" type="java-exception">
+          <properties class="java.lang.ArrayIndexOutOfBoundsException" package="java.lang" />
+          <option name="timeStamp" value="15" />
+        </breakpoint>
+        <line-breakpoint type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/analysis/Fftshift.java</url>
+          <line>136</line>
+          <option name="timeStamp" value="14" />
+        </line-breakpoint>
+        <line-breakpoint type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/Test.java</url>
+          <line>111</line>
+          <option name="timeStamp" value="88" />
+        </line-breakpoint>
+        <line-breakpoint type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/Test.java</url>
+          <line>125</line>
+          <option name="timeStamp" value="89" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/DriftCorrection.java</url>
+          <line>1759</line>
+          <option name="timeStamp" value="101" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/DriftCorrection.java</url>
+          <line>1768</line>
+          <option name="timeStamp" value="102" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/DriftCorrection.java</url>
+          <line>1803</line>
+          <option name="timeStamp" value="103" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/DriftCorrection.java</url>
+          <line>1804</line>
+          <option name="timeStamp" value="104" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/DriftCorrection.java</url>
+          <line>1805</line>
+          <option name="timeStamp" value="105" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/DriftCorrection.java</url>
+          <line>1811</line>
+          <option name="timeStamp" value="106" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/DriftCorrection.java</url>
+          <line>1820</line>
+          <option name="timeStamp" value="107" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/DriftCorrection.java</url>
+          <line>2795</line>
+          <option name="timeStamp" value="114" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/DriftCorrection.java</url>
+          <line>1752</line>
+          <option name="timeStamp" value="122" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/DriftCorrection.java</url>
+          <line>1753</line>
+          <option name="timeStamp" value="123" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/DriftCorrection.java</url>
+          <line>1754</line>
+          <option name="timeStamp" value="124" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/DriftCorrection.java</url>
+          <line>1747</line>
+          <option name="timeStamp" value="125" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/DriftCorrection.java</url>
+          <line>1726</line>
+          <option name="timeStamp" value="129" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/Test.java</url>
+          <line>205</line>
+          <option name="timeStamp" value="147" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/DriftCorrection.java</url>
+          <line>2766</line>
+          <option name="timeStamp" value="148" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/DriftCorrection.java</url>
+          <line>2135</line>
+          <option name="timeStamp" value="158" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/DriftCorrection.java</url>
+          <line>2134</line>
+          <option name="timeStamp" value="186" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/DriftCorrection.java</url>
+          <line>2123</line>
+          <option name="timeStamp" value="188" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/DriftCorrection.java</url>
+          <line>2124</line>
+          <option name="timeStamp" value="189" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/DriftCorrection.java</url>
+          <line>2125</line>
+          <option name="timeStamp" value="190" />
+        </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>
   </component>

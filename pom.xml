@@ -71,7 +71,7 @@
   </ciManagement>
 
   <properties>
-	  <scijava.app.directory> C:\Users\yw525\Desktop\desktop_files\superrescode\fiji-win64-GDSCSMLM2\Fiji.app </scijava.app.directory> <!-- FIXME: -->
+	  <scijava.app.directory> /Applications/Fiji.app </scijava.app.directory> <!-- directory of fiji -->
     <license.licenseName>bsd_2</license.licenseName>
     <license.copyrightOwners>Laue Lab</license.copyrightOwners>
     <gdsc.smlm.ij.version>1.0.2</gdsc.smlm.ij.version>
@@ -94,7 +94,7 @@
 	  <dependency>
       <groupId>com.googlecode.efficient-java-matrix-library</groupId>
       <artifactId>ejml</artifactId>
-      <version>0.24</version>
+      <version>0.25</version>
     </dependency>
     <dependency>
       <groupId>net.imagej</groupId>
@@ -114,9 +114,41 @@
       </exclusions>
     </dependency>
     <dependency>
+      <groupId>com.google.code.gson</groupId>
+      <artifactId>gson</artifactId>
+      <version>2.8.8</version> <!-- Use the latest version available -->
+    </dependency>
+    <dependency>
+      <groupId>org.jfree</groupId>
+      <artifactId>jfreechart</artifactId>
+      <version>1.5.3</version> <!-- Make sure to use the latest version or the version you desire -->
+    </dependency>
+    <dependency>
+      <groupId>org.jfree</groupId>
+      <artifactId>jcommon</artifactId>
+      <version>1.0.24</version> <!-- Use the compatible version with your JFreeChart version -->
+    </dependency>
+    <dependency>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-imaging</artifactId>
+      <version>1.0-alpha1</version> <!-- Check for the latest version -->
+    </dependency>
+    <dependency>
+      <groupId>com.twelvemonkeys.imageio</groupId>
+      <artifactId>imageio-tiff</artifactId>
+      <version>3.7.0</version> <!-- Check for the latest version -->
+    </dependency>
+
+
+    <dependency>
         <groupId>org.junit.jupiter</groupId>
         <artifactId>junit-jupiter</artifactId>
         <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.github.wendykierp</groupId>
+      <artifactId>JTransforms</artifactId>
+      <version>3.1</version>
     </dependency>
   </dependencies>
 </project>
