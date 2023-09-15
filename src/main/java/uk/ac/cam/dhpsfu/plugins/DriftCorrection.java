@@ -91,7 +91,7 @@ public class DriftCorrection implements PlugIn {
     private static String saving_directory = "";
 
     private String wlName = "";
-    private String threedName = "";
+    private static String threedName = "";
     private static String selectedTitle = "";
 
 
@@ -266,7 +266,14 @@ public class DriftCorrection implements PlugIn {
 //            IJ.log(selectedTitle);
             if(saving_directory.equals("") && dc_paras.save_DC_WL){
                 IJ.error("Please select a place to save your corrected white light image ");
-            }else {
+                return;
+            } else if (!memory3D && threed_path.equals("--Please Select--") ) {
+                IJ.error("Please select a 3d file");
+                return;
+            } else if (!memoryWL && WL_path.equals("--Please Select--")) {
+                IJ.error("Please select a opened image");
+                return;
+            } else {
                 load();
                 DCresult dCresult = drift_correction(threed_path, threedName, selectedTitle, WL_path, dc_generalParas, dc_paras);
                 ArrayList<double[]> result = dCresult.getData_corrected();
@@ -305,6 +312,7 @@ public class DriftCorrection implements PlugIn {
                         throw new RuntimeException(e);
                     }
                 }
+                IJ.log("--- Algorithm finish executing ---");
             }
 //            checkResult(dCresult.getDrift_by_frame(),"Drift by frame");
 //            checkResult(dCresult.getDrift_by_loc(),"Drift by loc");
@@ -445,15 +453,14 @@ public class DriftCorrection implements PlugIn {
 //        IJ.log(fileName);
 
         String fileExtension = getFileExtension(filePath);
-        if(fileExtension.equals(".3d")){
+        if(!fileExtension.equals(".3d")){
+            IJ.error(TITLE,"You must select a .3d file");
+        }else{
             try{
                 data = importer.readCSVDouble(Paths.get(filePath),0);
             }catch (IOException e){
                 e.printStackTrace();
             }
-
-        }else{
-            IJ.error(TITLE,"You must select a .3d file");
         }
 
        return loadResult(data,fileName);
@@ -463,7 +470,13 @@ public class DriftCorrection implements PlugIn {
      * load the 3d file and show the data using result table
      */
     public static void load(){
-        MemoryPeakResults threed_result = load3DFile(threed_path,threed_memory).getResults();
+        MemoryPeakResults threed_result;
+        if(!memory3D){
+            threed_result = load3DFile(threed_path,threed_memory).getResults();
+        }else {
+            threed_result = ResultsManager.loadInputResults(threedName,false,null,null);
+        }
+
         if(threed_result == null){
             return;
         }
