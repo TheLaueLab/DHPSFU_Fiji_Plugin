@@ -7,6 +7,7 @@
     <list default="true" id="32a29315-d0c5-4459-b136-4af97bf49b37" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/DriftCorrection.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/DriftCorrection.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/Test.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/Test.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -22,6 +23,11 @@
   </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="HighlightingSettingsPerFile">
+    <setting file="jar:///Library/Java/JavaVirtualMachines/amazon-corretto-11.jdk/Contents/Home/lib/src.zip!/java.base/java/lang/ArrayIndexOutOfBoundsException.java" root0="SKIP_INSPECTION" />
+    <setting file="jar://$MAVEN_REPOSITORY$/com/github/wendykierp/JTransforms/3.1/JTransforms-3.1-sources.jar!/org/jtransforms/fft/DoubleFFT_1D.java" root0="SKIP_INSPECTION" />
+    <setting file="jar://$MAVEN_REPOSITORY$/com/github/wendykierp/JTransforms/3.1/JTransforms-3.1-sources.jar!/org/jtransforms/fft/DoubleFFT_2D.java" root0="SKIP_INSPECTION" />
   </component>
   <component name="MarkdownSettingsMigration">
     <option name="stateVersion" value="1" />
@@ -156,7 +162,7 @@
       <workItem from="1692961970507" duration="61981000" />
       <workItem from="1693497197656" duration="14469000" />
       <workItem from="1693853270042" duration="14906000" />
-      <workItem from="1694795576563" duration="3736000" />
+      <workItem from="1694795576563" duration="26577000" />
     </task>
     <servers />
   </component>
@@ -196,113 +202,98 @@
         </line-breakpoint>
         <line-breakpoint type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/Test.java</url>
-          <line>111</line>
+          <line>112</line>
           <option name="timeStamp" value="88" />
         </line-breakpoint>
         <line-breakpoint type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/Test.java</url>
-          <line>125</line>
+          <line>126</line>
           <option name="timeStamp" value="89" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/DriftCorrection.java</url>
-          <line>1765</line>
-          <option name="timeStamp" value="101" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="java-line">
-          <url>file://$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/DriftCorrection.java</url>
-          <line>1774</line>
-          <option name="timeStamp" value="102" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="java-line">
-          <url>file://$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/DriftCorrection.java</url>
-          <line>1809</line>
-          <option name="timeStamp" value="103" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="java-line">
-          <url>file://$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/DriftCorrection.java</url>
-          <line>1810</line>
-          <option name="timeStamp" value="104" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="java-line">
-          <url>file://$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/DriftCorrection.java</url>
-          <line>1811</line>
-          <option name="timeStamp" value="105" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="java-line">
-          <url>file://$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/DriftCorrection.java</url>
-          <line>1817</line>
-          <option name="timeStamp" value="106" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="java-line">
-          <url>file://$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/DriftCorrection.java</url>
-          <line>1826</line>
-          <option name="timeStamp" value="107" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="java-line">
-          <url>file://$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/DriftCorrection.java</url>
-          <line>2801</line>
+          <line>2873</line>
           <option name="timeStamp" value="114" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/DriftCorrection.java</url>
-          <line>1758</line>
-          <option name="timeStamp" value="122" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="java-line">
-          <url>file://$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/DriftCorrection.java</url>
-          <line>1759</line>
-          <option name="timeStamp" value="123" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="java-line">
-          <url>file://$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/DriftCorrection.java</url>
-          <line>1760</line>
-          <option name="timeStamp" value="124" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="java-line">
-          <url>file://$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/DriftCorrection.java</url>
-          <line>1753</line>
-          <option name="timeStamp" value="125" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="java-line">
-          <url>file://$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/DriftCorrection.java</url>
-          <line>1732</line>
+          <line>1796</line>
           <option name="timeStamp" value="129" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/Test.java</url>
-          <line>205</line>
+          <line>206</line>
           <option name="timeStamp" value="147" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/DriftCorrection.java</url>
-          <line>2772</line>
-          <option name="timeStamp" value="148" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="java-line">
-          <url>file://$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/DriftCorrection.java</url>
-          <line>2141</line>
+          <line>2205</line>
           <option name="timeStamp" value="158" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/DriftCorrection.java</url>
-          <line>2140</line>
+          <line>2204</line>
           <option name="timeStamp" value="186" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/DriftCorrection.java</url>
-          <line>2129</line>
+          <line>2193</line>
           <option name="timeStamp" value="188" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/DriftCorrection.java</url>
-          <line>2130</line>
+          <line>2194</line>
           <option name="timeStamp" value="189" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/DriftCorrection.java</url>
-          <line>2131</line>
+          <line>2195</line>
           <option name="timeStamp" value="190" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/DriftCorrection.java</url>
+          <line>1733</line>
+          <option name="timeStamp" value="191" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/DriftCorrection.java</url>
+          <line>1371</line>
+          <option name="timeStamp" value="193" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/DriftCorrection.java</url>
+          <line>2842</line>
+          <option name="timeStamp" value="194" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/DriftCorrection.java</url>
+          <line>1700</line>
+          <option name="timeStamp" value="201" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/DriftCorrection.java</url>
+          <line>1684</line>
+          <option name="timeStamp" value="204" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/DriftCorrection.java</url>
+          <line>1691</line>
+          <option name="timeStamp" value="205" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/DriftCorrection.java</url>
+          <line>1258</line>
+          <option name="timeStamp" value="206" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/DriftCorrection.java</url>
+          <line>1260</line>
+          <option name="timeStamp" value="207" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/DriftCorrection.java</url>
+          <line>1266</line>
+          <option name="timeStamp" value="208" />
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>

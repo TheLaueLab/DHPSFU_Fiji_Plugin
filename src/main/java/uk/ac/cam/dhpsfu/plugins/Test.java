@@ -21,6 +21,7 @@ import org.jfree.chart.plot.XYPlot;
 import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
+import uk.ac.cam.dhpsfu.analysis.Dftresult;
 
 import javax.swing.*;
 import java.awt.*;
@@ -233,6 +234,191 @@ public class Test  {
 //        }
 //        return returnList;
 //    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//
+//
+//
+//    double[][] f1 = normalise_dtype(wlArray[0], true, 4096);
+//    ArrayList<Double> fxx = zeros1col(gp.burst);
+//    ArrayList<Double> fyy = zeros1col(gp.burst);
+//
+//    for(int i = 1; i < gp.burst; i++ ){
+//        double[][] f = normalise_dtype(wlArray[i], true, 4096);
+//        double[][] newF = realToComplex(f);
+//        double[][] newF1 = realToComplex(f1);
+//
+//        DoubleFFT_2D fft2 = new DoubleFFT_2D(f1.length, f1[0].length);
+//        fft2.complexForward(newF);
+//        fft2.complexForward(newF1);
+//        Dftresult r = dftregistration(convertToComplex(newF1),convertToComplex(newF),(int) gp.upFactor);
+//        fxx.set(i,r.getOutput()[3]);
+//        fyy.set(i,r.getOutput()[2]);
+//    }
+//    double avFxx = getMean(fxx);
+//    double avFyy = getMean(fyy);
+//    ArrayList<double[]> xxx = new ArrayList<>();
+//    ArrayList<double[]> yyy = new ArrayList<>();
+//
+//    double max = getMax(threed_data[4]);
+//    for(int i = 1; i < Math.ceil(max / gp.cycle) +1; i ++){
+//        ArrayList<Double> Gxx1 = zeros1col(gp.burst);
+//        ArrayList<Double> Gyy1 = zeros1col(gp.burst);
+//        ArrayList<Double> Gxx2 = zeros1col(gp.burst);
+//        ArrayList<Double> Gyy2 = zeros1col(gp.burst);
+//
+//        for(int j = 0; j < gp.burst; j++) {
+//            if (i != 1) {
+//                int frameAbs1 = (int) (2 * (i - 1) * gp.burst + j);
+//                double[][] g1 = normalise_dtype(wlArray[frameAbs1], true, 4096);
+//                double[][] newG1 = realToComplex(g1);
+//                double[][] newF1 = realToComplex(f1);
+//
+//                DoubleFFT_2D fft2 = new DoubleFFT_2D(f1.length, f1[0].length);
+//                fft2.complexForward(newG1);
+//                fft2.complexForward(newF1);
+//                Dftresult r = dftregistration(convertToComplex(newF1), convertToComplex(newG1), (int) gp.upFactor);
+//                Gxx1.set(j, r.getOutput()[3]);
+//                Gyy1.set(j, r.getOutput()[2]);
+//            }
+//            int frameAbs2 = (int) ((2 * i - 1) * gp.burst + j);
+//            double[][] g2 = normalise_dtype(wlArray[frameAbs2], true, 4096);
+//            double[][] newG2 = realToComplex(g2);
+//            double[][] newF1 = realToComplex(f1);
+//
+//            DoubleFFT_2D fft2 = new DoubleFFT_2D(f1.length, f1[0].length);
+//            fft2.complexForward(newG2);
+//            fft2.complexForward(newF1);
+//            Dftresult r = dftregistration(convertToComplex(newF1), convertToComplex(newG2), (int) gp.upFactor);
+//            Gxx2.set(j, r.getOutput()[3]);
+//            Gyy2.set(j, r.getOutput()[2]);
+//        }
+//        double avGxx1 = 0;
+//        double avGyy1 = 0;
+//        if(i == 1){
+//            avGxx1 = avFxx;
+//            avGyy1 = avFyy;
+//        }else{
+//            avGxx1 = getMean(Gxx1);
+//            avGyy1 = getMean(Gyy1);
+//        }
+//        double avGxx2 = getMean(Gxx2);
+//        double avGyy2 = getMean(Gyy2);
+//
+//        double[] ary = linspace(0, gp.cycle,(int) gp.cycle);
+//        double[] xx = interp(ary, new double[]{0,gp.cycle}, new double[]{avGxx1, avGxx2});
+//        double[] yy = interp(ary, new double[]{0,gp.cycle}, new double[]{avGyy1, avGyy2});
+//        xxx.add(xx);
+//        yyy.add(yy);
+//
+//        for(int j =1; j < gp.cycle+1; j ++){
+//            double frameNumber = (i - 1) * gp.cycle + j;
+//            ArrayList<Integer> locs = new ArrayList<>();
+//            for(int k = 0; k < threed_data[4].length; k ++){
+//                if(threed_data[4][k] == frameNumber){
+//                    locs.add(k);
+//                    if( k+1 < threed_data[4].length && threed_data[4][k+1] > frameNumber ){
+//                        break;
+//                    }
+//                }
+//            }
+//            if(locs.size() == 0){
+//                continue;
+//            }
+//
+//            double[][] data_to_correct = new double[locs.size()][5];
+//            for(int k = 0; k < locs.size(); k++){
+//                data_to_correct[k] = data_arr[locs.get(k)];
+//            }
+//
+//            double[] corr_x = new double[data_to_correct.length];
+//            if(paras.flip_x){
+//                for(int k = 0; k < corr_x.length; k ++){
+//                    corr_x[k] = data_to_correct[k][0] - xx[j-1] * gp.px_size;
+//                }
+//            }else {
+//                for(int k = 0; k < corr_x.length; k ++){
+//                    corr_x[k] = data_to_correct[k][0] + xx[j-1] * gp.px_size;
+//                }
+//            }
+//            double[] corr_y = new double[data_to_correct.length];
+//
+//            if(paras.flip_y){
+//                for(int k = 0; k < corr_y.length; k ++){
+//                    corr_y[k] = data_to_correct[k][1] - yy[j-1] * gp.px_size;
+//                }
+//            }else{
+//                for(int k = 0; k < corr_y.length; k ++){
+//                    corr_y[k] = data_to_correct[k][1] + yy[j-1] * gp.px_size;
+//                }
+//            }
+//            double[][] corr_x_reshape = reshape(corr_x.length,1,corr_x);
+//            double[][] corr_y_reshape = reshape(corr_y.length,1,corr_y);
+////                    for(int k = 0; k < corr_y.length; k ++){
+////                        corr_y_reshape[k][0] = corr_y[k] ;
+////                    }
+////                    double[][] slice_data = new double[data_to_correct.length][3];
+////                    for(int k = 0; k < data_to_correct.length; k ++){
+////                        for(int f = 2,a = 0 ; f < 5; f ++, a ++){
+////                            slice_data[k][a] = data_to_correct[j][f];
+////                        }
+////                    }
+////                    System.out.println("j: " + j + " row: " +data_to_correct.length + " col: " + data_to_correct[0].length);
+//            double[][] slice_data = arraySliceCol2d(data_to_correct,2);
+//            double[][] corrected = new double[slice_data.length][slice_data[0].length +
+//                    corr_x_reshape[0].length + corr_y_reshape[0].length];
+//            for(int k = 0; k < corrected.length; k++){
+//                corrected[k][0] = corr_x_reshape[k][0];
+//                corrected[k][1] = corr_y_reshape[k][0];
+//                corrected[k][2] = slice_data[k][0];
+//                corrected[k][3] = slice_data[k][1];
+//                corrected[k][4] = slice_data[k][2];
+//
+//            }
+//            for(int k = 0; k < corrected.length; k ++){
+//                data_corrected.add(corrected[k]);
+//            }
+//        }
+//        System.out.println(i);
+//    }
+//            data_corrected.remove(0);
+//    ArrayList<Double> xxxConcatenate = concatenate(xxx);
+//    double[][] reshape_xxx = reshape(arrayListSize(xxx),1,toArrayMul(xxxConcatenate, gp.px_size));
+//    ArrayList<Double> yyyConcatenate = concatenate(yyy);
+//    double[][] reshape_yyy = reshape(arrayListSize(yyy),1,toArrayMul(yyyConcatenate, gp.px_size));
+//
+//    drift_by_frame = convertIntoArrayList(concatenateAxis1(reshape_xxx,reshape_yyy));
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
     public static double[] interpAlter(double[] x_interp, double[] x_known, double[] y_known){

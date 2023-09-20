@@ -71,6 +71,7 @@ import javax.imageio.stream.ImageOutputStream;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.stream.IntStream;
 
 import ij.ImagePlus;
 import ij.ImageStack;
@@ -105,7 +106,7 @@ public class DriftCorrection implements PlugIn {
 //    private boolean group_burst;
 //    private boolean save_dc_wl;
     public static DC_GeneralParas dc_generalParas = new DC_GeneralParas(271,100,20,500);
-    public static DC_Paras dc_paras = new DC_Paras(true,true,false,false,false,true,true);
+    public static DC_Paras dc_paras = new DC_Paras(true,true,false,false,true,true,true);
 
 
 
@@ -123,9 +124,9 @@ public class DriftCorrection implements PlugIn {
         Preferences preferences = Preferences.userNodeForPackage(DriftCorrection.class);
 
         // 3d file input
-        gd.addMessage("select .3d File from ImageJ memory:");
         ResultManager.addInput(gd, "--Please Select--", ResultManager.InputSource.MEMORY);
 //        String defaultDirectory1 = preferences.get("defaultDirectory", "");
+        gd.addMessage("select .3d File from File Directory:");
         gd.addFilenameField(".3d_File_directory", "--Please Select--");
         gd.addStringField("File_name", "3D");
 //        IJ.log(defaultDirectory1);
@@ -134,7 +135,6 @@ public class DriftCorrection implements PlugIn {
         gd.addCheckbox("Load WL image from opened window", memoryWL);
         Checkbox wl_image = gd.getLastCheckbox();
         memoryWL = wl_image.getState();
-        gd.addMessage("White Light image:");
         String[] imageTitles = WindowManager.getImageTitles();
         if(imageTitles.length != 0 ){
             gd.addChoice("Select opened image", imageTitles,"--Please Select--");
@@ -143,6 +143,7 @@ public class DriftCorrection implements PlugIn {
         }
 
 //        String defaultDirectory2 = preferences.get("defaultDirectory", "");
+        gd.addMessage("Select WL image from File Directory ");
         gd.addFilenameField(".tif_File_directory", "--Please Select--");
 //        IJ.log(defaultDirectory2);
 
@@ -250,12 +251,17 @@ public class DriftCorrection implements PlugIn {
         IJ.log("            -Else will use saved file in \"Input\" field");
         IJ.log(" ");
         IJ.log("    *** If \"Load WL image from opened window\" is ticked:");
-        IJ.log("            -Program will use image selected in \".tif file directory\"");
-        IJ.log("            -Else will use saved image in \"Select opened image\" field");
+        IJ.log("            -Program will use saved image in \"Select opened image\" field");
+        IJ.log("            -Else will use image selected in \".tif file directory\"");
         IJ.log(" ");
         IJ.log("    Once you select \"OK\", it will takes 10-20 seconds to calculate the result");
         IJ.log("    (* Program running time depends on your input data size *)");
 
+        IJ.log("  ");
+        IJ.log(" White light occasional:  False means the WL image and the SR image are taken at the same time, one-to-one ");
+        IJ.log(" Drift correction twice: True means WL-SR-WL, WL-SR-WL, ... False means WL-SR, WL-SR, ... ");
+        IJ.log(" Average drift: If False, average WL images in each burst then calculate drift by averaged images ");
+        IJ.log(" Group burst: If True, average every (burst) frames and drift-correction by the first averaged burst. ");
     }
 
     @Override
@@ -663,16 +669,16 @@ public class DriftCorrection implements PlugIn {
 
         // perform inverse shift and scale
         imFTout = Fftshift.ifftShift2D(imFTout);
-        DecimalFormat df = new DecimalFormat("#.########");
-
-        for (int i = 0; i < imFTout.length; i++) {
-            for (int j = 0; j < imFTout[i].length; j++) {
-                imFTout[i][j] = imFTout[i][j].multiply((double) outsize[0] * outsize[1] / (nin[0] * nin[1]));
-                double real = Double.parseDouble(df.format(imFTout[i][j].getReal()));
-                double imaginary = Double.parseDouble(df.format(imFTout[i][j].getImaginary()));
-                imFTout[i][j] = new Complex(real, imaginary);
-            }
-        }
+//        DecimalFormat df = new DecimalFormat("#.########");
+//
+//        for (int i = 0; i < imFTout.length; i++) {
+//            for (int j = 0; j < imFTout[i].length; j++) {
+//                imFTout[i][j] = imFTout[i][j].multiply((double) outsize[0] * outsize[1] / (nin[0] * nin[1]));
+//                double real = Double.parseDouble(df.format(imFTout[i][j].getReal()));
+//                double imaginary = Double.parseDouble(df.format(imFTout[i][j].getImaginary()));
+//                imFTout[i][j] = new Complex(real, imaginary);
+//            }
+//        }
         return imFTout;
     }
     public static Complex[][] dftups(Complex[][] inn, int nor, int noc, int usfac, int roff, int coff){
@@ -684,14 +690,18 @@ public class DriftCorrection implements PlugIn {
             fftpara[i] = i;
         }
         fftpara = Fftshift.ifftShift1D(fftpara);
+
         //kernc_1
         Complex[] kernc_1 = new Complex[nc];
         for (int i = 0; i < nc; i++) {
             kernc_1[i] = new Complex(0, -2 * Math.PI / (nc * usfac)).multiply(fftpara[i] - Math.floor((double) nc / 2));
         }
+
+
         //reshape kernc_1
         Complex[][] reshaped_kernc_1 = new Complex[1][kernc_1.length];
         System.arraycopy(kernc_1, 0, reshaped_kernc_1[0], 0, kernc_1.length);
+
 
         //kernc_2
         double[] kernc_2 = new double[noc];
@@ -701,12 +711,12 @@ public class DriftCorrection implements PlugIn {
         //reshape kernc_2
         double[][] reshaped_kernc_2 = reshape(kernc_2.length,1,kernc_2);
 
-
         //multiplication between Complex and double
         int rows = reshaped_kernc_2.length;  // Assuming 2D array
         int cols = reshaped_kernc_1[0].length;  // Assuming non-empty 2D array
 
         Complex[][] multiResult = new Complex[rows][cols];
+
 
         for (int i = 0; i < rows; i++) {
             for (int j = 0; j < cols; j++) {
@@ -730,6 +740,7 @@ public class DriftCorrection implements PlugIn {
                 result.setEntry(i, j, expComplex);
             }
         }
+
         //kernc
         FieldMatrix<Complex> kerncM = result.transpose();
         Complex[][] kernc = matrixToArray(kerncM);
@@ -766,6 +777,7 @@ public class DriftCorrection implements PlugIn {
 
         Complex[][] multiResultNr = new Complex[nrrows][nrcols];
 
+
         for (int i = 0; i < nrrows; i++) {
             for (int j = 0; j < nrcols; j++) {
                 Complex sum = Complex.ZERO;
@@ -800,6 +812,8 @@ public class DriftCorrection implements PlugIn {
 
         Complex[][] interResult = new Complex[finalrow1][finalcol1];
 
+//        long startTime = System.currentTimeMillis();
+
         for (int i = 0; i < finalrow1; i++) {
             for (int j = 0; j < finalcol1; j++) {
                 Complex sum = Complex.ZERO;
@@ -809,10 +823,14 @@ public class DriftCorrection implements PlugIn {
                 interResult[i][j] = sum;
             }
         }
+//        long endTime = System.currentTimeMillis();
+//        System.out.println("8: "+ (endTime-startTime));
 
         //dot(interResult,kernc)
         int r = interResult.length;
         int c = kernc[0].length;
+
+//        startTime = System.currentTimeMillis();
 
         Complex[][] out = new Complex[r][c];
         for (int i = 0; i < r; i++) {
@@ -824,8 +842,14 @@ public class DriftCorrection implements PlugIn {
                 out[i][j] = sum;
             }
         }
+//        endTime = System.currentTimeMillis();
+//        System.out.println("9: "+ (endTime-startTime));
 
-        reformatComplex(out);
+//        startTime = System.currentTimeMillis();
+////        reformatComplex(out);
+//        endTime = System.currentTimeMillis();
+//        System.out.println("10: "+ (endTime-startTime));
+
         return out;
 
     }
@@ -865,19 +889,30 @@ public class DriftCorrection implements PlugIn {
 
 
         if (usfac == 0) {
-//            ccMax = new Complex(0, 0);
+            ccMax = new Complex(0, 0);
             for (int i = 0; i < buf1ft.length; i++) {
                 for (int j = 0; j < buf1ft[i].length; j++) {
+
                     Complex conj = buf2ft[i][j].conjugate(); // Take the conjugate of buf2ft[i][j]
                     Complex product = buf1ft[i][j].multiply(conj); // Multiply with buf1ft[i][j]
+
                     ccMax = ccMax.add(product); // Add to the sum
                 }
             }
+
+//            ccMax = IntStream.range(0, buf1ft.length)
+//                    .parallel()
+//                    .mapToObj(i -> IntStream.range(0, buf1ft[i].length)
+//                            .mapToObj(j -> buf1ft[i][j].multiply(buf2ft[i][j].conjugate()))
+//                            .reduce(Complex.ZERO, Complex::add))
+//                    .reduce(Complex.ZERO, Complex::add);
+
             row_shift = 0;
             col_shift = 0;
 
 
         } else if (usfac == 1) {
+
             Complex[][] cc = new Complex[buf1ft.length][buf1ft[0].length];
             for (int i = 0; i < buf1ft.length; i++) {
                 for (int j = 0; j < buf1ft[i].length; j++) {
@@ -909,6 +944,7 @@ public class DriftCorrection implements PlugIn {
 
 
         } else if (usfac > 1) {
+
             Complex[][] interCC = new Complex[buf1ft.length][buf1ft[0].length];
             for (int i = 0; i < buf1ft.length; i++) {
                 for (int j = 0; j < buf1ft[i].length; j++) {
@@ -952,28 +988,36 @@ public class DriftCorrection implements PlugIn {
             row_shift = Nr2[(int) row_shift] / 2;
             col_shift = Nc2[(int) col_shift] / 2;
 
+
             if (usfac > 2) {
+
                 Complex[][] interCC1 = new Complex[buf1ft.length][buf1ft[0].length];
                 for (int i = 0; i < buf1ft.length; i++) {
                     for (int j = 0; j < buf1ft[i].length; j++) {
                         interCC1[i][j] = buf2ft[i][j].multiply((buf1ft[i][j]).conjugate());
                     }
                 }
+
+
                 row_shift = (double) (Math.round(row_shift * usfac)) / usfac;
                 col_shift = (double) (Math.round(col_shift * usfac)) / usfac;
                 double dftshift = (Math.ceil(usfac * 1.5)) / 2;
                 //np.fix
                 dftshift = (dftshift < 0) ? Math.ceil(dftshift) : Math.floor(dftshift);
 
+
+
 //                Complex[][] newCC = new Complex[interCC1.length][interCC1[0].length];
 
                 Complex[][] interCC11 = dftups(interCC1, (int) Math.ceil(usfac * 1.5), (int) Math.ceil(usfac * 1.5), usfac, (int) (dftshift - row_shift * usfac), (int) (dftshift - col_shift * usfac));
+
                 Complex[][] newCC = new Complex[interCC11.length][interCC11[0].length];
                 for (int i = 0; i < newCC.length; i++) {
                     for (int j = 0; j < newCC[i].length; j++) {
                         newCC[i][j] = interCC11[i][j].conjugate();
                     }
                 }
+
                 ccAbs = absoluteValue(newCC);
                 int rloc = -1;
                 int cloc = -1;
@@ -987,6 +1031,7 @@ public class DriftCorrection implements PlugIn {
                         }
                     }
                 }
+
                 ccMax = newCC[rloc][cloc];
                 rloc = rloc - (int) dftshift;
                 cloc = cloc - (int) dftshift;
@@ -1062,26 +1107,27 @@ public class DriftCorrection implements PlugIn {
                 }
             }
         }
-        DecimalFormat df = new DecimalFormat("#.########");
-
-        for (int i = 0; i < greg.length; i++) {
-            for (int j = 0; j < greg[i].length; j++) {
-                double real = Double.parseDouble(df.format(greg[i][j].getReal()));
-                double imaginary = Double.parseDouble(df.format(greg[i][j].getImaginary()));
-                greg[i][j] = new Complex(real, imaginary);
-            }
-        }
+//        DecimalFormat df = new DecimalFormat("#.########");
+//
+//        for (int i = 0; i < greg.length; i++) {
+//            for (int j = 0; j < greg[i].length; j++) {
+//                double real = Double.parseDouble(df.format(greg[i][j].getReal()));
+//                double imaginary = Double.parseDouble(df.format(greg[i][j].getImaginary()));
+//                greg[i][j] = new Complex(real, imaginary);
+//            }
+//        }
 
         return new Dftresult(output,greg);
 
     }
     public static double[][][] division3dArray(int[][][] input_array, int factor){
         double[][][] out = new double[input_array.length][input_array[0].length][input_array[0][0].length];
-        DecimalFormat df = new DecimalFormat("#.########");
+//        DecimalFormat df = new DecimalFormat("#.########");
         for(int i = 0; i < input_array.length; i++){
             for(int j = 0; j < input_array[0].length; j ++){
                 for(int k = 0; k < input_array[0][0].length; k++){
-                    out[i][j][k] = Double.parseDouble(df.format((double) input_array[i][j][k] / factor));
+//                    out[i][j][k] = Double.parseDouble(df.format((double) input_array[i][j][k] / factor));
+                    out[i][j][k] = (double) input_array[i][j][k] / factor;
                 }
             }
         }
@@ -1090,10 +1136,11 @@ public class DriftCorrection implements PlugIn {
 
     public static double[][] division2dArray(int[][] input_array, int factor){
         double[][] out = new double[input_array.length][input_array[0].length];
-        DecimalFormat df = new DecimalFormat("#.########");
+//        DecimalFormat df = new DecimalFormat("#.########");
         for(int i = 0; i < input_array.length; i++){
             for(int j = 0; j < input_array[0].length; j ++){
-                out[i][j] = Double.parseDouble(df.format((double) input_array[i][j] / factor));
+//                out[i][j] = Double.parseDouble(df.format((double) input_array[i][j] / factor));
+                out[i][j] = (double) input_array[i][j] / factor;
             }
         }
         return out;
@@ -1210,7 +1257,7 @@ public class DriftCorrection implements PlugIn {
         // find the position of first frame
         //sometimes there's multiple first frame, with different xyz value
         ArrayList<Integer> locs1 = new ArrayList<Integer>();
-        double min = 0;
+        double min = Integer.MAX_VALUE;
         for(int i =0; i < threed_data[4].length; i ++){
             if (min > threed_data[4][i]){
                 min = threed_data[4][i];
@@ -1392,10 +1439,13 @@ public class DriftCorrection implements PlugIn {
                     for(int k = 0; k < threed_data[4].length; k ++){
                         if(threed_data[4][k] == frameNumber){
                             locs.add(k);
-                            if(threed_data[4][k+1] > frameNumber){
+                            if(k+1< threed_data[4].length && threed_data[4][k+1] > frameNumber){
                                 break;
                             }
                         }
+                    }
+                    if(locs.size() == 0){
+                        continue;
                     }
                     double[][] data_to_correct = new double[locs.size()][5];
                     for(int k = 0; k < locs.size(); k++){
@@ -1583,8 +1633,10 @@ public class DriftCorrection implements PlugIn {
                 ArrayList<Double> Gyy2 = zeros1col(gp.burst);
 
                 for(int j = 0; j < gp.burst; j++) {
+
                     if (i != 1) {
                         int frameAbs1 = (int) (2 * (i - 1) * gp.burst + j);
+
                         double[][] g1 = normalise_dtype(wlArray[frameAbs1], true, 4096);
                         double[][] newG1 = realToComplex(g1);
                         double[][] newF1 = realToComplex(f1);
@@ -1592,7 +1644,9 @@ public class DriftCorrection implements PlugIn {
                         DoubleFFT_2D fft2 = new DoubleFFT_2D(f1.length, f1[0].length);
                         fft2.complexForward(newG1);
                         fft2.complexForward(newF1);
+
                         Dftresult r = dftregistration(convertToComplex(newF1), convertToComplex(newG1), (int) gp.upFactor);
+
                         Gxx1.set(j, r.getOutput()[3]);
                         Gyy1.set(j, r.getOutput()[2]);
                     }
@@ -1607,6 +1661,8 @@ public class DriftCorrection implements PlugIn {
                     Dftresult r = dftregistration(convertToComplex(newF1), convertToComplex(newG2), (int) gp.upFactor);
                     Gxx2.set(j, r.getOutput()[3]);
                     Gyy2.set(j, r.getOutput()[2]);
+
+
                 }
                 double avGxx1 = 0;
                 double avGyy1 = 0;
@@ -1627,16 +1683,21 @@ public class DriftCorrection implements PlugIn {
                 yyy.add(yy);
 
                 for(int j =1; j < gp.cycle+1; j ++){
+
                     double frameNumber = (i - 1) * gp.cycle + j;
                     ArrayList<Integer> locs = new ArrayList<>();
                     for(int k = 0; k < threed_data[4].length; k ++){
                         if(threed_data[4][k] == frameNumber){
                             locs.add(k);
-                            if(threed_data[4][k+1] > frameNumber){
+                            if( k+1< threed_data[4].length && threed_data[4][k+1] > frameNumber ){
                                 break;
                             }
                         }
                     }
+                    if(locs.size() == 0){
+                        continue;
+                    }
+
                     double[][] data_to_correct = new double[locs.size()][5];
                     for(int k = 0; k < locs.size(); k++){
                         data_to_correct[k] = data_arr[locs.get(k)];
@@ -1664,15 +1725,17 @@ public class DriftCorrection implements PlugIn {
                     }
                     double[][] corr_x_reshape = reshape(corr_x.length,1,corr_x);
                     double[][] corr_y_reshape = reshape(corr_y.length,1,corr_y);
-                    for(int k = 0; k < corr_y.length; k ++){
-                        corr_y_reshape[k][0] = corr_y[k] ;
-                    }
-                    double[][] slice_data = new double[data_to_correct.length][3];
-                    for(int k = 0; k < data_to_correct.length; k ++){
-                        for(int f = 2,a = 0 ; f < 5; f ++, a ++){
-                            slice_data[k][a] = data_to_correct[j][f];
-                        }
-                    }
+//                    for(int k = 0; k < corr_y.length; k ++){
+//                        corr_y_reshape[k][0] = corr_y[k] ;
+//                    }
+//                    double[][] slice_data = new double[data_to_correct.length][3];
+//                    for(int k = 0; k < data_to_correct.length; k ++){
+//                        for(int f = 2,a = 0 ; f < 5; f ++, a ++){
+//                            slice_data[k][a] = data_to_correct[j][f];
+//                        }
+//                    }
+//                    System.out.println("j: " + j + " row: " +data_to_correct.length + " col: " + data_to_correct[0].length);
+                    double[][] slice_data = arraySliceCol2d(data_to_correct,2);
                     double[][] corrected = new double[slice_data.length][slice_data[0].length +
                             corr_x_reshape[0].length + corr_y_reshape[0].length];
                     for(int k = 0; k < corrected.length; k++){
@@ -1687,14 +1750,15 @@ public class DriftCorrection implements PlugIn {
                         data_corrected.add(corrected[k]);
                     }
                 }
-                data_corrected.remove(0);
-                ArrayList<Double> xxxConcatenate = concatenate(xxx);
-                double[][] reshape_xxx = reshape(arrayListSize(xxx),1,xxx);
-                ArrayList<Double> yyyConcatenate = concatenate(yyy);
-                double[][] reshape_yyy = reshape(arrayListSize(yyy),1,yyy);
-
-                drift_by_frame = convertIntoArrayList(concatenateAxis1(reshape_xxx,reshape_yyy));
+                System.out.println(i);
             }
+            data_corrected.remove(0);
+            ArrayList<Double> xxxConcatenate = concatenate(xxx);
+            double[][] reshape_xxx = reshape(arrayListSize(xxx),1,toArrayMul(xxxConcatenate, gp.px_size));
+            ArrayList<Double> yyyConcatenate = concatenate(yyy);
+            double[][] reshape_yyy = reshape(arrayListSize(yyy),1,toArrayMul(yyyConcatenate, gp.px_size));
+
+            drift_by_frame = convertIntoArrayList(concatenateAxis1(reshape_xxx,reshape_yyy));
         } else if (paras.wl_occasional && paras.correction_twice && !paras.average_drift) {
 //            int[][][] wlArray = loadtifFile(wl_path);
             double[][][]wl_img = normalise_dtype(wlArray,true,4096);
@@ -2271,7 +2335,7 @@ public static double compute00(Complex[][] buf1ft) {
     public static double[][] arraySliceCol2d(double[][] data_arr,int col){
         double[][] inter_data_corrected  = new double[data_arr.length][data_arr[0].length - col];
         for(int i = 0; i < data_arr.length; i ++){
-            for(int j =col, k = 0; j < 5; j ++, k ++){
+            for(int j =col, k = 0; j < data_arr[0].length; j ++, k ++){
                 inter_data_corrected[i][k] = data_arr[i][j];
             }
         }
@@ -2410,6 +2474,13 @@ public static double compute00(Complex[][] buf1ft) {
         }
         return result;
     }
+    public static double[] toArrayMul(ArrayList<Double> ary, double f){
+        double[] result = new double[ary.size()];
+        for(int i = 0; i < result.length; i ++){
+            result[i] = ary.get(i) * f;
+        }
+        return result;
+    }
 
     /**
      *
@@ -2449,10 +2520,11 @@ public static double compute00(Complex[][] buf1ft) {
     }
     public static double[] interp(double[] x, double[] xp, double[] fp) {
         double[] results = new double[x.length];
-        DecimalFormat df = new DecimalFormat("#.########");
+//        DecimalFormat df = new DecimalFormat("#.########");
 
         for (int i = 0; i < x.length; i++) {
-            results[i] = Double.parseDouble(df.format(interpolate(x[i], xp, fp)));
+//            results[i] = Double.parseDouble(df.format(interpolate(x[i], xp, fp)));
+            results[i] = interpolate(x[i], xp, fp);
         }
 
         return results;
@@ -2491,11 +2563,11 @@ public static double compute00(Complex[][] buf1ft) {
 
         double[] result = new double[numPoints];
         double step = (end - start) / (numPoints - 1);
-        DecimalFormat df = new DecimalFormat("#.########");
+//        DecimalFormat df = new DecimalFormat("#.########");
 
         for (int i = 0; i < numPoints; i++) {
-
-            result[i] = (Double.parseDouble(df.format(start + i * step)));
+            result[i] = start + i * step;
+//            result[i] = (Double.parseDouble(df.format(start + i * step)));
         }
 
         return result;
@@ -2764,16 +2836,16 @@ public static double compute00(Complex[][] buf1ft) {
     }
 
     public static void test() throws Exception {
-        String threedPath = "/Users/liusiqi/Downloads/Code/Sampledata/cell2_2nM_slice8_super-res.tif.results.3d";
-        String threedName1 = "cell2_2nM_slice8_super-res.tif.results.3d";
-        String wlPath = "/Users/liusiqi/Downloads/Code/Sampledata/cell2_2nM_slice8_WL.tif";
+        String threedPath = "/Users/liusiqi/Downloads/Code/Sampledata/cell2_2nM_slice7_super-res.tif.results.3d";
+        String threedName1 = "cell2_2nM_slice7_super-res.tif.results.3d";
+        String wlPath = "/Users/liusiqi/Downloads/Code/Sampledata/cell2_2nM_slice7_WL.tif";
 
-//        ArrayList<double[]>result = drift_correction(threedPath,threedName1,selectedTitle,wlPath,dc_generalParas,dc_paras).getData_corrected();
+        ArrayList<double[]>result = drift_correction(threedPath,threedName1,selectedTitle,wlPath,dc_generalParas,dc_paras).getData_corrected();
 //        writeCorrected(result,"corrected_new.txt");
-        align_wl(wlPath,"",dc_paras,dc_generalParas);
-//        for(int i = 0; i < 4; i ++){
-//            System.out.println(Arrays.toString(result.get(i)));
-//        }
+//        align_wl(wlPath,"",dc_paras,dc_generalParas);
+        for(int i = 0; i < 4; i ++){
+            System.out.println(Arrays.toString(result.get(i)));
+        }
     }
 
 
