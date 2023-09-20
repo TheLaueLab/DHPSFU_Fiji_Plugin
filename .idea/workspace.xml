@@ -4,11 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="32a29315-d0c5-4459-b136-4af97bf49b37" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/DriftCorrection.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/DriftCorrection.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/Test.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/Test.java" afterDir="false" />
-    </list>
+    <list default="true" id="32a29315-d0c5-4459-b136-4af97bf49b37" name="Changes" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -162,7 +158,7 @@
       <workItem from="1692961970507" duration="61981000" />
       <workItem from="1693497197656" duration="14469000" />
       <workItem from="1693853270042" duration="14906000" />
-      <workItem from="1694795576563" duration="26577000" />
+      <workItem from="1694795576563" duration="28582000" />
     </task>
     <servers />
   </component>
