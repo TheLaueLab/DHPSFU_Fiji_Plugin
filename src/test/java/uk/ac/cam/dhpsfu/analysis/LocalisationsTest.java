@@ -464,7 +464,7 @@ class LocalisationsTest {
             { new Complex(8.6, 5.2), new Complex(1.4, 7.8), new Complex(9.1, 0.3), new Complex(5.0, 6.5), new Complex(7.2, 5.7) },
             { new Complex(3.5, 7.9), new Complex(2.8, 0.6), new Complex(1.7, 5.3), new Complex(8.7, 2.0), new Complex(3.4, 6.8) }
     };
-    double[] output1 = {0.476081402363959, 0.06235906617752218, 0,0};
+    double[] output1 = {0.4760814023639589, 0.06235906617752218, 0,0};
     Complex[][] greg1 = {
             {new Complex(5.62698538, 7.76576046), new Complex(2.01509553, 4.63458628), new Complex(5.08395106, 2.02075274), new Complex(3.28160095, 8.42087259), new Complex(4.04859934, 4.16038982)},
             {new Complex(8.25922718, 5.72583324), new Complex(0.91119329, 7.87208529), new Complex(9.06361676, 0.86651668), new Complex(4.58521024, 6.79895927), new Complex(6.83078903, 6.13761527)},

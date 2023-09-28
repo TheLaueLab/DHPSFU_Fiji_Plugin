@@ -669,16 +669,11 @@ public class DriftCorrection implements PlugIn {
 
         // perform inverse shift and scale
         imFTout = Fftshift.ifftShift2D(imFTout);
-//        DecimalFormat df = new DecimalFormat("#.########");
-//
-//        for (int i = 0; i < imFTout.length; i++) {
-//            for (int j = 0; j < imFTout[i].length; j++) {
-//                imFTout[i][j] = imFTout[i][j].multiply((double) outsize[0] * outsize[1] / (nin[0] * nin[1]));
-//                double real = Double.parseDouble(df.format(imFTout[i][j].getReal()));
-//                double imaginary = Double.parseDouble(df.format(imFTout[i][j].getImaginary()));
-//                imFTout[i][j] = new Complex(real, imaginary);
-//            }
-//        }
+        for(int i = 0; i < imFTout.length; i ++){
+            for(int j = 0; j < imFTout[0].length; j ++){
+                imFTout[i][j] = imFTout[i][j].multiply( outsize[0] * outsize[1]).divide( (nin[0] * nin[1]));
+            }
+        }
         return imFTout;
     }
     public static Complex[][] dftups(Complex[][] inn, int nor, int noc, int usfac, int roff, int coff){
@@ -892,20 +887,15 @@ public class DriftCorrection implements PlugIn {
             ccMax = new Complex(0, 0);
             for (int i = 0; i < buf1ft.length; i++) {
                 for (int j = 0; j < buf1ft[i].length; j++) {
-
-                    Complex conj = buf2ft[i][j].conjugate(); // Take the conjugate of buf2ft[i][j]
-                    Complex product = buf1ft[i][j].multiply(conj); // Multiply with buf1ft[i][j]
-
+                    double r1 = buf2ft[i][j].getReal();
+                    double im1 = -buf2ft[i][j].getImaginary();
+                    double r2 = buf1ft[i][j].getReal();
+                    double im2 = buf1ft[i][j].getImaginary();
+                    //(r2,im2)*(r1,im1)
+                    Complex product  = new Complex(r2*r1 - im2 * im1,r2*im1 + r1*im2);
                     ccMax = ccMax.add(product); // Add to the sum
                 }
             }
-
-//            ccMax = IntStream.range(0, buf1ft.length)
-//                    .parallel()
-//                    .mapToObj(i -> IntStream.range(0, buf1ft[i].length)
-//                            .mapToObj(j -> buf1ft[i][j].multiply(buf2ft[i][j].conjugate()))
-//                            .reduce(Complex.ZERO, Complex::add))
-//                    .reduce(Complex.ZERO, Complex::add);
 
             row_shift = 0;
             col_shift = 0;
@@ -916,7 +906,14 @@ public class DriftCorrection implements PlugIn {
             Complex[][] cc = new Complex[buf1ft.length][buf1ft[0].length];
             for (int i = 0; i < buf1ft.length; i++) {
                 for (int j = 0; j < buf1ft[i].length; j++) {
-                    cc[i][j] = buf1ft[i][j].multiply((buf2ft[i][j]).conjugate());
+//                    cc[i][j] = buf1ft[i][j].multiply((buf2ft[i][j]).conjugate());
+
+                    double r1 = buf2ft[i][j].getReal();
+                    double im1 = -buf2ft[i][j].getImaginary();
+                    double r2 = buf1ft[i][j].getReal();
+                    double im2 = buf1ft[i][j].getImaginary();
+                    //(r2,im2)*(r1,im1)
+                    cc[i][j] = new Complex(r2*r1 - im2 * im1,r2*im1 + r1*im2);
                 }
             }
             double[][] doubleComplex = convertToInterleaved(cc);
@@ -948,7 +945,13 @@ public class DriftCorrection implements PlugIn {
             Complex[][] interCC = new Complex[buf1ft.length][buf1ft[0].length];
             for (int i = 0; i < buf1ft.length; i++) {
                 for (int j = 0; j < buf1ft[i].length; j++) {
-                    interCC[i][j] = buf1ft[i][j].multiply((buf2ft[i][j]).conjugate());
+//                    interCC[i][j] = buf1ft[i][j].multiply((buf2ft[i][j]).conjugate());
+                    double r1 = buf2ft[i][j].getReal();
+                    double im1 = -buf2ft[i][j].getImaginary();
+                    double r2 = buf1ft[i][j].getReal();
+                    double im2 = buf1ft[i][j].getImaginary();
+                    //(r2,im2)*(r1,im1)
+                    interCC[i][j] = new Complex(r2*r1 - im2 * im1,r2*im1 + r1*im2);
                 }
             }
             interCC = ftPad(interCC, new int[]{2 * nr, 2 * nc});
@@ -994,7 +997,14 @@ public class DriftCorrection implements PlugIn {
                 Complex[][] interCC1 = new Complex[buf1ft.length][buf1ft[0].length];
                 for (int i = 0; i < buf1ft.length; i++) {
                     for (int j = 0; j < buf1ft[i].length; j++) {
-                        interCC1[i][j] = buf2ft[i][j].multiply((buf1ft[i][j]).conjugate());
+//                        interCC1[i][j] = buf2ft[i][j].multiply((buf1ft[i][j]).conjugate());
+                        double r1 = buf1ft[i][j].getReal();
+                        double im1 = -buf1ft[i][j].getImaginary();
+                        double r2 = buf2ft[i][j].getReal();
+                        double im2 = buf2ft[i][j].getImaginary();
+                        //(r2,im2)*(r1,im1)
+                        interCC1[i][j] = new Complex(r2*r1 - im2 * im1,r2*im1 + r1*im2);
+
                     }
                 }
 
@@ -1014,7 +1024,10 @@ public class DriftCorrection implements PlugIn {
                 Complex[][] newCC = new Complex[interCC11.length][interCC11[0].length];
                 for (int i = 0; i < newCC.length; i++) {
                     for (int j = 0; j < newCC[i].length; j++) {
-                        newCC[i][j] = interCC11[i][j].conjugate();
+                        double r = interCC11[i][j].getReal();
+                        double im = interCC11[i][j].getImaginary();
+
+                        newCC[i][j] = new Complex(r,-im);
                     }
                 }
 
@@ -1372,8 +1385,8 @@ public class DriftCorrection implements PlugIn {
         } else if (paras.wl_occasional && !paras.correction_twice && paras.average_drift) {
 //            int[][][] wlArray = loadtifFile(wl_path);
             double[][] f1 = normalise_dtype(wlArray[0], true, 4096);
-            ArrayList<Double> fxx = zeros1col(gp.burst);
-            ArrayList<Double> fyy = zeros1col(gp.burst);
+            double[] fxx = zeros1col(gp.burst);
+            double[] fyy = zeros1col(gp.burst);
 
             for(int i = 1; i < gp.burst; i ++ ){
                 double[][] f = normalise_dtype(wlArray[i], true, 4096);
@@ -1384,8 +1397,8 @@ public class DriftCorrection implements PlugIn {
                 fft2.complexForward(newF);
                 fft2.complexForward(newF1);
                 Dftresult r = dftregistration(convertToComplex(newF1),convertToComplex(newF),(int) gp.upFactor);
-                fxx.set(i,r.getOutput()[3]);
-                fyy.set(i,r.getOutput()[2]);
+                fxx[i] = r.getOutput()[3];
+                fyy[i] = r.getOutput()[2];
             }
             double avFxx = getMean(fxx);
             double avFyy = getMean(fyy);
@@ -1396,17 +1409,18 @@ public class DriftCorrection implements PlugIn {
 //                    max = doubles[4];
 //                }
 //            }
-            ArrayList<Double> avGxx = zeros1col(Math.ceil(max / gp.cycle) +1 );
-            avGxx.add(avFxx);
-            ArrayList<Double> avGyy = zeros1col(Math.ceil(max / gp.cycle) +1 );
-            avGyy.add(avFyy);
+            //TODO: check
+            double[] avGxx = zeros1col(Math.ceil(max / gp.cycle) +1 +1 );
+            avGxx[avGxx.length-1] = (avFxx);
+            double[] avGyy = zeros1col(Math.ceil(max / gp.cycle) +1 +1);
+            avGyy[avGyy.length -1] = (avFyy);
 
             ArrayList<double[]> xxx = new ArrayList<>();
             ArrayList<double[]> yyy = new ArrayList<>();
 
             for(int i = 1; i < Math.ceil(max / gp.cycle) +1 ; i ++){
-                ArrayList<Double> Gxx = zeros1col(gp.burst);
-                ArrayList<Double> Gyy = zeros1col(gp.burst);
+                double[] Gxx = zeros1col(gp.burst);
+                double[] Gyy = zeros1col(gp.burst);
 
                 for(int j =0; j < gp.burst; j++){
                     int frameAbs = (int) (i * gp.burst + j);
@@ -1422,14 +1436,14 @@ public class DriftCorrection implements PlugIn {
                     fft2.complexForward(newG);
                     fft2.complexForward(newF1);
                     Dftresult r = dftregistration(convertToComplex(newF1),convertToComplex(newG),(int) gp.upFactor);
-                    Gxx.set(j,r.getOutput()[3]);
-                    Gyy.set(j,r.getOutput()[2]);
+                    Gxx[j] = r.getOutput()[3];
+                    Gyy[j] = r.getOutput()[2];
                 }
-                avGxx.set(i,getMean(Gxx));
-                avGyy.set(i,getMean(Gyy));
+                avGxx[i] = getMean(Gxx);
+                avGyy[i] = getMean(Gyy);
                 double[] ary = linspace(0, gp.cycle,(int) gp.cycle);
-                double[] xx = interp(ary, new double[]{0,gp.cycle}, new double[]{avGxx.get(i-1), avGxx.get(i)});
-                double[] yy = interp(ary, new double[]{0,gp.cycle}, new double[]{avGyy.get(i-1), avGyy.get(i)});
+                double[] xx = interp(ary, new double[]{0,gp.cycle}, new double[]{avGxx[i-1], avGxx[i]});
+                double[] yy = interp(ary, new double[]{0,gp.cycle}, new double[]{avGyy[i-1], avGyy[i]});
                 xxx.add(xx);
                 yyy.add(yy);
 
@@ -1544,8 +1558,8 @@ public class DriftCorrection implements PlugIn {
             }
 
             double[][] f1 = wl_avg.get(0);
-            ArrayList<Double> Gxx = zeros1col(num_burst);
-            ArrayList<Double> Gyy = zeros1col(num_burst);
+            double[] Gxx = zeros1col(num_burst);
+            double[] Gyy = zeros1col(num_burst);
 
             ArrayList<double[]> xxInter = new ArrayList<>();
             ArrayList<double[]> yyInter = new ArrayList<>();
@@ -1560,11 +1574,11 @@ public class DriftCorrection implements PlugIn {
                 fft2.complexForward(newG);
                 Dftresult r = dftregistration(convertToComplex(newF1),convertToComplex(newG),(int) gp.upFactor);
 
-                Gxx.set(i, r.getOutput()[3]);
-                Gyy.set(i, r.getOutput()[2]);
+                Gxx[i] = r.getOutput()[3];
+                Gyy[i] = r.getOutput()[2];
                 double[] ary = linspace(0, gp.cycle,(int) gp.cycle);
-                double[] xx_1 = interp(ary, new double[]{0,gp.cycle}, new double[]{Gxx.get(i-1), Gxx.get(i)});
-                double[] yy_1 = interp(ary, new double[]{0,gp.cycle}, new double[]{Gyy.get(i-1), Gyy.get(i)});
+                double[] xx_1 = interp(ary, new double[]{0,gp.cycle}, new double[]{Gxx[i-1], Gxx[i]});
+                double[] yy_1 = interp(ary, new double[]{0,gp.cycle}, new double[]{Gyy[i-1], Gyy[i]});
 
                 xxInter.add(xx_1);
                 yyInter.add(yy_1);
@@ -1605,8 +1619,8 @@ public class DriftCorrection implements PlugIn {
         } else if (paras.wl_occasional && paras.correction_twice && paras.average_drift) {
 //            int[][][] wlArray = loadtifFile(wl_path);
             double[][] f1 = normalise_dtype(wlArray[0], true, 4096);
-            ArrayList<Double> fxx = zeros1col(gp.burst);
-            ArrayList<Double> fyy = zeros1col(gp.burst);
+            double[] fxx = zeros1col(gp.burst);
+            double[] fyy = zeros1col(gp.burst);
 
             for(int i = 1; i < gp.burst; i ++ ){
                 double[][] f = normalise_dtype(wlArray[i], true, 4096);
@@ -1617,8 +1631,8 @@ public class DriftCorrection implements PlugIn {
                 fft2.complexForward(newF);
                 fft2.complexForward(newF1);
                 Dftresult r = dftregistration(convertToComplex(newF1),convertToComplex(newF),(int) gp.upFactor);
-                fxx.set(i,r.getOutput()[3]);
-                fyy.set(i,r.getOutput()[2]);
+                fxx[i] = r.getOutput()[3];
+                fyy[i] = r.getOutput()[2];
             }
             double avFxx = getMean(fxx);
             double avFyy = getMean(fyy);
@@ -1627,10 +1641,10 @@ public class DriftCorrection implements PlugIn {
 
             double max = getMax(threed_data[4]);
             for(int i =1; i < Math.ceil(max / gp.cycle) +1; i ++){
-                ArrayList<Double> Gxx1 = zeros1col(gp.burst);
-                ArrayList<Double> Gyy1 = zeros1col(gp.burst);
-                ArrayList<Double> Gxx2 = zeros1col(gp.burst);
-                ArrayList<Double> Gyy2 = zeros1col(gp.burst);
+                double[] Gxx1 = zeros1col(gp.burst);
+                double[] Gyy1 = zeros1col(gp.burst);
+                double[] Gxx2 = zeros1col(gp.burst);
+                double[] Gyy2 = zeros1col(gp.burst);
 
                 for(int j = 0; j < gp.burst; j++) {
 
@@ -1647,8 +1661,8 @@ public class DriftCorrection implements PlugIn {
 
                         Dftresult r = dftregistration(convertToComplex(newF1), convertToComplex(newG1), (int) gp.upFactor);
 
-                        Gxx1.set(j, r.getOutput()[3]);
-                        Gyy1.set(j, r.getOutput()[2]);
+                        Gxx1[j] = r.getOutput()[3];
+                        Gyy1[j] = r.getOutput()[2];
                     }
                     int frameAbs2 = (int) ((2 * i - 1) * gp.burst + j);
                     double[][] g2 = normalise_dtype(wlArray[frameAbs2], true, 4096);
@@ -1659,8 +1673,8 @@ public class DriftCorrection implements PlugIn {
                     fft2.complexForward(newG2);
                     fft2.complexForward(newF1);
                     Dftresult r = dftregistration(convertToComplex(newF1), convertToComplex(newG2), (int) gp.upFactor);
-                    Gxx2.set(j, r.getOutput()[3]);
-                    Gyy2.set(j, r.getOutput()[2]);
+                    Gxx2[j] = r.getOutput()[3];
+                    Gyy2[j] = r.getOutput()[2];
 
 
                 }
@@ -1781,14 +1795,14 @@ public class DriftCorrection implements PlugIn {
             double[][] f1 = wl_avg.get(0);
             System.out.println("F1: " + f1[0][0] + " " + f1[0][1] );
             System.out.println();
-            ArrayList<Double> Gxx = zeros1col(num_burst);
-            ArrayList<Double> Gyy = zeros1col(num_burst);
+            double[] Gxx = zeros1col(num_burst);
+            double[] Gyy = zeros1col(num_burst);
 
-            int num_cycle = (int) (Gxx.size() / 2);
-            ArrayList<Double> Gxx1 = zeros1col(num_cycle);
-            ArrayList<Double> Gyy1 = zeros1col(num_cycle);
-            ArrayList<Double> Gxx2 = zeros1col(num_cycle);
-            ArrayList<Double> Gyy2 = zeros1col(num_cycle);
+            int num_cycle = (int) (Gxx.length / 2);
+            double[] Gxx1 = zeros1col(num_cycle);
+            double[] Gyy1 = zeros1col(num_cycle);
+            double[] Gxx2 = zeros1col(num_cycle);
+            double[] Gyy2 = zeros1col(num_cycle);
 
 
             ArrayList<double[]> xxInter = new ArrayList<>();
@@ -1806,8 +1820,8 @@ public class DriftCorrection implements PlugIn {
                 Complex[][] cg = convertToComplex(newG);
                 Dftresult r = dftregistration(cf1, cg, (int) gp.upFactor);
 
-                Gxx.set(i, r.getOutput()[3]);
-                Gyy.set(i, r.getOutput()[2]);
+                Gxx[i] = r.getOutput()[3];
+                Gyy[i] = r.getOutput()[2];
             }
 //            for(int i = 0; i < 4; i++){
 //                System.out.println("gxx: " + Gxx.get(i) + " size: " + Gxx.size());
@@ -1816,13 +1830,13 @@ public class DriftCorrection implements PlugIn {
 //            }
 
             for(int i = 0; i < num_cycle; i ++){
-                Gxx1.set(i,Gxx.get(i * 2));
-                Gxx2.set(i,Gxx.get(i * 2 + 1));
-                Gyy1.set(i,Gyy.get(i * 2));
-                Gyy2.set(i,Gyy.get(i * 2 + 1));
+                Gxx1[i] = Gxx[i * 2];
+                Gxx2[i] = Gxx[i * 2 + 1];
+                Gyy1[i] = Gyy[i * 2];
+                Gyy2[i] = Gyy[i * 2 + 1];
                 double[] ary = linspace(0, gp.cycle,(int) gp.cycle);
-                double[] xx_i = interp(ary, new double[]{0,gp.cycle}, new double[]{Gxx1.get(i),Gxx2.get(i)});
-                double[] yy_i = interp(ary, new double[]{0,gp.cycle}, new double[]{Gyy1.get(i),Gyy2.get(i)});
+                double[] xx_i = interp(ary, new double[]{0,gp.cycle}, new double[]{Gxx1[i],Gxx2[i]});
+                double[] yy_i = interp(ary, new double[]{0,gp.cycle}, new double[]{Gyy1[i],Gyy2[i]});
 
                 xxInter.add(xx_i);
                 yyInter.add(yy_i);
@@ -2665,10 +2679,10 @@ public static double compute00(Complex[][] buf1ft) {
         return zeros;
     }
 
-    public static ArrayList<Double> zeros1col(double row){
-        ArrayList<Double> zeros = new ArrayList<>();
+    public static double[] zeros1col(double row){
+        double[] zeros = new double[(int)row];
         for(int i = 0 ;i < row; i ++){
-           zeros.add((double) 0);
+           zeros[i] = 0;
         }
         return zeros;
     }
@@ -2699,6 +2713,18 @@ public static double compute00(Complex[][] buf1ft) {
         return total / count;
     }
     public static double getMean(ArrayList<Double> list) {
+        double total = 0;
+        int count = 0;
+
+        for(double num : list) {
+            total += num;
+            count++;
+        }
+
+
+        return total / count;
+    }
+    public static double getMean(double[] list) {
         double total = 0;
         int count = 0;
 
@@ -2745,7 +2771,9 @@ public static double compute00(Complex[][] buf1ft) {
 
         for (int i = 0; i < rows; i++) {
             for (int j = 0; j < cols; j++) {
-                absoluteArray[i][j] = complexArray[i][j].abs();
+                double r = complexArray[i][j].getReal();
+                double im = complexArray[i][j].getImaginary();
+                absoluteArray[i][j] = r*r + im*im;
             }
         }
 

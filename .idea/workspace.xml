@@ -4,7 +4,12 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="32a29315-d0c5-4459-b136-4af97bf49b37" name="Changes" comment="" />
+    <list default="true" id="32a29315-d0c5-4459-b136-4af97bf49b37" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/DriftCorrection.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/DriftCorrection.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/Test.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/Test.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/java/uk/ac/cam/dhpsfu/analysis/LocalisationsTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/uk/ac/cam/dhpsfu/analysis/LocalisationsTest.java" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -57,7 +62,7 @@
     &quot;settings.editor.selected.configurable&quot;: &quot;preferences.editor&quot;
   }
 }</component>
-  <component name="RunManager" selected="Application.DriftCorrection">
+  <component name="RunManager" selected="JUnit.LocalisationsTest">
     <configuration name="DriftCorrection" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
       <option name="MAIN_CLASS_NAME" value="uk.ac.cam.dhpsfu.plugins.DriftCorrection" />
       <module name="gdsc-smlm-ij-example-plugin_" />
@@ -99,7 +104,7 @@
         <option name="Make" enabled="true" />
       </method>
     </configuration>
-    <configuration name="LocalisationsTest.interpTest2" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
+    <configuration name="LocalisationsTest.dftRes3" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
       <module name="gdsc-smlm-ij-example-plugin_" />
       <extension name="coverage">
         <pattern>
@@ -109,13 +114,13 @@
       </extension>
       <option name="PACKAGE_NAME" value="uk.ac.cam.dhpsfu.analysis" />
       <option name="MAIN_CLASS_NAME" value="uk.ac.cam.dhpsfu.analysis.LocalisationsTest" />
-      <option name="METHOD_NAME" value="interpTest2" />
+      <option name="METHOD_NAME" value="dftRes3" />
       <option name="TEST_OBJECT" value="method" />
       <method v="2">
         <option name="Make" enabled="true" />
       </method>
     </configuration>
-    <configuration name="LocalisationsTest.interpTest3" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
+    <configuration name="LocalisationsTest.dftRes4" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
       <module name="gdsc-smlm-ij-example-plugin_" />
       <extension name="coverage">
         <pattern>
@@ -125,7 +130,7 @@
       </extension>
       <option name="PACKAGE_NAME" value="uk.ac.cam.dhpsfu.analysis" />
       <option name="MAIN_CLASS_NAME" value="uk.ac.cam.dhpsfu.analysis.LocalisationsTest" />
-      <option name="METHOD_NAME" value="interpTest3" />
+      <option name="METHOD_NAME" value="dftRes4" />
       <option name="TEST_OBJECT" value="method" />
       <method v="2">
         <option name="Make" enabled="true" />
@@ -133,11 +138,11 @@
     </configuration>
     <recent_temporary>
       <list>
-        <item itemvalue="Application.DriftCorrection" />
-        <item itemvalue="Application.Test" />
         <item itemvalue="JUnit.LocalisationsTest" />
-        <item itemvalue="JUnit.LocalisationsTest.interpTest3" />
-        <item itemvalue="JUnit.LocalisationsTest.interpTest2" />
+        <item itemvalue="JUnit.LocalisationsTest.dftRes3" />
+        <item itemvalue="Application.DriftCorrection" />
+        <item itemvalue="JUnit.LocalisationsTest.dftRes4" />
+        <item itemvalue="Application.Test" />
       </list>
     </recent_temporary>
   </component>
@@ -158,7 +163,8 @@
       <workItem from="1692961970507" duration="61981000" />
       <workItem from="1693497197656" duration="14469000" />
       <workItem from="1693853270042" duration="14906000" />
-      <workItem from="1694795576563" duration="28582000" />
+      <workItem from="1694795576563" duration="32135000" />
+      <workItem from="1695663948586" duration="11007000" />
     </task>
     <servers />
   </component>
@@ -198,98 +204,128 @@
         </line-breakpoint>
         <line-breakpoint type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/Test.java</url>
-          <line>112</line>
+          <line>129</line>
           <option name="timeStamp" value="88" />
         </line-breakpoint>
         <line-breakpoint type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/Test.java</url>
-          <line>126</line>
+          <line>143</line>
           <option name="timeStamp" value="89" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/DriftCorrection.java</url>
-          <line>2873</line>
+          <line>2901</line>
           <option name="timeStamp" value="114" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/DriftCorrection.java</url>
-          <line>1796</line>
+          <line>1810</line>
           <option name="timeStamp" value="129" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/Test.java</url>
-          <line>206</line>
+          <line>223</line>
           <option name="timeStamp" value="147" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/DriftCorrection.java</url>
-          <line>2205</line>
+          <line>2219</line>
           <option name="timeStamp" value="158" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/DriftCorrection.java</url>
-          <line>2204</line>
+          <line>2218</line>
           <option name="timeStamp" value="186" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/DriftCorrection.java</url>
-          <line>2193</line>
+          <line>2207</line>
           <option name="timeStamp" value="188" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/DriftCorrection.java</url>
-          <line>2194</line>
+          <line>2208</line>
           <option name="timeStamp" value="189" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/DriftCorrection.java</url>
-          <line>2195</line>
+          <line>2209</line>
           <option name="timeStamp" value="190" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/DriftCorrection.java</url>
-          <line>1733</line>
+          <line>1747</line>
           <option name="timeStamp" value="191" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/DriftCorrection.java</url>
-          <line>1371</line>
+          <line>1384</line>
           <option name="timeStamp" value="193" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/DriftCorrection.java</url>
-          <line>2842</line>
+          <line>2870</line>
           <option name="timeStamp" value="194" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/DriftCorrection.java</url>
-          <line>1700</line>
+          <line>1714</line>
           <option name="timeStamp" value="201" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/DriftCorrection.java</url>
-          <line>1684</line>
+          <line>1698</line>
           <option name="timeStamp" value="204" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/DriftCorrection.java</url>
-          <line>1691</line>
+          <line>1705</line>
           <option name="timeStamp" value="205" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/DriftCorrection.java</url>
-          <line>1258</line>
+          <line>1271</line>
           <option name="timeStamp" value="206" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/DriftCorrection.java</url>
-          <line>1260</line>
+          <line>1273</line>
           <option name="timeStamp" value="207" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/DriftCorrection.java</url>
-          <line>1266</line>
+          <line>1279</line>
           <option name="timeStamp" value="208" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/DriftCorrection.java</url>
+          <line>944</line>
+          <option name="timeStamp" value="209" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/DriftCorrection.java</url>
+          <line>967</line>
+          <option name="timeStamp" value="211" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/DriftCorrection.java</url>
+          <line>956</line>
+          <option name="timeStamp" value="213" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/DriftCorrection.java</url>
+          <line>644</line>
+          <option name="timeStamp" value="214" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/DriftCorrection.java</url>
+          <line>650</line>
+          <option name="timeStamp" value="215" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="java-line">
+          <url>file://$PROJECT_DIR$/src/main/java/uk/ac/cam/dhpsfu/plugins/DriftCorrection.java</url>
+          <line>670</line>
+          <option name="timeStamp" value="216" />
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>

@@ -28,6 +28,23 @@ import java.awt.*;
 
 public class Test  {
     public static void main(String[] args) {
+        Complex c = new Complex(1,5);
+        long start = System.currentTimeMillis();
+        System.out.println(c.conjugate());
+        long end = System.currentTimeMillis();
+        System.out.println(end-start);
+        start = System.currentTimeMillis();
+        System.out.println(new Complex(c.getReal(), -c.getImaginary()));
+        end = System.currentTimeMillis();
+        System.out.println(end-start);
+        start = System.currentTimeMillis();
+        double[] cc = new double[2];
+        cc[0] = 1;
+        cc[1] = 5;
+        System.out.println(Arrays.toString(new double[]{cc[0], -cc[1]}));
+        end = System.currentTimeMillis();
+        System.out.println(end-start);
+
 //        XYSeries series = new XYSeries("My Line Graph");
 //        series.add(1, 3);
 //        series.add(2, 5);
@@ -169,7 +186,7 @@ public class Test  {
                 {4,5,6},
                 {7,8,9}
         };
-        System.out.println(DriftCorrection.zoom(arr5,3));
+//        System.out.println(DriftCorrection.zoom(arr5,3));
 //        System.out.println(DriftCorrection.zoom(arrr,10).size());
         double[] result = DriftCorrection.interp(arr1,arr2,arr3);
 //        System.out.println(Arrays.toString(result));
@@ -202,7 +219,7 @@ public class Test  {
         ar8.add(ar1);
         ar8.add(ar6);
 
-        System.out.println(DriftCorrection.concatenateAxis1(ar5,ar8));
+//        System.out.println(DriftCorrection.concatenateAxis1(ar5,ar8));
 //        System.out.println(ar4);
 //        System.out.println(DriftCorrection.arraySliceCol2dInverse(ar4,2));
 //        System.out.println(DriftCorrection.arraySliceCol2d(ar4,2));
@@ -210,7 +227,7 @@ public class Test  {
 //        System.out.println(DriftCorrection.arraySliceRow2dInverse(ar4,1));
 
 
-        System.out.println(DriftCorrection.concatenateAxis1(ar4,ar5));
+//        System.out.println(DriftCorrection.concatenateAxis1(ar4,ar5));
 //        System.out.println(Arrays.deepToString(DriftCorrection.arrayT(ar1,ar2).toArray()));
         DriftCorrection.arrayMultiplicaion(ar1,10);
 //        System.out.println(Arrays.deepToString(DriftCorrection.reshape(arr1.length, 1, arr1)));
