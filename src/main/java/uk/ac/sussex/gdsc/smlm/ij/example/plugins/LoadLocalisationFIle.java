@@ -69,16 +69,17 @@ public class LoadLocalisationFIle implements PlugIn {
   private static String intensityUnit = "photon";
   
   // column index 
-  private static int frameIndex = 0;
-  private static int xIndex = 9;
-  private static int yIndex = 10;
-  private static int zIndex = -1;
-  private static int intensityIndex = 8;
-  private static int precisionIndex = 13;
-  private static FileIndex fileIndex = new FileIndex(frameIndex, xIndex, yIndex, zIndex, intensityIndex, precisionIndex);
+  private int frameIndex = 0;
+  private int xIndex = 9;
+  private int yIndex = 10;
+  private int zIndex = -1;
+  private int intensityIndex = 8;
+  private int precisionIndex = 13;
+  private FileIndex fileIndex = new FileIndex(frameIndex, xIndex, yIndex, zIndex, intensityIndex, precisionIndex);
+  private boolean ifManualIndex = false; 
   
   private int skipLines;
-  private static boolean ifSetOwnIndex = false;
+  //private static boolean ifSetOwnIndex = false;
   //private static MemoryPeakResults allLocalisations = new MemoryPeakResults();
   private List<MemoryPeakResults> allLocalisationsList = new ArrayList<>();
   
@@ -172,9 +173,9 @@ public class LoadLocalisationFIle implements PlugIn {
 	    String[] formats = {".3d", ".csv", ".xls"};
 	    gd.addChoice("File_format", formats, formats[2]);
 	    gd.addNumericField("Pixel size (nm)", pxSize, 1);
-	    gd.addCheckbox("Manually set column Index", ifSetOwnIndex);
+	    gd.addCheckbox("Manually set column Index", ifManualIndex);
 	    
-	    gd.addMessage("Column index:");
+	    gd.addMessage("Column index (Set to -1 if not reading.):");
 	    gd.addNumericField("Header", skipLines, 1);
 	    gd.addNumericField("Frame", fileIndex.getFrameIndex(), 1);
 	    gd.addNumericField("X", fileIndex.getxIndex(), 1);
@@ -210,9 +211,9 @@ public class LoadLocalisationFIle implements PlugIn {
 	    fileType = gd.getNextChoice();
 	    savingFormat = gd.getNextChoice();
 	    pxSize = gd.getNextNumber();
-	    ifSetOwnIndex = gd.getNextBoolean();
+	    ifManualIndex = gd.getNextBoolean();
 	    
-	    if (!ifSetOwnIndex) {
+	    if (!ifManualIndex) {
 	    	fileIndex = getColumnIndex(fileType);
 	    	if (fileType == "Peakfit") {
 	    		skipLines = 9;
@@ -395,7 +396,7 @@ public class LoadLocalisationFIle implements PlugIn {
 				      // The peak width as the Gaussian standard deviation is the first non-standard parameter
 				      
 				      // Set noise assuming photons have a Poisson distribution
-				      float noise = (float) Math.sqrt(parameters[PeakResultDHPSFU.INTENSITY]);
+				      //float noise = (float) Math.sqrt(parameters[PeakResultDHPSFU.INTENSITY]);
 
 				      PeakResult r = new PeakResult((int)frame[i], parameters[2], parameters[3], parameters[1]);
 				      //AttributePeakResult ap = new AttributePeakResult(r);
@@ -428,12 +429,223 @@ public class LoadLocalisationFIle implements PlugIn {
         return results;
 		  }
 	  
+  public static MemoryPeakResults LoadLocalisationsManual(String dataPath, FileIndex fileIndex, String fileType,  int skipLines) {
+		SplittableRandom rng = new SplittableRandom();
+  	Read3DFileCalib importer = new Read3DFileCalib();
+  	double [][] data = null;
+  	
+  	 MemoryPeakResults results = new MemoryPeakResults();
+  	 results.setName(name);
+  	 
+//  	 final String msg = "Loaded " + TextUtils.pleural(fileIndex.getPrecisionIndex(), "Precision");
+//		 IJ.showStatus(msg);
+//  	 ImageJUtils.log(msg);
+  	if (fileType == "Peakfit") {   
+  	try {
+		data = importer.readCSVDouble(Paths.get(dataPath), skipLines);
+	} catch (IOException e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+	}
+  	final String msg = "Data is " + TextUtils.pleural(data != null ? 1 : 0, "");
+    IJ.showStatus(msg);
+    ImageJUtils.log(msg); 
+  	
+  	
+  	double[] frame = null;
+  	if (fileIndex.getFrameIndex() != -1) {
+  	    frame = ArrayUtils.getColumn(data, fileIndex.getFrameIndex());
+  	}
 
+  	double[] x = null;
+  	if (fileIndex.getxIndex() != -1) {
+  	    x = ArrayUtils.getColumn(data, fileIndex.getxIndex());
+  	}
+
+  	double[] y = null;
+  	if (fileIndex.getyIndex() != -1) {
+  	    y = ArrayUtils.getColumn(data, fileIndex.getyIndex());
+  	}
+
+  	double[] intensity = null;
+  	if (fileIndex.getIntensityIndex() != -1) {
+  	    intensity = ArrayUtils.getColumn(data, fileIndex.getIntensityIndex());
+  	}
+
+  	double[] precision = null;
+  	if (fileIndex.getPrecisionIndex() != -1) {
+  	    precision = ArrayUtils.getColumn(data, fileIndex.getPrecisionIndex());
+  	}
+
+  	if (data != null) {
+  	    results.begin();
+  	    for (int i = 0; i < data.length; i++) {
+  	        float[] parameters = new float[7];
+  	        float s = (float) rng.nextDouble(1 * 0.9, 1 * 1.3);
+
+  	        if (frame != null) {
+  	            parameters[PeakResultDHPSFU.BACKGROUND] = (float) frame[i];
+  	        }
+
+  	        if (x != null) {
+  	            parameters[PeakResultDHPSFU.X] = (float) x[i];
+  	        }
+
+  	        if (y != null) {
+  	            parameters[PeakResultDHPSFU.Y] = (float) y[i];
+  	        }
+
+  	        // Ignore z
+
+  	        if (intensity != null) {
+  	            parameters[PeakResultDHPSFU.INTENSITY] = (float) intensity[i];
+  	        }
+
+  	        if (precision != null) {
+  	            parameters[PeakResultDHPSFU.PRECISION] = (float) precision[i];
+  	        }
+
+  	        parameters[PeakResultDHPSFU.STANDARD_PARAMETERS] = s;
+
+  	        // Set noise assuming photons have a Poisson distribution
+  	        if (intensity != null) {
+  	            float noise = (float) Math.sqrt(parameters[PeakResultDHPSFU.INTENSITY]);
+  	        }
+
+  	        PeakResultDHPSFU r = new PeakResultDHPSFU((int)frame[i], parameters[2], parameters[3], parameters[1], parameters[4]);
+  	        AttributePeakResult ap = new AttributePeakResult(r);
+  	        if (precision != null) {
+  	            ap.setPrecision(precision[i]);
+  	        }
+
+  	        results.add(ap);
+  	    }
+  	}
+	    results.end();
+	    results.sort();
+	    //results.setName(name);
+
+	    // Calibrate the results
+	    CalibrationWriter cw = new CalibrationWriter();
+	    cw.setIntensityUnit(IntensityUnit.PHOTON);
+	    cw.setDistanceUnit(DistanceUnit.PIXEL);
+	    cw.setTimeUnit(TimeUnit.FRAME);
+	    cw.setExposureTime(50);
+	    cw.setNmPerPixel(100);
+	    cw.setCountPerPhoton(45);
+	    cw.getBuilder().getCameraCalibrationBuilder()
+	      .setCameraType(CameraType.EMCCD).setBias(100).setQuantumEfficiency(0.95).setReadNoise(1.6);
+	    results.setCalibration(cw.getCalibration());
+
+	    //PSF.Builder psf = PsfProtosHelper.DefaultOneAxisGaussian2dPsf.INSTANCE.toBuilder();
+	    //psf.getParametersBuilder(0).setValue(1);
+	    //results.setPsf(psf.build());       
+	    return results;
+  	} else if (fileType == "DHPSFU") {
+  		try {	
+      	 data = importer.readCSVDouble(Paths.get(dataPath), skipLines);
+
+	       } catch (IOException e) {
+	           e.printStackTrace();
+	      }
+  		final String msg = "Data is " + TextUtils.pleural(data != null ? 1 : 0, "");
+  	    IJ.showStatus(msg);
+  	    ImageJUtils.log(msg); 
+  	    ImageJUtils.log(fileType); 
+  	    ImageJUtils.log(TextUtils.pleural(skipLines, " lines")); 
+  	    
+  	    
+	  	final int frameIndex = fileIndex.getFrameIndex();
+	  	final int xIndex = fileIndex.getxIndex();
+	  	final int yIndex = fileIndex.getyIndex();
+	  	final int zIndex = fileIndex.getzIndex();
+	  	final int intensityIndex = fileIndex.getIntensityIndex();
+	
+	  	double[] frame = null;
+	  	if (frameIndex != -1) {
+	  	    frame = ArrayUtils.getColumn(data, frameIndex);
+	  	}
+	  	double[] x = null;
+	  	if (xIndex != -1) {
+	  	    x = ArrayUtils.getColumn(data, xIndex);
+	  	}
+	  	double[] y = null;
+	  	if (yIndex != -1) {
+	  	    y = ArrayUtils.getColumn(data, yIndex);
+	  	}
+	  	double[] z = null;
+	  	if (zIndex != -1) {
+	  	    z = ArrayUtils.getColumn(data, zIndex);
+	  	}
+	  	double[] intensity = null;
+	  	if (intensityIndex != -1) {
+	  	    intensity = ArrayUtils.getColumn(data, intensityIndex);
+	  	}
+	
+	  	if (data != null) {
+	  	    results.begin();
+	  	    for (int i = 0; i < frame.length; i++) {
+	  	        float[] parameters = new float[7];		      
+	  	      if (frame != null) {
+	  	            parameters[PeakResultDHPSFU.BACKGROUND] = (float) frame[i];
+	  	        }
+	  	    if (x != null) {
+	  	      parameters[PeakResultDHPSFU.X] = (float) (x[i] / pxSize);
+	  	    }
+	  	  if (y != null) {
+	  	    parameters[PeakResultDHPSFU.Y] = (float) (y[i] / pxSize);
+	  	  }
+	  	        // Ignore z
+	  	if (intensity != null) {
+	  	        parameters[PeakResultDHPSFU.INTENSITY] = (float)intensity[i];
+	  	}
+	  	        
+	  	        // Set noise assuming photons have a Poisson distribution
+	  	        //float noise = (float) Math.sqrt(parameters[PeakResultDHPSFU.INTENSITY]);
+	
+	  	        PeakResult r = new PeakResult((int)frame[i], parameters[2], parameters[3], parameters[1]);
+	  	        //AttributePeakResult ap = new AttributePeakResult(r);
+	  	        if (z != null) {
+	  	            r.setZPosition((float) (z[i] / pxSize)); 
+	  	        }
+	  	        results.add(r);
+	  	    }
+	  	}
+	    
+		       results.end();
+		       results.sort();
+		       //results.setName(name);
+		
+		   // Calibrate the results
+		   CalibrationWriter cw = new CalibrationWriter();
+		   cw.setIntensityUnit(IntensityUnit.PHOTON);
+		   cw.setDistanceUnit(DistanceUnit.PIXEL);
+		   cw.setTimeUnit(TimeUnit.FRAME);
+		   cw.setExposureTime(50);
+		   cw.setNmPerPixel(100);
+		   cw.setCountPerPhoton(45);
+		   cw.getBuilder().getCameraCalibrationBuilder()
+		     .setCameraType(CameraType.EMCCD).setBias(100).setQuantumEfficiency(0.95).setReadNoise(1.6);
+		   results.setCalibration(cw.getCalibration());
+		
+		   //PSF.Builder psf = PsfProtosHelper.DefaultOneAxisGaussian2dPsf.INSTANCE.toBuilder();
+		   //psf.getParametersBuilder(0).setValue(1);
+		   //results.setPsf(psf.build());       
+		   return results; 
+  	}
+  	return results;
+		  }
   
 	  public void Load() {
 		  //FileIndex fileIndex = getColumnIndex(fileType);
-		  MemoryPeakResults localisations = LoadLocalisations(dataPath, fileIndex, savingFormat, skipLines);		    
-		    if (localisations == null) {
+		  MemoryPeakResults localisations = new MemoryPeakResults();
+		  if (ifManualIndex == false) {
+		  localisations = LoadLocalisations(dataPath, fileIndex, savingFormat, skipLines);		   
+		  } else {
+			  localisations = LoadLocalisationsManual(dataPath, fileIndex, fileType, skipLines);		   
+		  }
+
+			if (localisations == null) {
 		      // Cancelled
 		      return;
 		    }
