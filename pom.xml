@@ -10,17 +10,17 @@
     <relativePath />
   </parent>
 
-  <groupId>uk.ac.sussex.gdsc</groupId>                  <!-- FIXME: Your organization groupId here -->
-  <artifactId>gdsc-smlm-ij-example-plugin_</artifactId> <!-- FIXME: Your project artifactId here   -->
+  <groupId>uk.ac.cam.dhpsfu</groupId>
+  <artifactId>dhpsfu_</artifactId>
   <version>0.1.0-SNAPSHOT</version>
 
-  <name>GDSC SMLM IJ Plugin</name>         <!-- FIXME: Your project name here      -->
-  <description>Example project for an ImageJ 1.x plugin using the GDSC SMLM library.</description> <!-- FIXME: Your project description here   -->
-  <url>http://www.sussex.ac.uk/gdsc/</url> <!-- FIXME: Your project website here     -->
-  <inceptionYear>2023</inceptionYear>      <!-- FIXME: Your project starting year here -->
+  <name>DHPSFU IJ Plugin</name>
+  <description>Double Helix PSF SMLM analysis tool.</description>
+  <url>https://www.bioc.cam.ac.uk/laue</url>
+  <inceptionYear>2023</inceptionYear>
   <organization>
-    <name>Genome Damage and Stability Centre</name> <!-- FIXME: Your organization name here  -->
-    <url>http://www.sussex.ac.uk/gdsc/</url>        <!-- FIXME: Your organization website here -->
+    <name>The Laue Lab</name>
+    <url>https://www.bioc.cam.ac.uk/laue</url>
   </organization>
   <licenses>
     <license>
@@ -33,9 +33,9 @@
 
   <developers>
     <developer>
-      <id>aherbert</id>         <!-- FIXME: Your GitHub handle here -->
-      <name>Alex Herbert</name> <!-- FIXME: Your name here      -->
-      <url></url>               <!-- FIXME: Your website here     -->
+      <id>laue</id>
+      <name>Laue</name>
+      <url>https://www.bioc.cam.ac.uk/laue</url>
       <roles>
         <!-- See https://imagej.net/contribute/governance#scijava-team-roles -->
         <role>developer</role>
@@ -71,9 +71,9 @@
   </ciManagement>
 
   <properties>
-	  <scijava.app.directory> C:\Users\yw525\Desktop\desktop_files\superrescode\fiji-win64-GDSCSMLM2\Fiji.app </scijava.app.directory>
-    <license.licenseName>bsd_2</license.licenseName>         <!-- FIXME: Your license-maven-plugin license code here -->
-    <license.copyrightOwners>GDSC</license.copyrightOwners>  <!-- FIXME: Your organization legal entity name here -->
+	  <scijava.app.directory> /Applications/Fiji.app </scijava.app.directory> <!-- directory of fiji -->
+    <license.licenseName>bsd_2</license.licenseName>
+    <license.copyrightOwners>Laue Lab</license.copyrightOwners>
     <gdsc.smlm.ij.version>1.0.2</gdsc.smlm.ij.version>
   </properties>
 
@@ -94,7 +94,7 @@
 	  <dependency>
       <groupId>com.googlecode.efficient-java-matrix-library</groupId>
       <artifactId>ejml</artifactId>
-      <version>0.24</version>
+      <version>0.25</version>
     </dependency>
     <dependency>
       <groupId>net.imagej</groupId>
@@ -102,18 +102,53 @@
     </dependency>
     <dependency>
       <groupId>uk.ac.sussex.gdsc</groupId>
-      <artifactId>gdsc-smlm</artifactId>
-      <version>${gdsc.smlm.ij.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>uk.ac.sussex.gdsc</groupId>
       <artifactId>gdsc-smlm-ij_</artifactId>
       <version>${gdsc.smlm.ij.version}</version>
+      <!-- Exclude the 3D viewer.
+           The version in pom-scijava is not in maven central and is not required anyway. -->
+      <exclusions>
+        <exclusion>
+          <groupId>sc.fiji</groupId>
+          <artifactId>3D_Viewer</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
+    <dependency>
+      <groupId>com.google.code.gson</groupId>
+      <artifactId>gson</artifactId>
+      <version>2.8.8</version> <!-- Use the latest version available -->
+    </dependency>
+    <dependency>
+      <groupId>org.jfree</groupId>
+      <artifactId>jfreechart</artifactId>
+      <version>1.5.3</version> <!-- Make sure to use the latest version or the version you desire -->
+    </dependency>
+    <dependency>
+      <groupId>org.jfree</groupId>
+      <artifactId>jcommon</artifactId>
+      <version>1.0.24</version> <!-- Use the compatible version with your JFreeChart version -->
+    </dependency>
+    <dependency>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-imaging</artifactId>
+      <version>1.0-alpha1</version> <!-- Check for the latest version -->
+    </dependency>
+    <dependency>
+      <groupId>com.twelvemonkeys.imageio</groupId>
+      <artifactId>imageio-tiff</artifactId>
+      <version>3.7.0</version> <!-- Check for the latest version -->
+    </dependency>
+
+
     <dependency>
         <groupId>org.junit.jupiter</groupId>
         <artifactId>junit-jupiter</artifactId>
         <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.github.wendykierp</groupId>
+      <artifactId>JTransforms</artifactId>
+      <version>3.1</version>
     </dependency>
   </dependencies>
 </project>
