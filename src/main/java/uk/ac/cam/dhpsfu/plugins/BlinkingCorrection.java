@@ -1,0 +1,849 @@
+package uk.ac.cam.dhpsfu.plugins;
+
+import ij.IJ;
+import ij.ImageJ;
+import ij.measure.ResultsTable;
+import ij.plugin.PlugIn;
+
+import java.io.File;
+import java.net.URISyntaxException;
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+import javax.swing.SwingUtilities;
+
+import java.util.concurrent.atomic.AtomicInteger;
+
+import uk.ac.sussex.gdsc.core.ij.ImageJUtils;
+import uk.ac.sussex.gdsc.core.ij.gui.ExtendedGenericDialog;
+import uk.ac.sussex.gdsc.core.utils.SimpleArrayUtils;
+import uk.ac.sussex.gdsc.core.utils.TextUtils;
+import uk.ac.sussex.gdsc.smlm.data.config.CalibrationWriter;
+import uk.ac.sussex.gdsc.smlm.data.config.CalibrationProtos.CameraType;
+import uk.ac.sussex.gdsc.smlm.data.config.UnitProtos.DistanceUnit;
+import uk.ac.sussex.gdsc.smlm.data.config.UnitProtos.IntensityUnit;
+import uk.ac.sussex.gdsc.smlm.data.config.UnitProtos.TimeUnit;
+import uk.ac.cam.dhpsfu.analysis.ArrayUtils;
+import uk.ac.cam.dhpsfu.analysis.BC_track;
+import uk.ac.cam.dhpsfu.analysis.CalibData;
+import uk.ac.cam.dhpsfu.analysis.FileIndex;
+import uk.ac.sussex.gdsc.smlm.ij.plugins.ResultsManager;
+import uk.ac.sussex.gdsc.smlm.ij.plugins.ResultsManager.InputSource;
+import uk.ac.sussex.gdsc.smlm.results.MemoryPeakResults;
+import uk.ac.sussex.gdsc.smlm.results.PeakResult;
+import uk.ac.sussex.gdsc.smlm.results.procedures.PrecisionResultProcedure;
+import uk.ac.sussex.gdsc.smlm.results.procedures.StandardResultProcedure;
+
+import org.apache.commons.math3.fitting.PolynomialCurveFitter;
+import org.apache.commons.math3.fitting.WeightedObservedPoints;
+import org.apache.commons.math3.linear.MatrixUtils;
+import org.apache.commons.math3.linear.QRDecomposition;
+import org.apache.commons.math3.linear.RealMatrix;
+import org.apache.commons.math3.linear.RealVector;
+
+import uk.ac.cam.dhpsfu.analysis.GeneralParas;
+import uk.ac.cam.dhpsfu.analysis.LoadedResult;
+import uk.ac.cam.dhpsfu.analysis.BC_track;
+import uk.ac.cam.dhpsfu.analysis.PeakResultDHPSFU;
+import uk.ac.cam.dhpsfu.analysis.Read3DFileCalib;
+import uk.ac.cam.dhpsfu.analysis.FittingParas;
+import uk.ac.cam.dhpsfu.analysis.FilterParas;
+//import uk.ac.sussex.gdsc.smlm.ij.example.plugin.ResultManager;
+import org.apache.commons.math3.ml.distance.EuclideanDistance;
+
+import java.awt.Button;
+import java.awt.FlowLayout;
+import java.awt.Label;
+import java.awt.Panel;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
+
+/**
+ * DHPSFU
+ */
+
+public class BlinkingCorrection implements PlugIn {
+
+  private static final String TITLE = "Blinking Correction";          			// Plugin title  
+  private static final AtomicInteger dataset = new AtomicInteger();    			// Counter for random datasets.
+
+  // Here we persist settings between invocations of the plugin using 'static' members.
+  /** Input dataset name. */
+  private static String input = "";
+
+  // Settings used only by the instance. We could reuse the static members but keeping
+  // an instance copy allows them to be changed without affecting the persistence.
+
+  /** Dataset name. */
+  private static String name1 = "File";
+  private static boolean memory3D = false;
+  private static String PixUnit = "Pixel";
+
+  /**
+   * Parameters for blinking correction
+   */
+  private int numDimension = 3;                    								 // Pixel size in nm
+  private double maxJumpDist = 300;          								 // precision cutoff in nm
+  private int maxFrameGap = 50;                             					 // Step length of calibration in nm
+  private int minNumPos = 1;                        					 // Fitting mode, can be 'Frame', 'Angle', or 'Z'. Default is 'Frame'
+  private String suffix = ".3d";                        					 // Range for fitting. Units: 'Z' mode in nm; 'Angle' mode in degrees; 'Frame' mode in number. Default is (1, 97) in frames
+  private FileIndex fileIndex = new FileIndex(4, 0, 1, 2, 3, -1);
+  private int skipLines;
+  private static double pxSize = 210;
+  
+  // Data paths
+  private static String filePath = "G:/2023-12-05_Trackingcode/slice6.3d";  		 // Path for the calibration file
+  private static String savePath;
+  
+  // Extra options
+  private boolean saveToFile;   
+  private boolean saveInfoToFile;  
+
+  
+  @Override
+  public void run(String arg) {
+	    //load();
+	    showInstruction();
+	    //blinkingCorrection();
+	    if (showDialog()) {
+	    	
+	    	//load();
+	      //ProcessTrack();
+	    	blinkingCorrection();
+	    	
+	    }
+	  }
+  private boolean showDialog() {
+	    ExtendedGenericDialog gd = new ExtendedGenericDialog(TITLE);
+	    gd.addMessage("Localisation file: ");
+	    ResultsManager.addInput(gd, input, InputSource.MEMORY);
+	    gd.addMessage("Parameters: ");
+	    // Get the values from the input boxes
+	    //gd.addCheckbox("Is data unit in Pixel?", PixUnit);
+	    String[] formats = {"Pixel", "nm"};
+	    gd.addChoice("Distance Unit", formats, formats[1]);
+	    gd.addNumericField("Pixel size", pxSize, 1);
+	    gd.addNumericField("Dimensions", numDimension, 1);
+	    gd.addNumericField("MaxJumpDist", maxJumpDist, 1);
+	    gd.addNumericField("MaxFrameGap", maxFrameGap, 1);
+	    gd.addNumericField("MinNumLocs", minNumPos, 1);
+	    
+	    gd.addMessage("File output:");
+	    gd.addCheckbox("Save corrected localisations", saveToFile);
+	    gd.addCheckbox("Save track info", saveInfoToFile);
+	    
+	    gd.addDirectoryField("Save_directory", "");
+
+	    gd.showDialog();
+
+	    if (gd.wasCanceled()) {
+	      return false;
+	    }
+	    
+	    input =  ResultsManager.getInputSource(gd);
+	    MemoryPeakResults calibresults = ResultsManager.loadInputResults(input, true, DistanceUnit.PIXEL, IntensityUnit.PHOTON);
+	    //MemoryPeakResults calibresults = getResults(input, calibPath);
+	    //MemoryPeakResults.addResults(calibresults);
+	    PixUnit = gd.getNextChoice();
+	    //PixUnit = gd.getNextBoolean();
+	    pxSize = gd.getNextNumber();
+	    numDimension = (int) gd.getNextNumber();
+	    maxJumpDist = gd.getNextNumber();
+	    maxFrameGap = (int) gd.getNextNumber();
+	    minNumPos = (int) gd.getNextNumber();
+	    saveToFile = gd.getNextBoolean();
+	    saveInfoToFile = gd.getNextBoolean();
+	    savePath = gd.getNextString();
+
+	    // Update the general parameters and the filtering parameters   
+	    name1 = input;
+	    System.out.print(name1);
+	    return true;   
+	  }  // End of shoeDialog
+  
+  public void showInstruction(){
+      IJ.log(" ");
+      IJ.log(" -------- Instruction about Blinking Correction Plugin ---------");
+      IJ.log(" ");
+      IJ.log("    *** For temporal grouping of localisations ***");
+      IJ.log(" ");
+      IJ.log("    - Input data: DHPSFU processed .3d format files from MEMORY");
+      IJ.log("                  (You can load file from directory using the Load Localisation function)");
+      IJ.log("    - Need to spefify the distance unit of the data, Pixel or nm");
+      IJ.log("    - Parameters: ");
+      IJ.log("         - Dimensions: dimension of the data. Default = 3");
+      IJ.log("         - MaxJumpDist: maximum jump distance allowed between frames ");
+      IJ.log("         - MaxFrameGap: Mmaximum change in frame number for two consecutive positions on track");
+      IJ.log("         - MinNumLocs: minimum number of localisations on track to be further considered");
+      IJ.log("    - Tick if you want to save the corrected localisations into file. File format is also .3d");
+      IJ.log("    - Tick if you want to save all track info into file. File format is .csv");
+      IJ.log("         - Columns in Track_info.csv: ");
+      IJ.log("              - # track: number of track");
+      IJ.log("              - numberPositions: number of localisations within this track");
+      IJ.log("              - deltaFrame: frame difference within track");
+      IJ.log("              - averageIntensity/averageX/averageY/averageZ: average intensity/x/y/z of all localisations within this track");
+      IJ.log("    ******");
+      IJ.log(" ");
+  }
+/* Functions to load .3d files from filePath
+ * 
+ */
+  public static LoadedResult loadResult(double[][]arr, String fileName, String PixUnit, double pxSize){
+      MemoryPeakResults results = new MemoryPeakResults();
+      results.setName(fileName);
+//      IJ.log(fileName);
+
+      double[][] returnArray= null;
+      
+      
+      if(arr!= null){
+    	  
+    	  if (PixUnit == "Pixel") {
+    		  int numRows = arr.length;
+    		  double[] x = new double[numRows];
+    		  double[] y = new double[numRows];
+    		  double[] z = new double[numRows];
+
+    		  for (int i = 0; i < numRows; i++) {
+    		      x[i] = arr[i][0] * pxSize;
+    		      y[i] = arr[i][0] * pxSize;
+    		      z[i] = arr[i][0] * pxSize;
+    		  }
+	          double[] intensity = ArrayUtils.getColumn(arr,3);
+	          double[] frame = ArrayUtils.getColumn(arr,4);
+	          returnArray = new double[][]{x, y, z, intensity,frame};
+	          results.begin();
+	          for(int i = 0; i < arr.length; i++){
+	              float[] parameters = new float[5];
+
+	              //The value of X in the ith row
+	              parameters[0] = (float) x[i];
+
+	              //The value of Y in the ith row
+	              parameters[1] = (float) y[i];
+
+	              //The value of Z in the ith row
+	              parameters[2] = (float) z[i];
+
+	              //The value of intensity in the ith row
+	              parameters[3] = (float) intensity[i];
+
+	              //The value of frame in the ith row
+	              parameters[4] = (float) frame[i];
+
+	              PeakResult r = new PeakResult((int) parameters[4], parameters[0],parameters[1],parameters[3]);
+	              r.setZPosition(parameters[2]);
+	              results.add(r);
+    		  
+    	  }
+	          }
+    	  
+    	  
+    	  else {
+	          double[] x = ArrayUtils.getColumn(arr,0);
+	          double[] y = ArrayUtils.getColumn(arr,1);
+	          double[] z = ArrayUtils.getColumn(arr,2);
+	          double[] intensity = ArrayUtils.getColumn(arr,3);
+	          double[] frame = ArrayUtils.getColumn(arr,4);
+	          returnArray = new double[][]{x, y, z, intensity,frame};
+	          results.begin();
+	          for(int i = 0; i < arr.length; i++){
+	              float[] parameters = new float[5];
+
+	              //The value of X in the ith row
+	              parameters[0] = (float) x[i];
+
+	              //The value of Y in the ith row
+	              parameters[1] = (float) y[i];
+
+	              //The value of Z in the ith row
+	              parameters[2] = (float) z[i];
+
+	              //The value of intensity in the ith row
+	              parameters[3] = (float) intensity[i];
+
+	              //The value of frame in the ith row
+	              parameters[4] = (float) frame[i];
+
+	              PeakResult r = new PeakResult((int) parameters[4], parameters[0],parameters[1],parameters[3]);
+	              r.setZPosition(parameters[2]);
+	              results.add(r);
+    	  }
+//          IJ.log("size" + x.length);
+
+          
+          }
+
+      }
+
+      
+      results.end();
+      results.sort();
+
+      LoadedResult r = new LoadedResult(results,returnArray);
+//      IJ.log("result "+results.get(1).getZPosition());
+      return r;
+
+  }
+  public static String getFileExtension(String filePath){
+      int lastIndex = filePath.lastIndexOf(".");
+      if (lastIndex == -1) {
+          return ""; // empty extension
+      }
+      return filePath.substring(lastIndex);
+  }
+
+  /**
+   * load the .3d file and add the loaded data into imageJ memory
+   * @param filePath the .3d file path
+   * @param fileName the name of the loaded data which stores in imageJ memory
+   * @return
+   */
+  public static LoadedResult load3DFile(String filePath, String fileName){
+      Read3DFileCalib importer = new Read3DFileCalib();
+      double [][] data = null;
+      double[][] returnArray = null;
+
+//      MemoryPeakResults results = new MemoryPeakResults();
+//      results.setName(fileName);
+//      IJ.log(fileName);
+
+      String fileExtension = getFileExtension(filePath);
+      if(!fileExtension.equals(".3d")){
+          IJ.error(TITLE,"You must select a .3d file");
+      }else{
+          try{
+              data = importer.readCSVDouble(Paths.get(filePath),0);
+          }catch (IOException e){
+              e.printStackTrace();
+          }
+      }
+
+     return loadResult(data,fileName,PixUnit,pxSize);
+  }
+  
+  
+  public static void load(){
+      MemoryPeakResults threed_result;
+      threed_result = load3DFile(filePath,name1).getResults();
+      //if(!memory3D){
+          //threed_result = load3DFile(threed_path,threed_memory).getResults();
+      //}else {
+          //threed_result = ResultsManager.loadInputResults(threedName,false,null,null);
+      //}
+
+      if(threed_result == null){
+          return;
+      }
+      if (threed_result.isEmpty()) {
+          IJ.error(TITLE, "No localisations could be loaded");
+          return;
+      }
+
+      // Create the in-memory results
+      if (threed_result.size() > 0) {
+          MemoryPeakResults.addResults(threed_result);
+      }
+
+      final String msg = "Loaded " + TextUtils.pleural(threed_result.size(), "lines");
+      IJ.showStatus(msg);
+      ImageJUtils.log(msg);
+
+      viewLoadedResult(threed_result,"Loaded_3d_file");
+
+  }
+  /**
+  *
+  * @param results the data that you want to show in the table
+  */
+ public static void viewLoadedResult(MemoryPeakResults results,String windowTitle){
+     if (MemoryPeakResults.isEmpty(results)) {
+         IJ.error(TITLE, "No results could be loaded");
+         return;
+     }
+     int size = results.size();
+     int[] frame = new int[size];
+     float[] x =new float[size];
+     float[] y = new float[size];
+     float[] z = new float[size];
+     float[] intensity = new float[size];
+
+     for(int i = 0; i < size; i++){
+         frame[i] = results.get(i).getFrame();
+         x[i] = results.get(i).getXPosition();
+         y[i] = results.get(i).getYPosition();
+         z[i] = results.get(i).getZPosition();
+         intensity[i] = results.get(i).getIntensity();
+     }
+
+
+
+     ResultsTable t = new ResultsTable();
+     t.setValues("Frame", SimpleArrayUtils.toDouble(frame));
+     //t.setValues("Frame", new double[]{1, 2, 3, 4, 5});
+     t.setValues("X", SimpleArrayUtils.toDouble(x));
+     t.setValues("Y", SimpleArrayUtils.toDouble(y));
+     t.setValues("Z", SimpleArrayUtils.toDouble(z));
+     t.setValues("Intensity", SimpleArrayUtils.toDouble(intensity));
+     t.show(windowTitle);
+
+ }
+  
+ public static double[][] resultToArray(MemoryPeakResults results,String PixUnit, double pxSize){
+     if (MemoryPeakResults.isEmpty(results)) {
+         IJ.error(TITLE, "No results could be loaded");
+//         return new double[][]{{}};
+     }
+     int size = results.size();
+     System.out.println("Size" + size);
+     double[][] r = new double[size][5];
+
+     for(int i = 0; i < size; i++){
+    	 
+    	 if (PixUnit=="Pixel") {
+    		 r[i][0] = results.get(i).getXPosition()*pxSize;
+             r[i][1] = results.get(i).getYPosition()*pxSize;
+             r[i][2] = results.get(i).getZPosition()*pxSize;
+    		  
+    	 } else {
+         r[i][0] = results.get(i).getXPosition();
+         r[i][1] = results.get(i).getYPosition();
+         r[i][2] = results.get(i).getZPosition();
+    	 }
+         r[i][3] = results.get(i).getIntensity();
+         r[i][4] = results.get(i).getFrame();
+     }
+     return r;
+
+ }
+  
+//Java equivalent of _processPosition
+  private void processPosition(Set<BC_track> finishedTracks, Set<BC_track> currentTracks, double[] position, int frame, double intensity, double maxJumpDistance, int maxFrameGap) {
+      double[] newPosition = new double[]{position[0], position[1], position[2]}; // Copy the position array
+
+      double bestDist = -1.0; // Initialize with a value less than 0
+      BC_track bestTrack = null;
+
+      List<BC_track> tracksToRemove = new ArrayList<>();
+
+      for (BC_track track : currentTracks) {
+          if (frame > track.frame.get(track.frame.size() - 1) + maxFrameGap) {
+              tracksToRemove.add(track);
+              finishedTracks.add(track);
+          } else if (frame > track.frame.get(track.frame.size() - 1)) {
+              double distance = BC_track.calcAdjustedDistance(newPosition[0], newPosition[1], newPosition[2], frame, track);
+              if (distance < maxJumpDistance && (bestTrack == null || distance < bestDist)) {
+                  bestDist = distance;
+                  //System.out.println("Best Distance" + bestDist);
+                  bestTrack = track;
+              }
+          }
+      }
+
+      currentTracks.removeAll(tracksToRemove);
+
+      if (bestTrack != null) {
+          bestTrack.addPosition(newPosition[0], newPosition[1], newPosition[2], frame, intensity);
+      } else {
+          BC_track track = new BC_track();
+          track.addPosition(newPosition[0], newPosition[1], newPosition[2], frame, intensity);
+          currentTracks.add(track);
+      }
+  }
+
+  public List<BC_track> determineTracks(double[][] threed_data, double maxJumpDistance, int maxFrameGap, int minNumPositions) {
+	    System.out.println("found " + threed_data.length + " records");
+
+	    Set<BC_track> finishedTracks = new HashSet<>();
+	    Set<BC_track> currentTracks = new HashSet<>();
+
+	    // Sort the data by frame (assuming frame is in the first column)
+	    Arrays.sort(threed_data, Comparator.comparingDouble(row -> row[4]));
+
+	    for (int n = 0; n < threed_data.length; n++) {
+	        int frame = (int) threed_data[n][4];
+	        double x = threed_data[n][0];
+	        double y = threed_data[n][1];
+	        double z = threed_data[n][2];
+	        double intensity = threed_data[n][3];
+
+	       // if (n > 0) {
+	         //   System.out.println("processing frame data " + n + " (finishedTracks " + finishedTracks.size() + ", currentTracks " + currentTracks.size() + ")");
+	        //}
+
+	        double[] position = {x, y, z};
+	        //for (int i = 0; i < position.length; i++) {
+	          //  System.out.println("position[" + i + "] = " + position[i]);
+	       // }
+	        
+	        processPosition(finishedTracks, currentTracks, position, frame, intensity, maxJumpDistance, maxFrameGap);
+	    }
+
+	    finishedTracks.addAll(currentTracks);
+
+	    System.out.println("Number of tracks = " + finishedTracks.size());
+
+	    // Filter out short tracks
+	    List<BC_track> filteredTracks = new ArrayList<>();
+	    for (BC_track track : finishedTracks) {
+	        if (track.x.size() >= minNumPositions) {
+	            filteredTracks.add(track);
+	        }
+	    }
+	    
+	    final String msg = "Number of tracks after filtering for >= "  + minNumPositions + " positions = " + filteredTracks.size();
+	      IJ.showStatus(msg);
+	      ImageJUtils.log(msg);
+
+	    System.out.println("Number of tracks after filtering for >= " + minNumPositions + " positions = " + filteredTracks.size());
+
+	    return filteredTracks;
+	}
+  
+  public void printFilteredTracks(List<BC_track> filteredTracks) {
+	    for (int i = 0; i < filteredTracks.size(); i++) {
+	        BC_track track = filteredTracks.get(i);
+	        System.out.println("Track " + (i + 1) + ":");
+	        System.out.println("Number of positions: " + track.x.size());
+	        System.out.println("Frames: " + track.frame);
+	        System.out.println("X positions: " + track.x);
+	        System.out.println("Y positions: " + track.y);
+	        System.out.println("Z positions: " + track.z);
+	        System.out.println("Intensities: " + track.intensity);
+	        System.out.println("Distances: " + track.distances);
+	        System.out.println(); // Add an empty line for separation
+	    }
+	}
+  
+  public static double[][] transpose(double[][] original) {
+	    int numRows = original.length;
+	    int numCols = original[0].length;
+
+	    double[][] transposed = new double[numCols][numRows];
+
+	    for (int i = 0; i < numRows; i++) {
+	        for (int j = 0; j < numCols; j++) {
+	            transposed[j][i] = original[i][j];
+	        }
+	    }
+
+	    return transposed;
+	}
+
+  public static void writeTracksToFile(String fileName, List<BC_track> tracks) {
+      try (BufferedWriter writer = new BufferedWriter(new FileWriter(fileName))) { 
+    	  for (BC_track track : tracks) {
+              double x = track.getAverageX();
+              double y = track.getAverageY();
+              double z = track.getAverageZ();
+              double intensity = track.getAverageI();
+              int frame = track.frame.get(0);
+
+              StringBuilder sb = new StringBuilder();
+              sb.append(x).append('\t'); // Append x coordinate
+              sb.append(y).append('\t'); // Append y coordinate
+              sb.append(z).append('\t'); // Append z coordinate
+              sb.append(intensity).append('\t'); // Append intensity
+              sb.append(frame);
+
+              writer.write(sb.toString());
+              writer.newLine();
+
+          }
+      } catch (IOException e) {
+          e.printStackTrace();
+      }
+  }
+  
+  public static List<List<Double>> saveTracksToMemory(List<BC_track> tracks) {
+	  List<List<Double>> result = new ArrayList<>();
+	  for (BC_track track : tracks) {
+		  List<Double> trackData = new ArrayList<>();
+          double x = track.getAverageX();
+          double y = track.getAverageY();
+          double z = track.getAverageZ();
+          double intensity = track.getAverageI();
+          int frame = track.frame.get(0);
+          
+          trackData.add(x);
+          trackData.add(y);
+          trackData.add(z);
+          trackData.add(intensity);
+          trackData.add((double) frame);
+
+          result.add(trackData);
+      }
+    
+      return result;
+  }
+  
+  public void writeTracksSummaryToFile(List<BC_track> tracks, String fileName) {
+      try (BufferedWriter writer = new BufferedWriter(new FileWriter(fileName))) {
+          writer.write("# track, numberPositions, deltaFrames, averageIntensity, averageX,averageY,averageZ");
+          writer.newLine();
+          for (int n = 0; n < tracks.size(); n++) {
+              BC_track track = tracks.get(n);
+              String averagePositionX = String.format("%.1f", track.getAverageX());
+              String averagePositionY = String.format("%.1f", track.getAverageY());
+              String averagePositionZ = String.format("%.1f", track.getAverageZ());
+              writer.write(String.format("%d,%d,%d,%.1f,%s,%s,%s", 
+                  n + 1, track.x.size(), track.getDeltaFrames(), track.getAverageI(), 
+                  averagePositionX, averagePositionY, averagePositionZ));
+              writer.newLine();
+          }
+      } catch (IOException e) {
+          e.printStackTrace();
+      }
+  }
+  
+  private void viewInfoResult(List<BC_track> tracks) {
+	  
+	  double[] xArray = new double[tracks.size()];
+	  double[] yArray = new double[tracks.size()];
+	  double[] zArray = new double[tracks.size()];
+	  double[] trackNumbers = new double[tracks.size()];
+	  double[] posNum = new double[tracks.size()];
+	  double[] FrameDelta = new double[tracks.size()];
+	  double[] IArray = new double[tracks.size()];
+	  
+  	  
+	  for (int n = 0; n < tracks.size(); n++) {
+          BC_track track = tracks.get(n);
+          double averagePositionX = track.getAverageX();
+          double averagePositionY = track.getAverageY();
+          double averagePositionZ = track.getAverageZ();
+          double numOfTrack = n + 1;
+          double numPos = track.x.size();
+          double deltaFrame = track.getDeltaFrames();
+          double averageI = track.getAverageI();
+          
+          xArray[n] = averagePositionX;
+          yArray[n] = averagePositionY;
+          zArray[n] = averagePositionZ;
+          trackNumbers[n] = numOfTrack;
+          posNum[n] = numPos;
+          FrameDelta[n] = deltaFrame;
+          IArray[n] = averageI;
+      }
+	  	
+
+	      ResultsTable t = new ResultsTable();
+	      
+	      t.setValues("# Track", trackNumbers);
+	      t.setValues("numberPositions", posNum);
+	      t.setValues("deltaFrames", FrameDelta);
+	      t.setValues("averageIntensity", IArray);
+	      t.setValues("Average X", xArray);
+	      t.setValues("Average Y", yArray);
+	      t.setValues("Average Z", zArray);
+	      t.show("Track info");
+	  	}  // End of view3DResult
+  
+  private double[][] toDouble(List<List<Double>> list) {
+	   int rows = list.size();
+	    int cols = list.get(0).size();
+
+	    return IntStream.range(0, cols).mapToObj(col ->
+	        IntStream.range(0, rows).mapToDouble(row ->
+	        list.get(row).get(col)
+	        ).toArray()
+	    ).toArray(double[][]::new);
+	}   // End of toDouble
+	    
+ 
+  
+  private MemoryPeakResults saveToMemory(List<List<Double>> result) {
+  	String name = "Corrected Result"; 
+  	double[][] doubleFilteredPeakResult = toDouble(result);
+  	
+      double[] frame = doubleFilteredPeakResult[4];
+      double[] x = doubleFilteredPeakResult[0];
+      double[] y = doubleFilteredPeakResult[1];
+      double[] z = doubleFilteredPeakResult[2];
+      double[] intensity = doubleFilteredPeakResult[3];
+      
+      MemoryPeakResults finalResult = new MemoryPeakResults(); 
+      for (int i = 0; i < frame.length; i++) {
+		      float[] parameters = new float[7];		      
+		      parameters[PeakResultDHPSFU.BACKGROUND] = (float)frame[i];
+		      parameters[PeakResultDHPSFU.X] = (float)x[i];
+		      parameters[PeakResultDHPSFU.Y] = (float)y[i];
+		      // Ignore z
+		      parameters[PeakResultDHPSFU.INTENSITY] = (float)intensity[i];
+		      // The peak width as the Gaussian standard deviation is the first non-standard parameter
+		      
+		      // Set noise assuming photons have a Poisson distribution
+		      float noise = (float) Math.sqrt(parameters[PeakResultDHPSFU.INTENSITY]);
+
+		      PeakResult r = new PeakResult((int)frame[i], parameters[2], parameters[3], parameters[1]);
+		      //AttributePeakResult ap = new AttributePeakResult(r);
+		      r.setZPosition((float)z[i]); 
+		      
+		      finalResult.add(r);
+	    }
+	    
+      finalResult.end();
+      finalResult.sort();
+      finalResult.setName(name);
+      System.out.println();
+      return finalResult;
+      
+  	}  // End of view3DResult
+  
+  private void view3DResult(List<List<Double>> filteredPeakResult) {
+  	  
+  	double[][] doubleFilteredPeakResult = toDouble(filteredPeakResult);
+  	
+      double[] frame = doubleFilteredPeakResult[4];
+      double[] x = doubleFilteredPeakResult[0];
+      double[] y = doubleFilteredPeakResult[1];
+      double[] z = doubleFilteredPeakResult[2];
+      double[] intensity = doubleFilteredPeakResult[3];
+
+      ResultsTable t = new ResultsTable();
+      
+      t.setValues("X (px)", x);
+      t.setValues("Y (px)", y);
+      t.setValues("Z (px)", z);
+      t.setValues("Intensity (photon)", intensity);
+      t.setValues("Frame", frame);
+      t.show("Corrected results");
+  	}  // End of view3DResult
+  	  
+  
+  private void blinkingCorrection() {
+		// Processing the calibration data
+		  
+		
+		double[][] threed_data;
+        /*
+		if(!memory3D){
+            IJ.log("load from file: " + filePath);
+            threed_data = load3DFile(filePath,name1).getResultArray();
+        }else{s
+            IJ.log("load from memory: " + name1);
+            MemoryPeakResults r = ResultsManager.loadInputResults(name1,false,null,null);
+            threed_data = resultToArray(r);
+        }
+        */
+        //String name1 = "File [17]";
+        IJ.log("load from memory: " + name1);
+        MemoryPeakResults r = MemoryPeakResults.getResults(name1);
+        CalibrationWriter cw1 = new CalibrationWriter();
+	    cw1.setIntensityUnit(IntensityUnit.PHOTON);
+	    cw1.setDistanceUnit(DistanceUnit.PIXEL);
+        cw1.setTimeUnit(TimeUnit.FRAME);
+        cw1.setExposureTime(50);
+        cw1.setNmPerPixel(pxSize);
+        cw1.setCountPerPhoton(45);
+        cw1.getBuilder().getCameraCalibrationBuilder()
+          .setCameraType(CameraType.EMCCD).setBias(100).setQuantumEfficiency(0.95).setReadNoise(1.6);
+	    r.setCalibration(cw1.getCalibration());
+        
+        
+        //MemoryPeakResults r = ResultsManager.getResults(name1);
+        //viewLoadedResult(r,"Memory");
+        threed_data = resultToArray(r,PixUnit,pxSize);
+        
+        //threed_data = transpose(threed_data);
+        
+        System.out.print(threed_data.length + " = Row");
+        System.out.print(threed_data[1].length + " = Column");
+        /*
+        for (int i = 0; i < threed_data.length; i++) {
+            // Loop through columns
+            for (int j = 0; j < threed_data[i].length; j++) {
+                System.out.print(threed_data[i][j] + " ");
+            }
+            // Move to the next row
+            System.out.println();
+        }*/
+  
+        List<BC_track> filteredTracks = determineTracks(threed_data, maxJumpDist, maxFrameGap, minNumPos);
+        //printFilteredTracks(filteredTracks);
+        
+        List<List<Double>> result = saveTracksToMemory(filteredTracks);
+        view3DResult(result);
+        viewInfoResult(filteredTracks);
+        System.out.print(saveToFile);
+        System.out.print(saveInfoToFile);
+        
+        if (saveToFile == true) {    
+        
+            String savePath2 = savePath+name1+"_out.3d";
+            System.out.print("Path "+savePath2);
+            writeTracksToFile(savePath2, filteredTracks);
+            
+        }
+        
+        if (saveInfoToFile == true) {    
+        
+        	String saveInfoPath = savePath +name1+"_Track_Info.csv";
+        	writeTracksSummaryToFile(filteredTracks, saveInfoPath);
+        }
+        
+        MemoryPeakResults finalResult = saveToMemory(result);
+        MemoryPeakResults.addResults(finalResult);
+        CalibrationWriter cw = finalResult.getCalibrationWriterSafe();
+        cw.setIntensityUnit(IntensityUnit.PHOTON);
+        cw.setDistanceUnit(DistanceUnit.NM);
+        cw.setTimeUnit(TimeUnit.FRAME);
+        cw.setExposureTime(50);
+        cw.setNmPerPixel(pxSize);
+        cw.setCountPerPhoton(45);
+        cw.getBuilder().getCameraCalibrationBuilder()
+          .setCameraType(CameraType.EMCCD).setBias(100).setQuantumEfficiency(0.95).setReadNoise(1.6);
+        finalResult.setCalibration(cw.getCalibration());
+        
+        
+        
+        }
+        
+   /*
+  public static void main(String[] args) throws URISyntaxException {
+	    // Set the base directory for plugins
+	    // see: https://stackoverflow.com/a/7060464/1207769
+	    Class<BlinkingCorrection> clazz = BlinkingCorrection.class;
+	    java.net.URL url = clazz.getProtectionDomain().getCodeSource().getLocation();
+	    File file = new File(url.toURI());
+	    // Note: This returns the base path. ImageJ will find plugins in here that have an
+	    // underscore in the name. But it will not search recursively through the
+	    // package structure to find plugins. Adding this at least puts it on ImageJ's
+	    // classpath so plugins not satisfying these requirements can be loaded.
+	    System.setProperty("plugins.dir", file.getAbsolutePath());
+
+	    // Start ImageJ and exit when closed
+	    ImageJ imagej = new ImageJ();
+	    imagej.exitWhenQuitting(true);
+
+	    // If this is in a sub-package or has no underscore then manually add the plugin
+	    String packageName = clazz.getName().replace(clazz.getSimpleName(), "");
+	    if (!packageName.isEmpty() || clazz.getSimpleName().indexOf('_') < 0) {
+	      // Add a spacer
+	      ij.Menus.installPlugin("", ij.Menus.PLUGINS_MENU, "-", "", IJ.getInstance());
+	      ij.Menus.installPlugin(clazz.getName(),
+	          ij.Menus.PLUGINS_MENU, clazz.getSimpleName().replace('_', ' '), "", IJ.getInstance());
+	    }
+
+	    // Initialise for testing, e.g. create some random datasets
+	    load();
+
+	    // Run the plugin
+	    IJ.runPlugIn(clazz.getName(), "");
+	  }  // End of main
+		*/
+  
+  
+}

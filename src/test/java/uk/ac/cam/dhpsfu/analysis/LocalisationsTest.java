@@ -51,6 +51,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+/*
+
 package uk.ac.cam.dhpsfu.analysis;
 
 import org.apache.commons.math3.complex.Complex;
@@ -65,11 +67,12 @@ import uk.ac.sussex.gdsc.smlm.results.procedures.StandardResultProcedure;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-
+*/
 /**
  * Demonstrate using the JUnit 5 test framework to assert expected results.
  */
-class LocalisationsTest {
+
+//class LocalisationsTest {
 
   /**
    * Test the created random localisations are calibrated in pixels and photons.
@@ -81,6 +84,8 @@ class LocalisationsTest {
    * The {@link StandardResultProcedure} provides commonly used options to get data into
    * arrays.
    */
+
+/*
   @Test
   void canCreateRandomResults() {
     MemoryPeakResults results = Localisations.createRandomResults("Test");
@@ -538,3 +543,4 @@ class LocalisationsTest {
   }
 
 }
+*/

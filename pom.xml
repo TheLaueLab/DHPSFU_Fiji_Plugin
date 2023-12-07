@@ -71,7 +71,7 @@
   </ciManagement>
 
   <properties>
-	  <scijava.app.directory> /Applications/Fiji.app </scijava.app.directory> <!-- directory of fiji -->
+	  <scijava.app.directory> C:\Users\yw525\Desktop\desktop_files\superrescode\fiji-win64-GDSCSMLM2\Fiji.app\Fiji.app </scijava.app.directory> <!-- directory of fiji -->
     <license.licenseName>bsd_2</license.licenseName>
     <license.copyrightOwners>Laue Lab</license.copyrightOwners>
     <gdsc.smlm.ij.version>1.0.2</gdsc.smlm.ij.version>
