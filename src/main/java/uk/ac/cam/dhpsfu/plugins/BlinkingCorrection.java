@@ -1,3 +1,31 @@
+/*-
+ * #%L
+ * Double Helix PSF SMLM analysis tool.
+ * %%
+ * Copyright (C) 2023 - 2024 Laue Lab
+ * %%
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ * 
+ * 1. Redistributions of source code must retain the above copyright notice,
+ *    this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDERS OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ * #L%
+ */
 package uk.ac.cam.dhpsfu.plugins;
 
 import ij.IJ;
@@ -153,7 +181,12 @@ public class BlinkingCorrection implements PlugIn {
 	    }
 	    
 	    input =  ResultsManager.getInputSource(gd);
-	    MemoryPeakResults calibresults = ResultsManager.loadInputResults(input, true, DistanceUnit.PIXEL, IntensityUnit.PHOTON);
+	    if (input == "Pixel") {
+	    	MemoryPeakResults calibresults = ResultsManager.loadInputResults(input, true, DistanceUnit.PIXEL, IntensityUnit.PHOTON);
+	    }
+	    else {MemoryPeakResults calibresults = ResultsManager.loadInputResults(input, true, DistanceUnit.NM, IntensityUnit.PHOTON);
+	    	
+	    }
 	    //MemoryPeakResults calibresults = getResults(input, calibPath);
 	    //MemoryPeakResults.addResults(calibresults);
 	    PixUnit = gd.getNextChoice();
@@ -181,7 +214,8 @@ public class BlinkingCorrection implements PlugIn {
       IJ.log(" ");
       IJ.log("    - Input data: DHPSFU processed .3d format files from MEMORY");
       IJ.log("                  (You can load file from directory using the Load Localisation function)");
-      IJ.log("    - Need to spefify the distance unit of the data, Pixel or nm");
+      IJ.log("    - Need to spefify the distance unit of the data, Pixel or nm.");
+      IJ.log("    - Make sure you choose the CORRECT DISTANCE UNIT of the data. It mignt be different when you import the file from directory.");
       IJ.log("    - Parameters: ");
       IJ.log("         - Dimensions: dimension of the data. Default = 3");
       IJ.log("         - MaxJumpDist: maximum jump distance allowed between frames ");
@@ -782,7 +816,7 @@ public class BlinkingCorrection implements PlugIn {
         
         if (saveToFile == true) {    
         
-            String savePath2 = savePath+name1+"_out.3d";
+            String savePath2 = savePath+name1+"_BC.3d";
             System.out.print("Path "+savePath2);
             writeTracksToFile(savePath2, filteredTracks);
             

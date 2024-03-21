@@ -2,7 +2,7 @@
  * #%L
  * Double Helix PSF SMLM analysis tool.
  * %%
- * Copyright (C) 2023 Laue Lab
+ * Copyright (C) 2023 - 2024 Laue Lab
  * %%
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -156,7 +156,7 @@ public class MultiBeadsDHPSFU implements PlugIn {
 //	  List<String> dataNames = resultManager.batchLoad();
 //	  String dataNamesString = dataNames.toString();
 	  System.out.println("Data names: ");
-
+	showInstruction();
     if (showDialog()) {
     	
     	
@@ -164,6 +164,37 @@ public class MultiBeadsDHPSFU implements PlugIn {
       DH_calibration();
       
     }
+  }
+  
+  public void showInstruction(){
+      IJ.log(" -------- Instruction about DHPSFU-MultiBeads Plugin ---------");
+      IJ.log(" ");
+      IJ.log(" Descriptions: ");
+      IJ.log("   - On top of the DHPSFU plugin, this plugin allows you to import multiple calibration files.");
+      IJ.log("   - This plugin corrects the lateral spacial variation of the DH across the FOV.");
+      IJ.log("   - By importing calibration stacks of different regions of the imaging FOV, this algorithm can compute the degree of spacial variation and correct the imaging data. ");
+      IJ.log(" ");
+      IJ.log(" Parameters: ");
+      IJ.log("   - Pixel size (nm): Camera pixel size in nm. ");
+      IJ.log("   - Calibration step (nm): Calibration step size in nm. ");
+      IJ.log("   - Precision cutoff (nm): Remove localisations with percision greater than this threshold. ");
+      IJ.log("   - Fitting mode: Fitting mode, can be 'Frame', 'Angle', or 'Z'. Default is 'Frame'. ");
+      IJ.log("   - Range to fit (from)/(to): Only fit data within this selected range. 'Frame' mode in number; 'Angle' mode in degrees; 'Z' mode in nm. ");
+      IJ.log(" ");
+      IJ.log(" Filtering options: ");
+      IJ.log("   - Enable filter calibration range: Remove localisations out of the angular range of calibration; if False, polynomial fit is extrapolated beyond the range. ");
+      IJ.log("   - Enable filter distance: Remove DH pairs with unexpected distances. ");
+      IJ.log("       - Initial distance filter (from)/(to): Minimum and maximum distance between a pair of dots in pixel. ");    
+      IJ.log("       - Distance deviation: Relative deviation of the distance between dots, compared to calibration. ");        
+      IJ.log("   - Enable filter intensity ratio: Filter based on the ratio of intensities between the dots. ");
+      IJ.log("       - Intensity deviation: Relative deviation of the intensity between dots, compared to calibration. ");    
+      IJ.log(" ");
+      IJ.log(" File output: ");
+      IJ.log("   - Save to file: Save the analysed data to user-speficied directory. ");
+      IJ.log("   - Saving format: .3d (essentially a tsv. that can be visualised in ViSP) and .csv. ");
+      
+     
+      
   }
   
   /*

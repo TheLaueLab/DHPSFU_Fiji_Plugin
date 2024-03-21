@@ -4,7 +4,7 @@ package uk.ac.cam.dhpsfu.plugins;
  * #%L
  * Double Helix PSF SMLM analysis tool.
  * %%
- * Copyright (C) 2023 Laue Lab
+ * Copyright (C) 2023 - 2024 Laue Lab
  * %%
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -127,7 +127,7 @@ import uk.ac.sussex.gdsc.smlm.results.procedures.StandardResultProcedure;
 /**
  * Opens peaks results and displays/converts them.
  */
- class ResultManager implements PlugIn {
+ public class ResultManager implements PlugIn {
   /** Use this to add extra options to the dialog. */
   static final int FLAG_EXTRA_OPTIONS = 0x00000001;
   /** Use this to add the results directory to the file results dialog. */

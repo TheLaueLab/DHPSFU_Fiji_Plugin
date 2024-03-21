@@ -2,7 +2,7 @@
  * #%L
  * Double Helix PSF SMLM analysis tool.
  * %%
- * Copyright (C) 2023 Laue Lab
+ * Copyright (C) 2023 - 2024 Laue Lab
  * %%
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -29,54 +29,47 @@
 package uk.ac.cam.dhpsfu.plugins;
 
 
-	/*
-	 * Have no idea of how to write the copyright!
-	 */
-
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import org.apache.commons.math3.fitting.PolynomialCurveFitter;
+import org.apache.commons.math3.fitting.WeightedObservedPoints;
+import org.apache.commons.math3.ml.distance.EuclideanDistance;
 import ij.IJ;
 import ij.ImageJ;
 import ij.measure.ResultsTable;
 import ij.plugin.PlugIn;
-
-import java.io.File;
-import java.net.URISyntaxException;
-import java.util.List;
-import java.util.*;
-import java.util.Arrays;
-import java.util.Map;
-import java.util.Collections;
-import java.util.ArrayList;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-import java.util.concurrent.atomic.AtomicInteger;
-
+import uk.ac.cam.dhpsfu.analysis.CalibData;
+import uk.ac.cam.dhpsfu.analysis.FilterParas;
+import uk.ac.cam.dhpsfu.analysis.FittingParas;
+import uk.ac.cam.dhpsfu.analysis.GeneralParas;
+import uk.ac.cam.dhpsfu.analysis.PeakResultDHPSFU;
 import uk.ac.sussex.gdsc.core.ij.gui.ExtendedGenericDialog;
-import uk.ac.sussex.gdsc.core.utils.SimpleArrayUtils;
-import uk.ac.sussex.gdsc.smlm.data.config.CalibrationWriter;
 import uk.ac.sussex.gdsc.smlm.data.config.CalibrationProtos.CameraType;
+import uk.ac.sussex.gdsc.smlm.data.config.CalibrationWriter;
 import uk.ac.sussex.gdsc.smlm.data.config.UnitProtos.DistanceUnit;
 import uk.ac.sussex.gdsc.smlm.data.config.UnitProtos.IntensityUnit;
 import uk.ac.sussex.gdsc.smlm.data.config.UnitProtos.TimeUnit;
-import uk.ac.cam.dhpsfu.analysis.CalibData;
 import uk.ac.sussex.gdsc.smlm.ij.plugins.ResultsManager;
 import uk.ac.sussex.gdsc.smlm.ij.plugins.ResultsManager.InputSource;
 import uk.ac.sussex.gdsc.smlm.results.MemoryPeakResults;
 import uk.ac.sussex.gdsc.smlm.results.PeakResult;
 import uk.ac.sussex.gdsc.smlm.results.procedures.PrecisionResultProcedure;
 import uk.ac.sussex.gdsc.smlm.results.procedures.StandardResultProcedure;
-import org.apache.commons.math3.fitting.PolynomialCurveFitter;
-import org.apache.commons.math3.fitting.WeightedObservedPoints;
-import uk.ac.cam.dhpsfu.analysis.GeneralParas;
-import uk.ac.cam.dhpsfu.analysis.PeakResultDHPSFU;
-import uk.ac.cam.dhpsfu.analysis.FittingParas;
-import uk.ac.cam.dhpsfu.analysis.FilterParas;
-import org.apache.commons.math3.ml.distance.EuclideanDistance;
-import java.io.BufferedWriter;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 
 /**
  * DHPSFU
@@ -84,57 +77,95 @@ import java.nio.file.Paths;
 
 public class DHPSFU implements PlugIn {
 
-  private static final String TITLE = "DHPSFU";                        			// Plugin title
-  private static final AtomicInteger dataset = new AtomicInteger();    			// Counter for random datasets.
+	private static final String TITLE = "DHPSFU"; // Plugin title
+	private static final AtomicInteger dataset = new AtomicInteger(); // Counter for random datasets.
 
-  // Here we persist settings between invocations of the plugin using 'static' members.
-  /** Input dataset name. */
-  private static String input = "";
-  private static String input2 = "";
+	// Here we persist settings between invocations of the plugin using 'static'
+	// members.
+	/** Input dataset name. */
+	private static String input = "";
+	private static String input2 = "";
 
-  // Settings used only by the instance. We could reuse the static members but keeping
-  // an instance copy allows them to be changed without affecting the persistence.
+	// Settings used only by the instance. We could reuse the static members but
+	// keeping
+	// an instance copy allows them to be changed without affecting the persistence.
 
-  /** Dataset name. */
-  private static String name1 = "Calibration";
-  private static String name2 = "Peakfit_data"; 
+	/** Dataset name. */
+	private static String name1 = "Calibration";
+	private static String name2 = "Peakfit_data";
+
+	/**
+	 * Parameters for DHPSFU
+	 */
+	// General parameters
+	private double pxSize = 210; // Pixel size in nm
+	private double precisionCutoff = 30; // precision cutoff in nm
+	private double calibStep = 33.3; // Step length of calibration in nm
+	private String fittingMode = "Frame"; // Fitting mode, can be 'Frame', 'Angle', or 'Z'. Default is 'Frame'
+	private int[] rangeToFit = { 5, 114 }; // Range for fitting. Units: 'Z' mode in nm; 'Angle' mode in degrees; 'Frame'
+											// mode in number. Default is (1, 97) in frames
+	private int[] initialDistanceFilter = { 3, 8 }; // Minimum and maximum distance between a pair of dots in px
+	private int frameNumber = 10000;
+	GeneralParas generalParas = new GeneralParas(pxSize, precisionCutoff, calibStep, fittingMode, rangeToFit,
+			initialDistanceFilter, frameNumber);
+
+	// Filtering parameters
+	private boolean enableFilters = true; // true if enable all filters
+	private boolean enableFilterCalibRange; // remove localisations out of the angular range of calibration; if False,
+											// polynomial fit is extrapolated beyond the range.
+	private boolean enableFilterDistance; // remove dots with unexpected distances
+	private double distanceDev = 0.2; // relative deviation of the distance between dots, compared to calibration
+	private boolean enableFilterIntensityRatio; // filter based on the ratio of intensities between the dots
+	private double intensityDev = 1; // relative deviation of the intensity difference between dots, compared to
+										// calibration
+	FilterParas filterParas = new FilterParas(enableFilters, enableFilterCalibRange, enableFilterDistance, distanceDev,
+			enableFilterIntensityRatio, intensityDev);
+
+	// Data paths
+	private static String calibPath = "E:/Fiji_sampledata/badcalib.xls"; // Path for the calibration file
+	private static String dataPath = "E:/Fiji_sampledata/slice0.tif.results.xls"; // Data path
+	private static String savePath;
+	// private boolean saveToFile = true;
+	private String savingFormat = ".3d";
+
+	// Extra options
+	private boolean saveToFile = true;   
   
-  /**
-   * Parameters for DHPSFU
-   */
-  // General parameters
-  private double pxSize = 210;                    								 // Pixel size in nm
-  private double precisionCutoff = 30;          								 // precision cutoff in nm
-  private double calibStep = 33.3;                             					 // Step length of calibration in nm
-  private String fittingMode = "Frame";                        					 // Fitting mode, can be 'Frame', 'Angle', or 'Z'. Default is 'Frame'
-  private int[] rangeToFit = {5, 114};                        					 // Range for fitting. Units: 'Z' mode in nm; 'Angle' mode in degrees; 'Frame' mode in number. Default is (1, 97) in frames
-  private int[] initialDistanceFilter = {3, 8};              					 // Minimum and maximum distance between a pair of dots in px
-  private int frameNumber = 10000;
-  GeneralParas generalParas = new GeneralParas(pxSize, precisionCutoff, calibStep, fittingMode, rangeToFit, initialDistanceFilter, frameNumber);
   
-  // Filtering parameters
-  private boolean enableFilters = true;                          				 // true if enable all filters
-  private boolean enableFilterCalibRange;              							 // remove localisations out of the angular range of calibration; if False, polynomial fit is extrapolated beyond the range.
-  private boolean enableFilterDistance ;                  						 // remove dots with unexpected distances
-  private double distanceDev = 0.2;                             				 // relative deviation of the distance between dots, compared to calibration
-  private boolean enableFilterIntensityRatio;           					 	 // filter based on the ratio of intensities between the dots
-  private double intensityDev = 1;                              				 // relative deviation of the intensity difference between dots, compared to calibration
-  FilterParas filterParas = new FilterParas(enableFilters, enableFilterCalibRange, enableFilterDistance, distanceDev, enableFilterIntensityRatio, intensityDev);
-  
-  // Data paths
-  private static String calibPath = "E:/Fiji_sampledata/badcalib.xls";  		 // Path for the calibration file
-  private static String dataPath = "E:/Fiji_sampledata/slice0.tif.results.xls";  // Data path
-  private static String savePath;
-  //private boolean saveToFile = true; 
-  private String savingFormat = ".3d";
-  
-  
-  // Extra options
-  private boolean saveToFile = true;   
+	public void showInstruction() {
+		IJ.log(" -------- Instruction about DHPSFU Plugin ---------");
+		IJ.log(" ");
+		IJ.log(" Descriptions: ");
+		IJ.log("   - DHPSFU converts the peakfitted 2D data into 3D coordinates.");
+		IJ.log("   - Simply select the calibration file and the data file from the Fiji memory. Make sure that both of them are in the memory.");
+		IJ.log("   - The analysed 3D data will also be saved in the memory for later access.");
+
+		IJ.log(" ");
+		IJ.log(" Parameters: ");
+		IJ.log("   - Pixel size (nm): Camera pixel size in nm. ");
+		IJ.log("   - Calibration step (nm): Calibration step size in nm. ");
+		IJ.log("   - Precision cutoff (nm): Remove localisations with percision greater than this threshold. ");
+		IJ.log("   - Fitting mode: Fitting mode, can be 'Frame', 'Angle', or 'Z'. Default is 'Frame'. ");
+		IJ.log("   - Range to fit (from)/(to): Only fit data within this selected range. 'Frame' mode in number; 'Angle' mode in degrees; 'Z' mode in nm. ");
+		IJ.log(" ");
+		IJ.log(" Filtering options: ");
+		IJ.log("   - Enable filter calibration range: Remove localisations out of the angular range of calibration; if False, polynomial fit is extrapolated beyond the range. ");
+		IJ.log("   - Enable filter distance: Remove DH pairs with unexpected distances. ");
+		IJ.log("       - Initial distance filter (from)/(to): Minimum and maximum distance between a pair of dots in pixel. ");
+		IJ.log("       - Distance deviation: Relative deviation of the distance between dots, compared to calibration. ");
+		IJ.log("   - Enable filter intensity ratio: Filter based on the ratio of intensities between the dots. ");
+		IJ.log("       - Intensity deviation: Relative deviation of the intensity between dots, compared to calibration. ");
+		IJ.log(" ");
+		IJ.log(" File output: ");
+		IJ.log("   - Save to file: Save the analysed data to user-speficied directory. ");
+		IJ.log("   - Saving format: .3d (essentially a tsv. that can be visualised in ViSP) and .csv. ");
+	}
 
   @Override
   public void run(String arg) {
+	showInstruction();
     if (showDialog()) {
+      
       DH_calibration();
       
     }
@@ -235,42 +266,42 @@ public class DHPSFU implements PlugIn {
 	  }  // End of shoeDialog
   
 
-  private void viewLocalisations2() {
-    MemoryPeakResults results = ResultsManager.loadInputResults(name1, false, null, null);
-    
-    if (MemoryPeakResults.isEmpty(results)) {
-      IJ.error(TITLE, "No results could be loaded");
-      return;
-    }
-    
-    PrecisionResultProcedure p = new PrecisionResultProcedure(results);
-
-    p.getPrecision(true);
-    double[] precisions = p.precisions;
-
-    StandardResultProcedure s = new StandardResultProcedure(results, DistanceUnit.PIXEL, IntensityUnit.PHOTON);
-
-    s.getTxy();
-    s.getI();
-    int[] frame = s.frame;
-    float[] x = s.x;
-    //System.out.println(x);
-    float[] y = s.y;
-    float[] intensity = s.intensity;
+//  private void viewLocalisations2() {
+//    MemoryPeakResults results = ResultsManager.loadInputResults(name1, false, null, null);
+//    
+//    if (MemoryPeakResults.isEmpty(results)) {
+//      IJ.error(TITLE, "No results could be loaded");
+//      return;
+//    }
+//    
+//    PrecisionResultProcedure p = new PrecisionResultProcedure(results);
+//
+//    p.getPrecision(true);
+//    double[] precisions = p.precisions;
+//
+//    StandardResultProcedure s = new StandardResultProcedure(results, DistanceUnit.PIXEL, IntensityUnit.PHOTON);
+//
+//    s.getTxy();
+//    s.getI();
+//    int[] frame = s.frame;
+//    float[] x = s.x;
+//    //System.out.println(x);
+//    float[] y = s.y;
+//    float[] intensity = s.intensity;
 /*
     TextWindow tw = new TextWindow("My Results text window", "T\tx\ty\tIntensity\tPrecision", "", 800, 400);
     for (int i = 0; i < frame.length; i++) {
       tw.append(frame[i] + "\t" + x[i] +"\t" + y[i] +"\t" + intensity[i] + "\t" + precisions[i]);
     }
 */
-    ResultsTable t = new ResultsTable();
-    t.setValues("Frame", SimpleArrayUtils.toDouble(frame));
-    t.setValues("X (px)", SimpleArrayUtils.toDouble(x));
-    t.setValues("Y (px)", SimpleArrayUtils.toDouble(y));
-    t.setValues("Intensity (photon)", SimpleArrayUtils.toDouble(intensity));
-    t.setValues("Precision (nm)", precisions);
-    t.show("DHPSFU results");   //need to change table name 
-  }
+//    ResultsTable t = new ResultsTable();
+//    t.setValues("Frame", SimpleArrayUtils.toDouble(frame));
+//    t.setValues("X (px)", SimpleArrayUtils.toDouble(x));
+//    t.setValues("Y (px)", SimpleArrayUtils.toDouble(y));
+//    t.setValues("Intensity (photon)", SimpleArrayUtils.toDouble(intensity));
+//    t.setValues("Precision (nm)", precisions);
+//    t.show("DHPSFU results");   //need to change table name 
+//  }
   
   
   /*
@@ -736,18 +767,18 @@ public class DHPSFU implements PlugIn {
     /**
      * Get the save path of the .3d result file
      */
-    private String getSavePath(String dataPath) {
-    	 String targetSubstring = ".tif.results.xls";
-         int index = dataPath.lastIndexOf(targetSubstring);
-
-         if (index == -1) {
-             return dataPath + ".3d";
-         } else {
-             return dataPath.substring(0, index) + ".3d";
-         }
-     }   // End of getSavePath
-    	    
-    
+//    private String getSavePath(String dataPath) {
+//    	 String targetSubstring = ".tif.results.xls";
+//         int index = dataPath.lastIndexOf(targetSubstring);
+//
+//         if (index == -1) {
+//             return dataPath + ".3d";
+//         } else {
+//             return dataPath.substring(0, index) + ".3d";
+//         }
+//     }   // End of getSavePath
+//    	    
+//    
     /* 
      * Save the final filtered result to .3D file
      */ 
@@ -832,7 +863,7 @@ public class DHPSFU implements PlugIn {
 		      // The peak width as the Gaussian standard deviation is the first non-standard parameter
 		      
 		      // Set noise assuming photons have a Poisson distribution
-		      float noise = (float) Math.sqrt(parameters[PeakResultDHPSFU.INTENSITY]);
+		      // float noise = (float) Math.sqrt(parameters[PeakResultDHPSFU.INTENSITY]);
 
 		      PeakResult r = new PeakResult((int)frame[i], parameters[2], parameters[3], parameters[1]);
 		      //AttributePeakResult ap = new AttributePeakResult(r);
@@ -853,90 +884,82 @@ public class DHPSFU implements PlugIn {
 /*
  * Main function for DHPSFU	
  */
-  private void DH_calibration() {
+private void DH_calibration() {
 	// Processing the calibration data
-    MemoryPeakResults results = ResultsManager.loadInputResults(name1, false, null, null);
-    System.out.println(name1);
-    if (MemoryPeakResults.isEmpty(results)) {
-      IJ.error(TITLE, "No calibration results could be loaded");
-      return;
-    }		    
-    PrecisionResultProcedure p = new PrecisionResultProcedure(results);
-    p.getPrecision(true);
-    double[] precisions = p.precisions;
-    StandardResultProcedure s = new StandardResultProcedure(results, DistanceUnit.PIXEL, IntensityUnit.PHOTON);
-    s.getTxy();
-    s.getI();
-    int[] frame = s.frame;
-    float[] x = s.x;
-    //System.out.println(frame);
-    float[] y = s.y;
-    float[] intensity = s.intensity;
-    
-    List<Integer> badFrames = removeBadFrame(frame);
-    float[][] goodData = removeValuesForBadFrames(badFrames, frame, x, y, intensity, precisions);
-    double[][] calculated = DHPSFUCalculation(goodData);
-    double[][] filteredData = filterData(calculated, generalParas);
-    FittingParas fittingParas =  polyFitting(filteredData, generalParas);
-    
-   // Processing the peakfit data
-    MemoryPeakResults PeakfitData = ResultsManager.loadInputResults(name2, false, null, null);
-    if (MemoryPeakResults.isEmpty(PeakfitData)) {
-        IJ.error(TITLE, "No peakfit results could be loaded");
-        return;
-      }		
-    
-    double[][] DataFilteredPrecision = filterDataByPrecision(PeakfitData, precisionCutoff);
-    List<List<Double>> processedResult = processData(DataFilteredPrecision, generalParas);
-    List<List<Double>> xyzN = calculateCoordinates(processedResult, fittingParas, generalParas);
-    List<List<Double>> filteredPeakResult = filterPeakfitData(processedResult, xyzN, filterParas, fittingParas); 
-    
-    // Save files
-    if (saveToFile = true) {
-        saveTo3D(filteredPeakResult, input2, savingFormat);
-        }
-    
-    
-    
-    // View localisation
-    view3DResult(filteredPeakResult);
-    MemoryPeakResults finalResult = saveToMemory(filteredPeakResult);
-    MemoryPeakResults.addResults(finalResult);
-    
-    
-    
-    
-    CalibrationWriter cw = finalResult.getCalibrationWriterSafe();
-    cw.setIntensityUnit(IntensityUnit.PHOTON);
-    cw.setDistanceUnit(DistanceUnit.NM);
-    cw.setTimeUnit(TimeUnit.FRAME);
-    cw.setExposureTime(50);
-    cw.setNmPerPixel(pxSize);
-    cw.setCountPerPhoton(45);
-    cw.getBuilder().getCameraCalibrationBuilder()
-      .setCameraType(CameraType.EMCCD).setBias(100).setQuantumEfficiency(0.95).setReadNoise(1.6);
-    finalResult.setCalibration(cw.getCalibration());
-    
-    
-    System.out.println("No. of localisation left: " + filteredPeakResult.size());
-  //System.out.println("No. of localisation left: " + processedResultWithZN.get(0).size());
-}  // End of DH_calibration
+	MemoryPeakResults results = ResultsManager.loadInputResults(name1, false, null, null);
+	System.out.println(name1);
+	if (MemoryPeakResults.isEmpty(results)) {
+		IJ.error(TITLE, "No calibration results could be loaded");
+		return;
+	}
+	PrecisionResultProcedure p = new PrecisionResultProcedure(results);
+	p.getPrecision(true);
+	double[] precisions = p.precisions;
+	StandardResultProcedure s = new StandardResultProcedure(results, DistanceUnit.PIXEL, IntensityUnit.PHOTON);
+	s.getTxy();
+	s.getI();
+	int[] frame = s.frame;
+	float[] x = s.x;
+	// System.out.println(frame);
+	float[] y = s.y;
+	float[] intensity = s.intensity;
+
+	List<Integer> badFrames = removeBadFrame(frame);
+	float[][] goodData = removeValuesForBadFrames(badFrames, frame, x, y, intensity, precisions);
+	double[][] calculated = DHPSFUCalculation(goodData);
+	double[][] filteredData = filterData(calculated, generalParas);
+	FittingParas fittingParas = polyFitting(filteredData, generalParas);
+
+	// Processing the peakfit data
+	MemoryPeakResults PeakfitData = ResultsManager.loadInputResults(name2, false, null, null);
+	if (MemoryPeakResults.isEmpty(PeakfitData)) {
+		IJ.error(TITLE, "No peakfit results could be loaded");
+		return;
+	}
+
+	double[][] DataFilteredPrecision = filterDataByPrecision(PeakfitData, precisionCutoff);
+	List<List<Double>> processedResult = processData(DataFilteredPrecision, generalParas);
+	List<List<Double>> xyzN = calculateCoordinates(processedResult, fittingParas, generalParas);
+	List<List<Double>> filteredPeakResult = filterPeakfitData(processedResult, xyzN, filterParas, fittingParas);
+
+	// Save files
+	if (saveToFile = true) {
+		saveTo3D(filteredPeakResult, input2, savingFormat);
+	}
+
+	// View localisation
+	view3DResult(filteredPeakResult);
+	MemoryPeakResults finalResult = saveToMemory(filteredPeakResult);
+	MemoryPeakResults.addResults(finalResult);
+
+	CalibrationWriter cw = finalResult.getCalibrationWriterSafe();
+	cw.setIntensityUnit(IntensityUnit.PHOTON);
+	cw.setDistanceUnit(DistanceUnit.NM);
+	cw.setTimeUnit(TimeUnit.FRAME);
+	cw.setExposureTime(50);
+	cw.setNmPerPixel(pxSize);
+	cw.setCountPerPhoton(45);
+	cw.getBuilder().getCameraCalibrationBuilder().setCameraType(CameraType.EMCCD).setBias(100)
+			.setQuantumEfficiency(0.95).setReadNoise(1.6);
+	finalResult.setCalibration(cw.getCalibration());
+
+	System.out.println("No. of localisation left: " + filteredPeakResult.size());
+	// System.out.println("No. of localisation left: " +
+	// processedResultWithZN.get(0).size());
+    } // End of DH_calibration
   
   /*
    * Convert the List<List<Double>> object into double [][]
    */
-  private double[][] toDouble(List<List<Double>> list) {
-	   int rows = list.size();
-	    int cols = list.get(0).size();
+	private double[][] toDouble(List<List<Double>> list) {
+		int rows = list.size();
+		int cols = list.get(0).size();
 
-	    return IntStream.range(0, cols).mapToObj(col ->
-	        IntStream.range(0, rows).mapToDouble(row ->
-	        list.get(row).get(col)
-	        ).toArray()
-	    ).toArray(double[][]::new);
-	}   // End of toDouble
-	    
-  
+		return IntStream.range(0, cols)
+				.mapToObj(col -> IntStream.range(0, rows).mapToDouble(row -> list.get(row).get(col)).toArray())
+				.toArray(double[][]::new);
+	} // End of toDouble
+
   /**
    * Main method for debugging.
    *

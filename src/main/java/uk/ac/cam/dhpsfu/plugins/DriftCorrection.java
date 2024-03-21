@@ -1,3 +1,31 @@
+/*-
+ * #%L
+ * Double Helix PSF SMLM analysis tool.
+ * %%
+ * Copyright (C) 2023 - 2024 Laue Lab
+ * %%
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ * 
+ * 1. Redistributions of source code must retain the above copyright notice,
+ *    this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDERS OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ * #L%
+ */
 package uk.ac.cam.dhpsfu.plugins;
 
 import com.google.gson.Gson;
@@ -38,10 +66,13 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 import java.util.prefs.Preferences;
 
@@ -71,6 +102,7 @@ import javax.imageio.stream.ImageOutputStream;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import ij.ImagePlus;
@@ -96,7 +128,7 @@ public class DriftCorrection implements PlugIn {
     private static String selectedTitle = "";
 
 
-    private static String threed_memory; //the name that you want to store in the fiji memory
+    private static String threed_memory =""; //the name that you want to store in the fiji memory
 
 //    private boolean wl_occasional;
 //    private boolean correction_twice;
@@ -108,6 +140,15 @@ public class DriftCorrection implements PlugIn {
     public static DC_GeneralParas dc_generalParas = new DC_GeneralParas(271,100,20,500);
     public static DC_Paras dc_paras = new DC_Paras(true,true,false,false,true,true,true);
 
+    private static String savePath;
+    //private boolean saveToFile = true; 
+    private String savingFormat = ".3d";
+    
+    
+    // Extra options
+    private boolean saveToFile = true;   
+    private static String input = "";
+    
 
 
     private Checkbox checkbox;
@@ -150,21 +191,26 @@ public class DriftCorrection implements PlugIn {
         //parameters
         Checkbox white_light_occasional = gd.addAndGetCheckbox("White Light occasional", dc_paras.wl_occasional);
         Checkbox correction_twice = gd.addAndGetCheckbox("Drift correction twice", dc_paras.correction_twice);
-        Checkbox flip_x = gd.addAndGetCheckbox("Flip the field of view in x ", dc_paras.flip_x);
-        Checkbox flip_y = gd.addAndGetCheckbox("Flip the field of view in y", dc_paras.flip_y);
-        Checkbox average_drift = gd.addAndGetCheckbox("Average the drift", dc_paras.average_drift);
+        Checkbox flip_x = gd.addAndGetCheckbox("Flip FOV in x ", dc_paras.flip_x);
+        Checkbox flip_y = gd.addAndGetCheckbox("Flip FOV in y", dc_paras.flip_y);
+        Checkbox average_drift = gd.addAndGetCheckbox("Average drifts", dc_paras.average_drift);
         Checkbox group_burst = gd.addAndGetCheckbox("Group burst", dc_paras.group_burst);
 
 
 
-        gd.addNumericField("Pixel size(nm)", dc_generalParas.px_size,1);
+        gd.addNumericField("Pixel size (nm)", dc_generalParas.px_size,1);
         gd.addNumericField("Upsampling factor", dc_generalParas.upFactor);
-        gd.addNumericField("Number of WL frames taken in each burst", dc_generalParas.burst);
-        gd.addNumericField("Number of SR frames in each cycle", dc_generalParas.cycle);
+        gd.addNumericField("No. of WL frames in each burst", dc_generalParas.burst);
+        gd.addNumericField("No. of SR frames in each cycle", dc_generalParas.cycle);
 
         gd.addMessage("File Output:");
         Checkbox save_DC_WL = gd.addAndGetCheckbox("Save drift corrected WL images", dc_paras.save_DC_WL);
-        gd.addDirectoryField("Save_directory", "");
+        gd.addDirectoryField("WL save directory", "");
+       
+        gd.addCheckbox("Saving data", saveToFile);
+        gd.addDirectoryField("Data save directory", "");
+	    String[] formats = {".3d", ".csv"};
+	    gd.addChoice("Saving_format", formats, formats[0]);
 
         showInstruction();
         gd.showDialog();
@@ -172,10 +218,11 @@ public class DriftCorrection implements PlugIn {
         if (gd.wasCanceled()) {
             return false;
         }
-//        wlName = ResultsManager.getInputSource(gd);
+//        wlName = ResultsManagerc.getInputSource(gd);
         threedName = ResultsManager.getInputSource(gd);
         memory3D = load_3D_file.getState();
         IJ.log("3d: "+ memory3D);
+        //input = gd.getNextString();
         memoryWL = wl_image.getState();
         IJ.log("wl: "+ memoryWL);
 
@@ -185,6 +232,10 @@ public class DriftCorrection implements PlugIn {
         IJ.log(selectedTitle);
         WL_path = gd.getNextString();
         saving_directory = gd.getNextString();
+        saveToFile = gd.getNextBoolean();
+	    savePath = gd.getNextString();
+	    savingFormat = gd.getNextChoice();
+
 
 
 
@@ -208,60 +259,36 @@ public class DriftCorrection implements PlugIn {
         dc_generalParas.setCycle(cycle);
 
 
-
-
-
-//        load_3D_file.addItemListener(e -> {
-//            memory1 = load_3D_file.getState();
-//            Label file_directory_3d = null;
-//
-//            Preferences preferences = Preferences.userNodeForPackage(DriftCorrection.class);
-//            if(memory1){
-//                gd.addMessage("select .3d File from ImageJ memory:");
-//                ResultManager.addInput(gd, "", ResultManager.InputSource.MEMORY);
-//
-//            }else{
-//                String defaultDirectory = preferences.get("defaultDirectory", "");
-//                gd.addFilenameField(".3d_File_directory", defaultDirectory);
-//            }
-//            gd.showDialog();
-//            gd.pack();
-//            Component[] cpn = gd.getComponents();
-//            for(Component component : cpn){
-//                IJ.log(component.getClass().getSimpleName());
-//            }
-//        });
-
-
-
-
-
-
-        //
-
-
         return true;
 
     }
     public void showInstruction(){
-        IJ.log(" -------- Brief Instruction about Drift Correction Plugin ---------");
+        IJ.log(" -------- Instruction about Drift Correction Plugin ---------");
         IJ.log(" ");
         IJ.log("    *** If \"Load .3d file from ImageJ memory\" is ticked:");
-        IJ.log("            -Program will use file selected in \".3d file directory\"");
-        IJ.log("            -Else will use saved file in \"Input\" field");
+        IJ.log("            -Program will use file selected in \".3d file directory\".");
+        IJ.log("            -Else will use saved file in \"Input\" field. ");
         IJ.log(" ");
         IJ.log("    *** If \"Load WL image from opened window\" is ticked:");
-        IJ.log("            -Program will use saved image in \"Select opened image\" field");
-        IJ.log("            -Else will use image selected in \".tif file directory\"");
+        IJ.log("            -Program will use saved image in \"Select opened image\" field. ");
+        IJ.log("            -Else will use image selected in \".tif file directory\".");
         IJ.log(" ");
-        IJ.log("    Once you select \"OK\", it will takes 10-20 seconds to calculate the result");
+        IJ.log("    Once you select \"OK\", it will takes 10-20 seconds to calculate the result.");
         IJ.log("    (* Program running time depends on your input data size *)");
-
-        IJ.log("  ");
-        IJ.log(" White light occasional:  False means the WL image and the SR image are taken at the same time, one-to-one ");
-        IJ.log(" Drift correction twice: True means WL-SR-WL, WL-SR-WL, ... False means WL-SR, WL-SR, ... ");
-        IJ.log(" Average drift: If False, average WL images in each burst then calculate drift by averaged images ");
-        IJ.log(" Group burst: If True, average every (burst) frames and drift-correction by the first averaged burst. ");
+        IJ.log(" ");
+        IJ.log(" Parameters: ");
+        IJ.log("   - White light occasional:  True means the WL images are acquired occasionally. False means the WL image and the SR image are taken at the same time, one-to-one. ");
+        IJ.log("   - Drift correction twice: True means WL-SR-WL, WL-SR-WL, ... False means WL-SR, WL-SR, ... ");
+        IJ.log("   - Flip FOV in x/y: True means WL-SR-WL, WL-SR-WL, ... False means WL-SR, WL-SR, ... ");
+        IJ.log("   - Average drifts: Obtain the drift from each WL image and then average. If False, average WL images in each burst first then calculate drift by the averaged images. ");
+        IJ.log("   - Pixel size (nm): Camera pixel size in nm. ");
+        IJ.log("   - Upsampling factor: upsampling factor for cross correlation. Default is 100. ");
+        IJ.log("   - No. of WL frames in each burst: Number of WL frames taken in each burst. ");
+        IJ.log("   - No. of SR frames in each cycle: Number of SR frames taken in each cycle. ");
+        IJ.log(" ");
+        IJ.log(" File output: ");
+        IJ.log("   - Save drift corrected WL images: Save the drift corrected WL images in a TIFF stack. ");
+        IJ.log("   - Save directory: Directory for the drift corrected WL stack. ");
     }
 
     @Override
@@ -289,6 +316,13 @@ public class DriftCorrection implements PlugIn {
                 }
                 ArrayList<ArrayList<Double>> dbf = dCresult.getDrift_by_frame();
                 double[][] dbl = dCresult.getDrift_by_loc();
+                
+                // Save files
+                if (saveToFile = true) {
+                	 List<List<Double>> doubleList = memoryPeakResultToDoubleList(r);
+                    saveTo3D(doubleList, threed_memory, savingFormat, r);
+                    }
+                
 //            writeCorrected(result,"DataCorrected.txt");
 //            writedbf(dbf,"dfb.txt");
 //            writedbl(dbl,"dbl.txt");
@@ -312,13 +346,16 @@ public class DriftCorrection implements PlugIn {
 
                 if (dc_paras.save_DC_WL) {
                     try {
+                    	IJ.log(" ");
                         IJ.log("--- Saving corrected white light image ---");
                         align_wl(WL_path, selectedTitle, dc_paras, dc_generalParas);
                     } catch (Exception e) {
                         throw new RuntimeException(e);
                     }
                 }
+                IJ.log(" ");
                 IJ.log("--- Algorithm finish executing ---");
+                IJ.log(" ");
             }
 //            checkResult(dCresult.getDrift_by_frame(),"Drift by frame");
 //            checkResult(dCresult.getDrift_by_loc(),"Drift by loc");
@@ -333,6 +370,79 @@ public class DriftCorrection implements PlugIn {
         }
     }
     //arr[0] = =[x,y,z,intensity,frame]
+    private List<List<Double>> memoryPeakResultToDoubleList(MemoryPeakResults r) {
+    	List<List<Double>> doubleList = new ArrayList<>();
+        int size = r.size();
+        double[] frame = new double[size];
+        double[] x = new double[size];
+        double[] y = new double[size];
+        double[] z = new double[size];
+        double[] intensity = new double[size];
+        
+        for (int i = 0; i < size; i++) {
+            frame[i] = r.get(i).getFrame();
+            x[i] = r.get(i).getXPosition();
+            y[i] = r.get(i).getYPosition();
+            z[i] = r.get(i).getZPosition();
+            intensity[i] = r.get(i).getIntensity();
+            
+            List<Double> sublist = new ArrayList<>();
+            sublist.add(frame[i]);
+            sublist.add(x[i]);
+            sublist.add(y[i]);
+            sublist.add(z[i]);
+            sublist.add(intensity[i]);
+            doubleList.add(sublist);
+        }
+    	return doubleList;
+    	
+    }
+    
+    
+    
+    
+    
+    /* 
+     * Save the final filtered result to .3D file
+     */ 
+    private void saveTo3D(List<List<Double>> filteredPeakResult, String threed_memory, String savingFormat, MemoryPeakResults r) {
+        //Path outputPath = Paths.get(fileName);
+    	r.setName(threed_memory);
+    	String outputFilename = r.getName() + "_DC";
+    	//IJ.log("Path: " + threed_memory + " ourput: " + outputFilename);
+    	Path outputPath;
+        if (savingFormat == ".3d") {
+        	outputPath = Paths.get(savePath, outputFilename + savingFormat);
+        try (BufferedWriter writer = Files.newBufferedWriter(outputPath)) {
+            for (List<Double> row : filteredPeakResult) {
+                String csvRow = row.stream()
+                        .map(Object::toString)
+                        .collect(Collectors.joining("\t"));
+                writer.write(csvRow);
+                writer.newLine();
+            }
+        } catch (IOException e) {
+            System.err.println("Error writing to file: " + threed_memory);
+            e.printStackTrace();
+        }
+        } else { 
+        	outputPath = Paths.get(savePath, outputFilename + savingFormat);
+        	try (BufferedWriter writer = Files.newBufferedWriter(outputPath)) {
+            for (List<Double> row : filteredPeakResult) {
+                String csvRow = row.stream()
+                        .map(Object::toString)
+                        .collect(Collectors.joining(","));
+                writer.write(csvRow);
+                writer.newLine();
+            }
+        } catch (IOException e) {
+            System.err.println("Error writing to file: " + threed_memory);
+            e.printStackTrace();
+        }
+        	
+        }
+        
+    }   // End of saveTo3D
 
     public static void writedbf(ArrayList<ArrayList<Double>> a,String filename){
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(filename))) {
@@ -495,8 +605,9 @@ public class DriftCorrection implements PlugIn {
         if (threed_result.size() > 0) {
             MemoryPeakResults.addResults(threed_result);
         }
-
+        IJ.log(" ");
         final String msg = "Loaded " + TextUtils.pleural(threed_result.size(), "lines");
+        IJ.log(" ");
         IJ.showStatus(msg);
         ImageJUtils.log(msg);
 
