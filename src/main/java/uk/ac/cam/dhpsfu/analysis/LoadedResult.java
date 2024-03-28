@@ -2,7 +2,7 @@
  * #%L
  * Double Helix PSF SMLM analysis tool.
  * %%
- * Copyright (C) 2023 - 2024 Laue Lab
+ * Copyright (C) 2024 Laue Lab
  * %%
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -31,28 +31,28 @@ package uk.ac.cam.dhpsfu.analysis;
 import uk.ac.sussex.gdsc.smlm.results.MemoryPeakResults;
 
 public class LoadedResult {
-    public  MemoryPeakResults results;
-    public double[][] resultArray;
+	public MemoryPeakResults results;
+	public double[][] resultArray;
 
-    public LoadedResult(MemoryPeakResults results, double[][] resultArray){
-        this.results = results;
-        this.resultArray = resultArray;
+	public LoadedResult(MemoryPeakResults results, double[][] resultArray) {
+		this.results = results;
+		this.resultArray = resultArray;
 
-    }
+	}
 
-    public MemoryPeakResults getResults() {
-        return results;
-    }
+	public MemoryPeakResults getResults() {
+		return results;
+	}
 
-    public void setResults(MemoryPeakResults results) {
-        this.results = results;
-    }
+	public void setResults(MemoryPeakResults results) {
+		this.results = results;
+	}
 
-    public double[][] getResultArray() {
-        return resultArray;
-    }
+	public double[][] getResultArray() {
+		return resultArray;
+	}
 
-    public void setResultArray(double[][] resultArray) {
-        this.resultArray = resultArray;
-    }
+	public void setResultArray(double[][] resultArray) {
+		this.resultArray = resultArray;
+	}
 }

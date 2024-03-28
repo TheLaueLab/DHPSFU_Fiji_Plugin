@@ -2,7 +2,7 @@
  * #%L
  * Double Helix PSF SMLM analysis tool.
  * %%
- * Copyright (C) 2023 - 2024 Laue Lab
+ * Copyright (C) 2024 Laue Lab
  * %%
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -31,26 +31,27 @@ package uk.ac.cam.dhpsfu.analysis;
 import org.apache.commons.math3.complex.Complex;
 
 public class Dftresult {
-        double[] output;
-        Complex[][] Greg;
+	double[] output;
+	Complex[][] Greg;
 
-        public Dftresult(double[] output, Complex[][] Greg) {
-            this.output = output;
-            this.Greg = Greg;
-        }
+	public Dftresult(double[] output, Complex[][] Greg) {
+		this.output = output;
+		this.Greg = Greg;
+	}
 
-        public double[] getOutput(){
-            return output;
-        }
-        public void setOutput(double[] px_size){
-            this.output = output;
-        }
+	public double[] getOutput() {
+		return output;
+	}
 
-        public Complex[][] getGreg(){
-            return Greg;
-        }
-        public void setGreg(Complex[][] Greg){
-            this.Greg = Greg;
-        }
+	public void setOutput(double[] px_size, double[] output) {
+		this.output = output;
+	}
+
+	public Complex[][] getGreg() {
+		return Greg;
+	}
+
+	public void setGreg(Complex[][] Greg) {
+		this.Greg = Greg;
+	}
 }
-

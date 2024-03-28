@@ -2,7 +2,7 @@
  * #%L
  * Double Helix PSF SMLM analysis tool.
  * %%
- * Copyright (C) 2023 - 2024 Laue Lab
+ * Copyright (C) 2024 Laue Lab
  * %%
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -28,8 +28,6 @@
  */
 package uk.ac.cam.dhpsfu.analysis;
 
-import org.apache.commons.math3.complex.Complex;
-
 import java.util.ArrayList;
 
 public class DCresult {
@@ -43,7 +41,7 @@ public class DCresult {
         this.drift_by_loc = drift_by_loc;
     }
 
-    public ArrayList<double[]> getData_corrected() {
+	public ArrayList<double[]> getData_corrected() {
         return data_corrected;
     }
 

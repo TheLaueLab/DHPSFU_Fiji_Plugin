@@ -3,7 +3,7 @@
  * #%L
  * Double Helix PSF SMLM analysis tool.
  * %%
- * Copyright (C) 2023 - 2024 Laue Lab
+ * Copyright (C) 2024 Laue Lab
  * %%
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -29,31 +29,32 @@
  */
 
 package uk.ac.cam.dhpsfu.analysis;
+
 /**
  * Gets a data value from a peak result.
  *
  * @param <E> the element type
  */
 public interface PeakResultDataGDSC<E> {
-  /**
-   * Gets the value of the result.
-   *
-   * @param result the result
-   * @return the value
-   */
-  E getValue(PeakResultDHPSFU result);
+	/**
+	 * Gets the value of the result.
+	 *
+	 * @param result the result
+	 * @return the value
+	 */
+	E getValue(PeakResultDHPSFU result);
 
-  /**
-   * Gets the name of the value.
-   *
-   * @return the name
-   */
-  String getValueName();
+	/**
+	 * Gets the name of the value.
+	 *
+	 * @return the name
+	 */
+	String getValueName();
 
-  /**
-   * Gets the class type of the value.
-   *
-   * @return the name
-   */
-  Class<E> getValueClass();
+	/**
+	 * Gets the class type of the value.
+	 *
+	 * @return the name
+	 */
+	Class<E> getValueClass();
 }

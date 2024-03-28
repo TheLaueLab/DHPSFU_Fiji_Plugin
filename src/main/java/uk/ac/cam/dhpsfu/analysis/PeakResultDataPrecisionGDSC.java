@@ -4,7 +4,7 @@ package uk.ac.cam.dhpsfu.analysis;
  * #%L
  * Double Helix PSF SMLM analysis tool.
  * %%
- * Copyright (C) 2023 - 2024 Laue Lab
+ * Copyright (C) 2024 Laue Lab
  * %%
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -31,15 +31,16 @@ package uk.ac.cam.dhpsfu.analysis;
 
 import uk.ac.sussex.gdsc.smlm.results.data.PeakResultDataDouble;
 import uk.ac.sussex.gdsc.smlm.results.data.PeakResultDataPrecision;
+
 /**
  * Gets the precision from a result.
  */
 public class PeakResultDataPrecisionGDSC extends PeakResultDataPrecision implements PeakResultDataDouble {
-  public float getValue(PeakResultDHPSFU result) {
-    return result.getThePrecision();
-  }
+	public float getValue(PeakResultDHPSFU result) {
+		return result.getThePrecision();
+	}
 
-  public String getValueName() {
-    return "Precision";
-  }
+	public String getValueName() {
+		return "Precision";
+	}
 }

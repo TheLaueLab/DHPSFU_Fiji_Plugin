@@ -2,7 +2,7 @@
  * #%L
  * Double Helix PSF SMLM analysis tool.
  * %%
- * Copyright (C) 2023 - 2024 Laue Lab
+ * Copyright (C) 2024 Laue Lab
  * %%
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -30,7 +30,6 @@ package uk.ac.cam.dhpsfu.analysis;
 
 import java.io.IOException;
 import java.nio.file.Paths;
-import java.util.Collection;
 import java.util.SplittableRandom;
 import uk.ac.sussex.gdsc.smlm.data.config.CalibrationProtos.CameraType;
 import uk.ac.sussex.gdsc.smlm.data.config.CalibrationWriter;
@@ -112,9 +111,6 @@ public class CalibData {
 		      parameters[PeakResultDHPSFU.STANDARD_PARAMETERS] = s;
 		     
 		   
-		      
-		      // Set noise assuming photons have a Poisson distribution
-		      float noise = (float) Math.sqrt(parameters[PeakResultDHPSFU.INTENSITY]);
 		      
 		      //double precision = (double) rng.nextDouble(minPrecision);
 		      //PeakResult r = new PeakResult(t, (int) x, (int) y, 0, 0, noise, meanIntensity, params, null);

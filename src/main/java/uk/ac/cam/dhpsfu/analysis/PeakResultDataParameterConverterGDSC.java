@@ -4,7 +4,7 @@ package uk.ac.cam.dhpsfu.analysis;
  * #%L
  * Double Helix PSF SMLM analysis tool.
  * %%
- * Copyright (C) 2023 - 2024 Laue Lab
+ * Copyright (C) 2024 Laue Lab
  * %%
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -36,29 +36,28 @@ import uk.ac.sussex.gdsc.core.data.utils.Converter;
  * Gets a parameter data value from a result.
  */
 public abstract class PeakResultDataParameterConverterGDSC extends PeakResultDataParameterConverter {
-  /** The parameter index. */
-  public final int index;
-  final Converter converter;
+	/** The parameter index. */
+	public final int index;
+	final Converter converter;
 
+	/**
+	 * Instantiates a new peak result parameter value.
+	 *
+	 * @param converter the converter
+	 * @param index     the index
+	 */
+	public PeakResultDataParameterConverterGDSC(Converter converter, int index) {
+		super(converter, index);
+		this.index = index;
+		this.converter = converter;
+	}
 
-  /**
-   * Instantiates a new peak result parameter value.
-   *
-   * @param converter the converter
-   * @param index the index
-   */
-  public PeakResultDataParameterConverterGDSC(Converter converter, int index) {
-	  super(converter, index);
-	  this.index = index;
-	this.converter = converter;
-  }
+	public Float getValue(PeakResultDHPSFU result) {
+		return converter.convert(result.getParameter(index));
+	}
 
-  public Float getValue(PeakResultDHPSFU result) {
-	return converter.convert(result.getParameter(index));
-  }
-
-  @Override
-  public String getValueName() {
-    return PeakResultDHPSFU.getParameterName(index);
-  }
+	@Override
+	public String getValueName() {
+		return PeakResultDHPSFU.getParameterName(index);
+	}
 }

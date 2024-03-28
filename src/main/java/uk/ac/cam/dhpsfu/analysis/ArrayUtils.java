@@ -2,7 +2,7 @@
  * #%L
  * Double Helix PSF SMLM analysis tool.
  * %%
- * Copyright (C) 2023 - 2024 Laue Lab
+ * Copyright (C) 2024 Laue Lab
  * %%
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -30,14 +30,12 @@ package uk.ac.cam.dhpsfu.analysis;
 
 public class ArrayUtils {
 	public static double[] getColumn(double[][] data, int columnIndex) {
-        int numRows = data.length;
-        double[] column = new double[numRows];
+		int numRows = data.length;
+		double[] column = new double[numRows];
 
-        for (int i = 0; i < numRows; i++) {
-            column[i] = data[i][columnIndex];
-        }
-
-        return column;
-    }
-
+		for (int i = 0; i < numRows; i++) {
+			column[i] = data[i][columnIndex];
+		}
+		return column;
+	}
 }
