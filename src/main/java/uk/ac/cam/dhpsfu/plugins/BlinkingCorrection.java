@@ -61,7 +61,7 @@ public class BlinkingCorrection implements PlugIn {
 	private static final String TITLE = "Blinking Correction";
 	private static String input = ""; // Input dataset name
 	private static String name1 = "File"; // Dataset name
-	private static String PixUnit = "Pixel";
+	// private static String PixUnit = "Pixel";
 
 	// Parameters for blinking correctio
 	private int numDimension = 3; // Pixel size in nm
@@ -74,6 +74,7 @@ public class BlinkingCorrection implements PlugIn {
 	// Extra options
 	private boolean saveToFile;
 	private boolean saveInfoToFile;
+	private boolean saveAssignedTrack;
 
 	@Override
 	public void run(String arg) {
@@ -89,36 +90,38 @@ public class BlinkingCorrection implements PlugIn {
 		ResultsManager.addInput(gd, input, InputSource.MEMORY);
 		gd.addMessage("Parameters: ");
 		// gd.addCheckbox("Is data unit in Pixel?", PixUnit);
-		String[] formats = { "Pixel", "nm" };
-		gd.addChoice("Distance Unit", formats, formats[1]);
+		// String[] formats = { "Pixel", "nm" };
+		// gd.addChoice("Distance Unit", formats, formats[0]);
 		gd.addNumericField("Pixel size", pxSize, 1);
 		gd.addNumericField("Dimensions", numDimension, 0);
 		gd.addNumericField("MaxJumpDist", maxJumpDist, 0);
 		gd.addNumericField("MaxFrameGap", maxFrameGap, 0);
-		gd.addNumericField("MinNumLocs", minNumPos, 1);
+		gd.addNumericField("MinNumLocs", minNumPos, 0);
 		gd.addMessage("File output:");
 		gd.addCheckbox("Save corrected localisations", saveToFile);
 		gd.addCheckbox("Save track info", saveInfoToFile);
+		gd.addCheckbox("Save assigned track", saveAssignedTrack);
 		gd.addDirectoryField("Save_directory", "");
 		String html = "<html>" + "<h2>Instruction about Blinking Correction Plugin</h2>"
 		// +"<font size=+1>"
 				+ "*** For temporal grouping of localisations ***<br>" + "<br>"
-				+ "  - Input data: DHPSFU processed .3d format files from <font color=red>MEMORY</font>. <br>"
+				+ "  - Input data: a list of 3D localisations in <font color=red>FIJI MEMORY</font> (in .3d format: tab-separated “x y z Intensity Frame”. <br>"
 				+ "               (You can load file from directory using the Load Localisation function) <br>"
 				+ "  - Need to spefify the distance unit of the data, Pixel or nm. <br>"
-				+ "  - Make sure you choose the <font color=red>CORRECT DISTANCE UNIT</font> of the data. It might be different when you import the file from directory. <br>"
-				+ "<br>" + "Parameters:  <br>" + "  - Dimensions: Dimension of the data. Default = 3.  <br>"
-				+ "  - MaxJumpDist: Maximum jump distance allowed between frames.  <br>"
-				+ "  - MaxFrameGap: Mmaximum change in frame number for two consecutive positions on track.  <br>"
-				+ "  - MinNumLocs: Minimum number of localisations on track to be further considered.  <br>" + "<br>"
-				+ "File output:  <br>"
-				+ "  - Save corrected localisations: Tick if you want to save the corrected localisations into file. File format is also .3d.  <br>"
-				+ "  - Save track info: Tick if you want to save all track info into a file. File format is .csv.  <br>"
-				+ "<br>" + "Columns in Track_info.csv:  <br>" + "  - # track: number of track.  <br>"
-				+ "  - numberPositions: number of localisations within this track.  <br>"
-				+ "  - deltaFrame: frame difference within track.  <br>"
-				+ "  - averageIntensity/averageX/averageY/averageZ: average intensity/x/y/z of all localisations within this track. <br>"
-				+ "<br>" + "</font>";
+				+ "  - Make sure to choose the <font color=red>CORRECT DISTANCE UNIT</font> of the data. It might be different when you import the file from directory. <br>"
+				+ "<br>" + "Parameters:  <br>" + "  - Dimensions: Number of dimensions of the data. Default = 3.  <br>"
+				+ "  - MaxJumpDist: Maximum jump distance allowed between frames to count the two localisations as originating from the same molecule.   <br>"
+				+ "  - MaxFrameGap: Mmaximum change in frame number for two consecutive positions of the same molecule.  <br>"
+				+ "  - MinNumLocs: A filter on the minimum number of localisations originating from the same molecule.  <br>"
+				+ "<br>" + "File output:  <br>"
+				+ "  - Save corrected localisations: save the average coordinate of each molecule into a new .3d (tab-separarted “x y z Intensity Frame”) file.   <br>"
+				+ "  - Save track info: save additional track info into a Track_info.csv, containing: <br>"
+				+ "  ** # track: number of track.  <br>"
+				+ "  ** numberPositions: number of localisations within this track.  <br>"
+				+ "  ** deltaFrame: the number of frames this track covers, i.e. last frame – first frame.  <br>"
+				+ "  ** averageIntensity/averageX/averageY/averageZ: average intensity/x/y/z of all localisations within this track. <br>"
+				+ "  - Save assigned track: save the original localisations and track assignment, containing: <br>"
+				+ "  ** # track, x, y, z, internsity, frame  <br>" + "<br>" + "</font>";
 		gd.addHelp(html);
 		gd.showDialog();
 		if (gd.wasCanceled()) {
@@ -131,7 +134,7 @@ public class BlinkingCorrection implements PlugIn {
 		} else {
 			ResultsManager.loadInputResults(input, true, DistanceUnit.NM, IntensityUnit.PHOTON);
 		}
-		PixUnit = gd.getNextChoice();
+		// PixUnit = gd.getNextChoice();
 		pxSize = gd.getNextNumber();
 		numDimension = (int) gd.getNextNumber();
 		maxJumpDist = gd.getNextNumber();
@@ -139,13 +142,14 @@ public class BlinkingCorrection implements PlugIn {
 		minNumPos = (int) gd.getNextNumber();
 		saveToFile = gd.getNextBoolean();
 		saveInfoToFile = gd.getNextBoolean();
+		saveAssignedTrack = gd.getNextBoolean();
 		savePath = gd.getNextString();
 		name1 = input;
 		System.out.print(name1);
 		return true;
 	} // End of shoeDialog
 
-	private static double[][] resultToArray(MemoryPeakResults results, String PixUnit, double pxSize) {
+	private static double[][] resultToArray(MemoryPeakResults results, double pxSize) {
 		if (MemoryPeakResults.isEmpty(results)) {
 			IJ.error(TITLE, "No results could be loaded");
 		}
@@ -153,11 +157,11 @@ public class BlinkingCorrection implements PlugIn {
 		System.out.println("Size" + size);
 		double[][] r = new double[size][5];
 		for (int i = 0; i < size; i++) {
-			if (PixUnit == "Pixel") {
+			if (results.getDistanceUnit() == DistanceUnit.PIXEL) {
 				r[i][0] = results.get(i).getXPosition() * pxSize;
 				r[i][1] = results.get(i).getYPosition() * pxSize;
 				r[i][2] = results.get(i).getZPosition() * pxSize;
-			} else {
+			} else if (results.getDistanceUnit() == DistanceUnit.NM) {
 				r[i][0] = results.get(i).getXPosition();
 				r[i][1] = results.get(i).getYPosition();
 				r[i][2] = results.get(i).getZPosition();
@@ -221,6 +225,9 @@ public class BlinkingCorrection implements PlugIn {
 				filteredTracks.add(track);
 			}
 		}
+		// Sort the filteredTracks based on frame
+		Collections.sort(filteredTracks, Comparator.comparingInt(track -> track.frame.get(0)));
+
 		final String msg = "Number of tracks after filtering for >= " + minNumPositions + " positions = "
 				+ filteredTracks.size();
 		IJ.showStatus(msg);
@@ -298,7 +305,7 @@ public class BlinkingCorrection implements PlugIn {
 		return result;
 	} // End of saveTracksToMemory
 
-	public void writeTracksSummaryToFile(List<BC_track> tracks, String fileName) {
+	private void writeTracksSummaryToFile(List<BC_track> tracks, String fileName) {
 		try (BufferedWriter writer = new BufferedWriter(new FileWriter(fileName))) {
 			writer.write("# track, numberPositions, deltaFrames, averageIntensity, averageX,averageY,averageZ");
 			writer.newLine();
@@ -315,6 +322,43 @@ public class BlinkingCorrection implements PlugIn {
 			e.printStackTrace();
 		}
 	} // End of writeTracksSummaryToFile
+
+	private void saveTracks(List<BC_track> tracks, String fileName) {
+		try (BufferedWriter writer = new BufferedWriter(new FileWriter(fileName))) {
+			writer.write("#track,x,y,z,intensity,frame\n");
+
+			for (int n = 0; n < tracks.size(); n++) {
+				BC_track track = tracks.get(n);
+
+				List<Double> x = track.getX_list();
+				List<Double> y = track.getY_list();
+				List<Double> z = track.getZ_list();
+				List<Integer> frames = track.getFrame_list();
+				List<Double> intensities = track.getI_list();
+
+				for (int i = 0; i < frames.size(); i++) {
+					double position0, position1, position2;
+					int frame = frames.get(i);
+					double intensity = intensities.get(i);
+
+					if (x.size() <= i || y.size() <= i || z.size() <= i) {
+						// Handle the case where there are not enough positions
+						position0 = position1 = position2 = 0.0;
+					} else {
+						position0 = x.get(i);
+						position1 = y.get(i);
+						position2 = z.get(i);
+					}
+
+					String[] fields = { String.valueOf(n + 1), String.valueOf(position0), String.valueOf(position1),
+							String.valueOf(position2), String.valueOf(intensity), String.valueOf(frame) };
+					writer.write(String.join(",", fields) + "\n");
+				}
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	} // End of saveTracks
 
 	private void viewInfoResult(List<BC_track> tracks) {
 		double[] xArray = new double[tracks.size()];
@@ -345,12 +389,46 @@ public class BlinkingCorrection implements PlugIn {
 		t.setValues("# Track", trackNumbers);
 		t.setValues("numberPositions", posNum);
 		t.setValues("deltaFrames", FrameDelta);
-		t.setValues("averageIntensity", IArray);
+		t.setValues("average Intensity", IArray);
 		t.setValues("Average X", xArray);
 		t.setValues("Average Y", yArray);
 		t.setValues("Average Z", zArray);
 		t.show("Track info");
 	} // End of viewInfoResult
+
+	private void viewTrackResults(List<BC_track> tracks) {
+		ResultsTable table = new ResultsTable();
+		for (int n = 0; n < tracks.size(); n++) {
+			BC_track track = tracks.get(n);
+			List<Double> x = track.getX_list();
+			List<Double> y = track.getY_list();
+			List<Double> z = track.getZ_list();
+			List<Integer> frames = track.getFrame_list();
+			List<Double> intensities = track.getI_list();
+			for (int i = 0; i < frames.size(); i++) {
+				double position0, position1, position2, intensity;
+				int frame;
+				if (x.size() <= i || y.size() <= i || z.size() <= i || frames.size() <= i || intensities.size() <= i) {
+					position0 = position1 = position2 = intensity = 0.0;
+					frame = 0;
+				} else {
+					position0 = x.get(i);
+					position1 = y.get(i);
+					position2 = z.get(i);
+					intensity = intensities.get(i);
+					frame = frames.get(i);
+				}
+				table.incrementCounter();
+				table.addValue("# Track", n + 1);
+				table.addValue("X", position0);
+				table.addValue("Y", position1);
+				table.addValue("Z", position2);
+				table.addValue("Intensity", intensity);
+				table.addValue("Frame", frame);
+			}
+		}
+		table.show("Track assigned results");
+	} // End of viewTrackResults
 
 	private double[][] toDouble(List<List<Double>> list) {
 		int rows = list.size();
@@ -360,8 +438,8 @@ public class BlinkingCorrection implements PlugIn {
 				.toArray(double[][]::new);
 	} // End of toDouble
 
-	private MemoryPeakResults saveToMemory(List<List<Double>> result) {
-		String name = "Corrected Result";
+	private MemoryPeakResults saveToMemory(String input, List<List<Double>> result) {
+		String name = input + "_BC";
 		double[][] doubleFilteredPeakResult = toDouble(result);
 		double[] frame = doubleFilteredPeakResult[4];
 		double[] x = doubleFilteredPeakResult[0];
@@ -395,35 +473,36 @@ public class BlinkingCorrection implements PlugIn {
 		double[] z = doubleFilteredPeakResult[2];
 		double[] intensity = doubleFilteredPeakResult[3];
 		ResultsTable t = new ResultsTable();
-		t.setValues("X (px)", x);
-		t.setValues("Y (px)", y);
-		t.setValues("Z (px)", z);
-		t.setValues("Intensity (photon)", intensity);
+		t.setValues("X", x);
+		t.setValues("Y", y);
+		t.setValues("Z", z);
+		t.setValues("Intensity", intensity);
 		t.setValues("Frame", frame);
-		t.show("Corrected results");
+		t.show("Blinking corrected results");
 	} // End of view3DResult
 
 	private void blinkingCorrection() {
 		double[][] threed_data;
 		IJ.log("load from memory: " + name1);
 		MemoryPeakResults r = MemoryPeakResults.getResults(name1);
-		CalibrationWriter cw1 = new CalibrationWriter();
-		cw1.setIntensityUnit(IntensityUnit.PHOTON);
-		cw1.setDistanceUnit(DistanceUnit.PIXEL);
-		cw1.setTimeUnit(TimeUnit.FRAME);
-		cw1.setExposureTime(50);
-		cw1.setNmPerPixel(pxSize);
-		cw1.setCountPerPhoton(45);
-		cw1.getBuilder().getCameraCalibrationBuilder().setCameraType(CameraType.EMCCD).setBias(100)
-				.setQuantumEfficiency(0.95).setReadNoise(1.6);
-		r.setCalibration(cw1.getCalibration());
-		threed_data = resultToArray(r, PixUnit, pxSize);
+//		CalibrationWriter cw1 = new CalibrationWriter();
+//		cw1.setIntensityUnit(IntensityUnit.PHOTON);
+//		cw1.setDistanceUnit(DistanceUnit.PIXEL);
+//		cw1.setTimeUnit(TimeUnit.FRAME);
+//		cw1.setExposureTime(50);
+//		cw1.setNmPerPixel(pxSize);
+//		cw1.setCountPerPhoton(45);
+//		cw1.getBuilder().getCameraCalibrationBuilder().setCameraType(CameraType.EMCCD).setBias(100)
+//				.setQuantumEfficiency(0.95).setReadNoise(1.6);
+//		r.setCalibration(cw1.getCalibration());
+		threed_data = resultToArray(r, pxSize);
 		System.out.print(threed_data.length + " = Row");
 		System.out.print(threed_data[1].length + " = Column");
 		List<BC_track> filteredTracks = determineTracks(threed_data, maxJumpDist, maxFrameGap, minNumPos);
 		List<List<Double>> result = saveTracksToMemory(filteredTracks);
 		view3DResult(result);
 		viewInfoResult(filteredTracks);
+		viewTrackResults(filteredTracks);
 		System.out.print(saveToFile);
 		System.out.print(saveInfoToFile);
 		if (saveToFile == true) {
@@ -435,7 +514,11 @@ public class BlinkingCorrection implements PlugIn {
 			String saveInfoPath = savePath + name1 + "_Track_Info.csv";
 			writeTracksSummaryToFile(filteredTracks, saveInfoPath);
 		}
-		MemoryPeakResults finalResult = saveToMemory(result);
+		if (saveAssignedTrack == true) {
+			String savePath3 = savePath + name1 + "_Assigned.csv";
+			saveTracks(filteredTracks, savePath3);
+		}
+		MemoryPeakResults finalResult = saveToMemory(name1, result);
 		MemoryPeakResults.addResults(finalResult);
 		CalibrationWriter cw = finalResult.getCalibrationWriterSafe();
 		cw.setIntensityUnit(IntensityUnit.PHOTON);

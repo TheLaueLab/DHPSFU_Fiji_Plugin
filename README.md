@@ -1,89 +1,85 @@
-This is an example Maven project implementing an ImageJ 1.x plugin that
-uses the [GDSC SMLM ImageJ](https://github.com/aherbert/gdsc-smlm) library.
+DHPSFU - An ImageJ Plugins for Double Helix PSF Analysis 
+===========================================================
 
-This is based on the example for an **original ImageJ plugin**, see:
-    https://github.com/imagej/example-legacy-plugin.
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
-For an example Maven project implementing an **ImageJ2 command**, see:
-    https://github.com/imagej/example-imagej2-command
+The DHPSFU plugin provides a suite of tools for analysing 3D SMLM/SPT data obtained using Double Helix (DH) PSF microscopy. 
 
-It is intended as an ideal starting point to develop new ImageJ 1.x plugins
-in an IDE of your choice. You can even collaborate with developers using a
-different IDE than you.
+Features:
 
-* In [Eclipse](http://eclipse.org), for example, it is as simple as
-  _File &#8250; Import... &#8250; Existing Maven Project_.
+- DHPSFU: 
+Converts a list of 2D localisations into 3D coordinates. 
+Requires a DH calibration file and a 2D data file.
+Outputs the 3D coordinates into a tab-separated file (.3d) in “x y z Intensity Frame” format.  
 
-* In [NetBeans](http://netbeans.org), it is even simpler:
-  _File &#8250; Open Project_.
+- DHPSFU-Multibeads:
+On top of DHPSFU, corrects lateral spatial variation of the DH across the FOV.
+Requires multiple calibration files from different parts of the imaging FOV. 
+Outputs the 3D coordinates into a tab-separated file (.3d) in “x y z Intensity Frame” format.  
 
-* The same works in [IntelliJ](http://jetbrains.net).
+- Drift Correction:
+Corrects drift during acquisition using cross-correlation of images of the same imaging sample. 
+Inspired by and developed from Mennella et al.
 
-* If [jEdit](http://jedit.org) is your preferred IDE, you will need the
-  [Maven Plugin](http://plugins.jedit.org/plugins/?MavenPlugin).
+- Blinking Correction:
+Temporal grouping or tracking of localisations.
 
-Die-hard command-line developers can use Maven directly by calling `mvn`
-in the project root.
+- Overlay: 
+Overlays the results onto the raw image stack.
 
-However you build the project, in the end you will have the `.jar` file
-(called *artifact* in Maven speak) in the `target/` subdirectory.
+- Load File Localisations: 
+Loads a list of 2D/3D localisations from file to FIJI memory.
+Available pre-defined formats are GDSC PeakFit output file (.xls) for 2D localisations and ViSP format (.3d) for 3D localisations.
+Any other format can be loaded by specifying custom columns.
 
-To copy the artifact into the correct place, you can call
+- View and Save localisations:
+Savse results to a table, a file, an image and/or to FIJI memory
+Creates localisation density images.
 
-    mvn -Dscijava.app.directory="/path/to/ImageJ.app/"
 
-This will not only copy your artifact, but also all the dependencies. Restart
-your ImageJ or call *Help &#8250; Refresh Menus* to see your plugin in the menus.
+Installation
+------------
 
-Developing code in an IDE is convenient, especially for debugging.
-To that end, the plugin contains a `main` method which sets the `plugins.dir`
-system property and adds the plugin to the Plugins menu, starts
-ImageJ, and runs the plugin. See also
-[this page](https://imagej.net/Debugging#Debugging_plugins_in_an_IDE_.28Netbeans.2C_IntelliJ.2C_Eclipse.2C_etc.29)
-for information how ImageJ makes it easier to debug in IDEs.
+The DHPSFU plugins are distributed using an ImageJ2/Fiji update site.
 
-This project is intended as a starting point for your own developments.
+To install the plugins using Fiji (an ImageJ distribution) just follow the
+instructions [How_to_follow_a_3rd_party_update_site](http://fiji.sc/How_to_follow_a_3rd_party_update_site)
+and add the DHPSFU update site. All the plugins will appear under the 'Plugins > DHPSFU' menu.
 
-How to use this project as a starting point
-===========================================
 
-1. Visit [this link](https://github.com/aherbert/gdsc-smlm-ij-examples-plugin/generate)
-   to create a new repository in your space using this one as a template.
+Documentation
+-------------
 
-2. [Clone your new repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository).
+For detailed instructions on how to use the plugin, click the 'Help' button provided within the interface. 
+This will provide you with guidance on how to use the function and explanations for each parameter.
 
-3. Edit the `pom.xml` file, fixing all the lines labelled `FIXME`.
-   In particular, change
-    1. the *artifactId* (**NOTE**: should contain a '_' character)
-    2. the *groupId*, ideally to a reverse domain name your organization owns
-    3. the *version* (note that you typically want to use a version number
-       ending in *-SNAPSHOT* to mark it as a work in progress rather than a
-       final version)
-    4. the *dependencies* (read how to specify the correct
-       *groupId/artifactId/version* triplet
-       [here](https://imagej.net/Maven#How_to_find_a_dependency.27s_groupId.2FartifactId.2Fversion_.28GAV.29.3F))
-    5. the *developer* information
-    6. the *scm* information
 
-4. Remove the example `.java` files and add your own `.java` files
-   to `src/main/java/<package>/` (if you need supporting files -- like icons
-   -- in the resulting `.jar` file, put them into `src/main/resources/`)
+Modifying the source
+--------------------
 
-5. Edit `src/main/resources/plugins.config`
+The source code is accessed using git and built using Maven.
+The code depends on the GDSC SMLM plugin (https://github.com/aherbert/gdsc-smlm).  
+you will have to install these to your local Maven repository before building:
+The DHPSF code was developed using the [Eclipse IDE](https://eclipse.org/).
 
-6. Replace the contents of `README.md` with information about your project.
+License
+-------
 
-7. Make your initial
-   [commit](https://docs.github.com/en/desktop/contributing-and-collaborating-using-github-desktop/making-changes-in-a-branch/committing-and-reviewing-changes-to-your-project) and
-   [push the results](https://docs.github.com/en/get-started/using-git/pushing-commits-to-a-remote-repository)!
+DHPSFU is licensed under the GNU General Public License v3.0. See [LICENSE](LICENSE.txt)
 
-### Eclipse: To ensure that Maven copies the plugin to your ImageJ folder
 
-1. Go to _Run Configurations..._
-2. Choose _Maven Build_
-3. Add the following parameter:
-    - name: `scijava.app.directory`
-    - value: `/path/to/ImageJ.app/`
+# About #
 
-This ensures that the final `.jar` file will also be copied
-into your ImageJ plugins folder everytime you run the Maven build.
+###### Authors ######
+Dr Ziwei Zhang, Department of Chemistry, University of Cambridge
+Dr Alex Herbert, School of Life Sciences, University of Sussex
+Siqi Liu, Department of Computer Science, University of St Andrews
+
+###### Other contributors ######
+Dr Aleks Ponjavic, School of Physics and Astronomy, University of Leeds
+Dr Aleksandra Ochirova, Department of Biochemistry, University of Cambridge
+
+
+###### Owner(s) ######
+The Laue Lab, Department of Biochemistry, University of Cambridge
+

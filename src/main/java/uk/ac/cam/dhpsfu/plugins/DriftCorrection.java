@@ -49,10 +49,13 @@ import org.jfree.chart.ui.RectangleEdge;
 import org.jfree.chart.ui.RectangleInsets;
 import org.jtransforms.fft.DoubleFFT_2D;
 import uk.ac.cam.dhpsfu.analysis.*;
-import uk.ac.sussex.gdsc.core.ij.ImageJUtils;
 import uk.ac.sussex.gdsc.core.ij.gui.ExtendedGenericDialog;
 import uk.ac.sussex.gdsc.core.utils.SimpleArrayUtils;
-import uk.ac.sussex.gdsc.core.utils.TextUtils;
+import uk.ac.sussex.gdsc.smlm.data.config.CalibrationWriter;
+import uk.ac.sussex.gdsc.smlm.data.config.CalibrationProtos.CameraType;
+import uk.ac.sussex.gdsc.smlm.data.config.UnitProtos.DistanceUnit;
+import uk.ac.sussex.gdsc.smlm.data.config.UnitProtos.IntensityUnit;
+import uk.ac.sussex.gdsc.smlm.data.config.UnitProtos.TimeUnit;
 import uk.ac.sussex.gdsc.smlm.ij.plugins.ResultsManager;
 
 import java.awt.*;
@@ -71,10 +74,6 @@ import java.util.prefs.Preferences;
 import uk.ac.sussex.gdsc.smlm.ij.plugins.SmlmUsageTracker;
 import uk.ac.sussex.gdsc.smlm.results.MemoryPeakResults;
 import uk.ac.sussex.gdsc.smlm.results.PeakResult;
-
-import java.awt.event.ItemEvent;
-import java.awt.event.ItemListener;
-
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
@@ -91,8 +90,8 @@ import ij.ImageStack;
 import ij.process.FloatProcessor;
 
 public class DriftCorrection implements PlugIn {
-	private static final String TITLE = "Drift_correction";
-	private static boolean memory3D = false;
+	private static final String TITLE = "Drift Correction";
+	// private static boolean memory3D = true;
 	private static boolean memoryWL = false;
 
 	private double px_size;
@@ -103,12 +102,13 @@ public class DriftCorrection implements PlugIn {
 	private static String threed_path;
 	private static String saving_directory = "";
 
-	private static String threedName = "";
+	// private static String threedName = "";
 	private static String selectedTitle = "";
+	private static String average_drift = "";
 
 	private static String threed_memory = ""; // the name that you want to store in the fiji memory
-	public static DC_GeneralParas dc_generalParas = new DC_GeneralParas(271, 100, 20, 500);
-	public static DC_Paras dc_paras = new DC_Paras(true, true, false, false, true, true, true);
+	public static DC_GeneralParas dc_generalParas = new DC_GeneralParas(210, 100, 20, 500);
+	public static DC_Paras dc_paras = new DC_Paras(false, false, false, false, average_drift, false, true);
 	private static String savePath;
 	private String savingFormat = ".3d";
 
@@ -117,17 +117,19 @@ public class DriftCorrection implements PlugIn {
 
 	private boolean showDialog() {
 		final ExtendedGenericDialog gd = new ExtendedGenericDialog(TITLE);
-		gd.addCheckbox("Load .3d file from ImageJ memory", memory3D);
-		final Checkbox load_3D_file = gd.getLastCheckbox();
-		memory3D = load_3D_file.getState();
-		Preferences.userNodeForPackage(DriftCorrection.class);	
+		gd.addMessage("Load .3d file from ImageJ memory:");
+		// gd.addCheckbox("Load .3d file from ImageJ memory", memory3D);
+		// final Checkbox load_3D_file = gd.getLastCheckbox();
+		// memory3D = true;
+		Preferences.userNodeForPackage(DriftCorrection.class);
 //		// 3d file input
 		ResultManager.addInput(gd, "--Please Select--", ResultManager.InputSource.MEMORY);
-		gd.addMessage("select .3d File from File Directory:");
-		gd.addFilenameField(".3d_File_directory", "--Please Select--");
-		gd.addStringField("File_name", "3D");
+
+		// gd.addMessage("select .3d File from File Directory:");
+		// gd.addFilenameField(".3d_File_directory", "--Please Select--");
+		// gd.addStringField("File_name", "3D");
 		// white light image input
-		gd.addCheckbox("Load WL image from opened window", memoryWL);
+		gd.addCheckbox("Load Ref image from opened window", memoryWL);
 		Checkbox wl_image = gd.getLastCheckbox();
 		memoryWL = wl_image.getState();
 		String[] imageTitles = WindowManager.getImageTitles();
@@ -136,73 +138,79 @@ public class DriftCorrection implements PlugIn {
 		} else {
 			gd.addChoice("Select opened image", new String[] { "No Image Opened" }, "No Image Opened");
 		}
-		gd.addMessage("Select WL image from File Directory ");
+		gd.addMessage("Select Ref image from File Directory ");
 		gd.addFilenameField(".tif_File_directory", "--Please Select--");
 		// parameters
-		Checkbox white_light_occasional = gd.addAndGetCheckbox("White Light occasional", dc_paras.wl_occasional);
+		Checkbox white_light_occasional = gd.addAndGetCheckbox("Ref occasional", dc_paras.wl_occasional);
 		Checkbox correction_twice = gd.addAndGetCheckbox("Drift correction twice", dc_paras.correction_twice);
-		Checkbox flip_x = gd.addAndGetCheckbox("Flip FOV in x ", dc_paras.flip_x);
-		Checkbox flip_y = gd.addAndGetCheckbox("Flip FOV in y", dc_paras.flip_y);
-		Checkbox average_drift = gd.addAndGetCheckbox("Average drifts", dc_paras.average_drift);
-		Checkbox group_burst = gd.addAndGetCheckbox("Group burst", dc_paras.group_burst);
+		// Checkbox flip_x = gd.addAndGetCheckbox("Flip FOV in x ", dc_paras.flip_x);
+		// Checkbox flip_y = gd.addAndGetCheckbox("Flip FOV in y", dc_paras.flip_y);
+		String[] formats = { "Average drift", "Average image" };
+		gd.addChoice("Drift averaging", formats, formats[1]);
+		// Checkbox group_burst = gd.addAndGetCheckbox("Group burst",
+		// dc_paras.group_burst);
 		gd.addNumericField("Pixel size (nm)", dc_generalParas.px_size, 1);
 		gd.addNumericField("Upsampling factor", dc_generalParas.upFactor);
-		gd.addNumericField("No. of WL frames in each burst", dc_generalParas.burst);
+		gd.addNumericField("No. of Ref frames in each burst", dc_generalParas.burst);
 		gd.addNumericField("No. of SR frames in each cycle", dc_generalParas.cycle);
 		gd.addMessage("File Output:");
 		Checkbox save_DC_WL = gd.addAndGetCheckbox("Save drift corrected WL images", dc_paras.save_DC_WL);
-		gd.addDirectoryField("WL save directory", "");
+		gd.addDirectoryField("Ref save directory", "");
 		gd.addCheckbox("Saving data", saveToFile);
 		gd.addDirectoryField("Data save directory", "");
-		String[] formats = { ".3d", ".csv" };
-		gd.addChoice("Saving_format", formats, formats[0]);
+		String[] formats2 = { ".3d", ".csv" };
+		gd.addChoice("Saving_format", formats2, formats2[0]);
 		String html = "<html>" + "<h2>Instruction about Drift Correction Plugin</h2>"
-				+ "If \\\"Load .3d file from ImageJ memory\\\" is ticked: <br>"
-				+ "- Program will use file selected in \\\".3d file directory\\\". <br>"
-				+ "- Else will use saved file in \\\"Input\\\" field. <br>" + "<br>"
-				+ "If \\\"Load WL image from opened window\\\" is ticked: <br>"
-				+ "- Program will use saved image in \\\"Select opened image\\\" field.  <br>"
-				+ "- Else will use image selected in \\\".tif file directory\\\". <br>" + "<br>"
+				+ "Load the localisation file for drift correction from FIJI memory. <br>" + "<br>"
+				+ "If \\\"Load Ref image from opened window\\\" is ticked: <br>"
+				+ "- The program will use the image saved in the \\\"Select opened image\\\" field.  <br>"
+				+ "- Else it will use the image selected in \\\".tif file directory\\\". <br>" + "<br>"
 				+ "Once you select \\\"OK\\\", it will takes 10-20 seconds to calculate the result. <br>"
 				+ "(* Program running time depends on your input data size *) <br>" + "<br>" + "Parameters:  <br>"
-				+ "- White light occasional:  True means the WL images are acquired occasionally. False means the WL image and the SR image are taken at the same time, one-to-one.  <br>"
-				+ "- Drift correction twice: True means WL-SR-WL, WL-SR-WL, ... False means WL-SR, WL-SR, ...  <br>"
-				+ "- Flip FOV in x/y: True means WL-SR-WL, WL-SR-WL, ... False means WL-SR, WL-SR, ...  <br>"
-				+ "- Average drifts: Obtain the drift from each WL image and then average. If False, average WL images in each burst first then calculate drift by the averaged images.  <br>"
+				+ "- Reference occasional:  False means that the reference and the SR images were acquired in parallel, i.e. they have a one-to-one correspondence. True means that the reference images were acquired occasionally, every N SR frames.  <br>"
+				+ "- Drift correction twice: True means that the reference images were taken at the beginning and end of each SR burst, i.e. ref-SR-ref, ref-SR-ref, …; False means that only one reference image was acquired per SR burst, i.e. ref-SR, ref-SR, ...   <br>"
+				// + "- Flip FOV in x/y: True means WL-SR-WL, WL-SR-WL, ... False means WL-SR,
+				// WL-SR, ... <br>"
+				+ "- Drift averaging: If each time, multiple reference image frames were taken, the accuracy of drift estimation can be increased by averaging in two ways.   <br>"
+				+ "** Average drift: Calculating the drift for each frame independently, and then averaging the values;   <br>"
+				+ "** Average image: Constructing an average projection from all the frames and using that to calculate drift.   <br>"
 				+ "- Pixel size (nm): Camera pixel size in nm. <br>"
 				+ "- Upsampling factor: upsampling factor for cross correlation. Default is 100. <br>"
-				+ "- No. of WL frames in each burst: Number of WL frames taken in each burst. <br>"
+				+ "- No. of Ref frames in each burst: Number of reference frames taken in each burst. <br>"
 				+ "- No. of SR frames in each cycle: Number of SR frames taken in each cycle. <br>" + "<br>"
 				+ "File output:  <br>"
-				+ "- Save drift corrected WL images: Save the drift corrected WL images in a TIFF stack.  <br>"
-				+ "- Save directory: Directory for the drift corrected WL stack.  <br>" + "<br>" + "</font>";
+				+ "- Save drift-corrected Ref images: Save the drift corrected reference images in a TIFF stack.  <br>"
+				+ "- Save directory: Directory for the drift corrected reference stack.  <br>" + "<br>" + "</font>";
 		gd.addHelp(html);
 		gd.showDialog();
 		if (gd.wasCanceled()) {
 			return false;
 		}
 
-		threedName = ResultsManager.getInputSource(gd);
-		memory3D = load_3D_file.getState();
-		IJ.log("3d: " + memory3D);
-		memoryWL = wl_image.getState();
-		IJ.log("wl: " + memoryWL);
-		threed_path = gd.getNextString();
-		threed_memory = gd.getNextString();
+		threed_memory = ResultsManager.getInputSource(gd);
+		// memory3D = load_3D_file.getState();
+		// IJ.log("3d: " + memory3D);
+		// memoryWL = wl_image.getState();
+		// IJ.log("wl: " + memoryWL);
+		// threed_path = gd.getNextString();
+		// threed_memory = gd.getNextString();
 		selectedTitle = gd.getNextChoice();
-		IJ.log(selectedTitle);
+		// IJ.log(selectedTitle);
 		WL_path = gd.getNextString();
+		average_drift = gd.getNextChoice();
 		saving_directory = gd.getNextString();
 		saveToFile = gd.getNextBoolean();
 		savePath = gd.getNextString();
 		savingFormat = gd.getNextChoice();
+
 		// update parameters
 		dc_paras.setWl_occasional(white_light_occasional.getState());
 		dc_paras.setCorrection_twice(correction_twice.getState());
-		dc_paras.setFlip_x(flip_x.getState());
-		dc_paras.setFlip_y(flip_y.getState());
-		dc_paras.setAverage_drift(average_drift.getState());
-		dc_paras.setGroup_burst(group_burst.getState());
+		// dc_paras.setFlip_x(flip_x.getState());
+		// dc_paras.setFlip_y(flip_y.getState());
+		dc_paras.setAverage_drift(average_drift);
+		// IJ.log(average_drift);
+		// dc_paras.setGroup_burst(group_burst.getState());
 		dc_paras.setSave_DC_WL(save_DC_WL.getState());
 		px_size = gd.getNextNumber();
 		upFactor = gd.getNextNumber();
@@ -215,35 +223,6 @@ public class DriftCorrection implements PlugIn {
 		return true;
 	}
 
-//	private void showInstruction() {
-//		IJ.log(" -------- Instruction about Drift Correction Plugin ---------");
-//		IJ.log(" ");
-//		IJ.log("    *** If \"Load .3d file from ImageJ memory\" is ticked:");
-//		IJ.log("            -Program will use file selected in \".3d file directory\".");
-//		IJ.log("            -Else will use saved file in \"Input\" field. ");
-//		IJ.log(" ");
-//		IJ.log("    *** If \"Load WL image from opened window\" is ticked:");
-//		IJ.log("            -Program will use saved image in \"Select opened image\" field. ");
-//		IJ.log("            -Else will use image selected in \".tif file directory\".");
-//		IJ.log(" ");
-//		IJ.log("    Once you select \"OK\", it will takes 10-20 seconds to calculate the result.");
-//		IJ.log("    (* Program running time depends on your input data size *)");
-//		IJ.log(" ");
-//		IJ.log(" Parameters: ");
-//		IJ.log("   - White light occasional:  True means the WL images are acquired occasionally. False means the WL image and the SR image are taken at the same time, one-to-one. ");
-//		IJ.log("   - Drift correction twice: True means WL-SR-WL, WL-SR-WL, ... False means WL-SR, WL-SR, ... ");
-//		IJ.log("   - Flip FOV in x/y: True means WL-SR-WL, WL-SR-WL, ... False means WL-SR, WL-SR, ... ");
-//		IJ.log("   - Average drifts: Obtain the drift from each WL image and then average. If False, average WL images in each burst first then calculate drift by the averaged images. ");
-//		IJ.log("   - Pixel size (nm): Camera pixel size in nm. ");
-//		IJ.log("   - Upsampling factor: upsampling factor for cross correlation. Default is 100. ");
-//		IJ.log("   - No. of WL frames in each burst: Number of WL frames taken in each burst. ");
-//		IJ.log("   - No. of SR frames in each cycle: Number of SR frames taken in each cycle. ");
-//		IJ.log(" ");
-//		IJ.log(" File output: ");
-//		IJ.log("   - Save drift corrected WL images: Save the drift corrected WL images in a TIFF stack. ");
-//		IJ.log("   - Save directory: Directory for the drift corrected WL stack. ");
-//	}
-
 	@Override
 	public void run(String arg) {
 		SmlmUsageTracker.recordPlugin(this.getClass(), arg);
@@ -251,30 +230,41 @@ public class DriftCorrection implements PlugIn {
 			if (saving_directory.equals("") && dc_paras.save_DC_WL) {
 				IJ.error("Please select a place to save your corrected white light image ");
 				return;
-			} else if (!memory3D && threed_path.equals("--Please Select--")) {
-				IJ.error("Please select a 3d file");
-				return;
-			} else if (!memoryWL && WL_path.equals("--Please Select--")) {
+				// } else if (!memory3D && threed_path.equals("--Please Select--")) {
+				// IJ.error("Please select a 3d file");
+				// return;
+			} else if (memoryWL && WL_path.equals("--Please Select--")) {
+				// IJ.log("WL " + String.valueOf(memoryWL));
 				IJ.error("Please select a opened image");
 				return;
 			} else {
-				load();
-				DCresult dCresult = drift_correction(threed_path, threedName, selectedTitle, WL_path, dc_generalParas,
-						dc_paras);
+				// load();
+				DCresult dCresult = drift_correction(threed_path, threed_memory, selectedTitle, WL_path,
+						dc_generalParas, dc_paras, px_size);
+
 				ArrayList<double[]> result = dCresult.getData_corrected();
-				MemoryPeakResults r = loadResult(arrayListToArray(result), "corrected_result").getResults();
-				if (r.size() > 0) {
-					MemoryPeakResults.addResults(r);
-				}
+				// MemoryPeakResults r = loadResult(arrayListToArray(result), threed_memory);
+				double[][] arrayResult = arrayListToArray(result);
+				MemoryPeakResults dcFinalResult = saveToMemory(arrayResult, threed_memory, px_size);
+				MemoryPeakResults.addResults(dcFinalResult);
+
+				// int num = MemoryPeakResults.countMemorySize();
+				// IJ.log("int" + String.valueOf(num));
+
 				ArrayList<ArrayList<Double>> dbf = dCresult.getDrift_by_frame();
 				dCresult.getDrift_by_loc();
 
+				// IJ.log(threed_memory+"_Drift_by_Frame.csv");
+				saveData(dbf, savePath, dcFinalResult, threed_memory);
+				// saveLocData(dCresult.getDrift_by_loc(), savePath, dcFinalResult,
+				// threed_memory);
+
 				// Save files
 				if (saveToFile = true) {
-					List<List<Double>> doubleList = memoryPeakResultToDoubleList(r);
-					saveTo3D(doubleList, threed_memory, savingFormat, r);
+					List<List<Double>> doubleList = memoryPeakResultToDoubleList(dcFinalResult);
+					saveTo3D(doubleList, threed_memory, savingFormat, dcFinalResult);
 				}
-				viewLoadedResult(r, "corrected_result");
+				viewLoadedResult(dcFinalResult, "Drift corrected result");
 				JFreeChart chart = createChartPanel(dbf);
 				JFrame frame = new JFrame();
 				frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
@@ -317,11 +307,11 @@ public class DriftCorrection implements PlugIn {
 			z[i] = r.get(i).getZPosition();
 			intensity[i] = r.get(i).getIntensity();
 			List<Double> sublist = new ArrayList<>();
-			sublist.add(frame[i]);
 			sublist.add(x[i]);
 			sublist.add(y[i]);
 			sublist.add(z[i]);
 			sublist.add(intensity[i]);
+			sublist.add(frame[i]);
 			doubleList.add(sublist);
 		}
 		return doubleList;
@@ -330,8 +320,8 @@ public class DriftCorrection implements PlugIn {
 	// Save the final filtered result to .3D file
 	private void saveTo3D(List<List<Double>> filteredPeakResult, String threed_memory, String savingFormat,
 			MemoryPeakResults r) {
-		r.setName(threed_memory);
-		String outputFilename = r.getName() + "_DC";
+		// r.setName(threed_memory);
+		String outputFilename = r.getName();
 		Path outputPath;
 		if (savingFormat == ".3d") {
 			outputPath = Paths.get(savePath, outputFilename + savingFormat);
@@ -418,35 +408,63 @@ public class DriftCorrection implements PlugIn {
 //		}
 //	}
 
-	private static LoadedResult loadResult(double[][] arr, String fileName) {
-		MemoryPeakResults results = new MemoryPeakResults();
-		results.setName(fileName);
-		double[][] returnArray = null;
-		if (arr != null) {
-			double[] x = ArrayUtils.getColumn(arr, 0);
-			double[] y = ArrayUtils.getColumn(arr, 1);
-			double[] z = ArrayUtils.getColumn(arr, 2);
-			double[] intensity = ArrayUtils.getColumn(arr, 3);
-			double[] frame = ArrayUtils.getColumn(arr, 4);
-			returnArray = new double[][] { x, y, z, intensity, frame };
-			results.begin();
-			for (int i = 0; i < arr.length; i++) {
-				float[] parameters = new float[5];
-				parameters[0] = (float) x[i];
-				parameters[1] = (float) y[i];
-				parameters[2] = (float) z[i];
-				parameters[3] = (float) intensity[i];
-				parameters[4] = (float) frame[i];
-				PeakResult r = new PeakResult((int) parameters[4], parameters[0], parameters[1], parameters[3]);
-				r.setZPosition(parameters[2]);
-				results.add(r);
-			}
+	private MemoryPeakResults saveToMemory(double[][] arr, String threed_memory, double px_size) {
 
+		// results.getName();
+		// double[][] returnArray = null;
+		// IJ.log(String.valueOf("arr lengh " +arr.length));
+
+		double[] x = ArrayUtils.getColumn(arr, 0);
+		double[] y = ArrayUtils.getColumn(arr, 1);
+		double[] z = ArrayUtils.getColumn(arr, 2);
+		double[] intensity = ArrayUtils.getColumn(arr, 3);
+		double[] frame = ArrayUtils.getColumn(arr, 4);
+		// returnArray = new double[][] { x, y, z, intensity, frame };
+		// results.begin();
+		MemoryPeakResults result = new MemoryPeakResults();
+
+		for (int i = 0; i < frame.length; i++) {
+			float[] parameters = new float[7];
+			parameters[PeakResultDHPSFU.BACKGROUND] = (float) frame[i];
+			parameters[PeakResultDHPSFU.X] = (float) x[i];
+			parameters[PeakResultDHPSFU.Y] = (float) y[i];
+			parameters[PeakResultDHPSFU.INTENSITY] = (float) intensity[i];
+			// Set noise assuming photons have a Poisson distribution
+			// float noise = (float) Math.sqrt(parameters[PeakResultDHPSFU.INTENSITY]);
+			PeakResult r = new PeakResult((int) frame[i], parameters[2], parameters[3], parameters[1]);
+			r.setZPosition((float) z[i]);
+			result.add(r);
 		}
-		results.end();
-		results.sort();
-		LoadedResult r = new LoadedResult(results, returnArray);
-		return r;
+		// results.begin();
+//		for (int i = 0; i < arr.length; i++) {
+//			float[] parameters = new float[7];
+//			parameters[0] = (float) x[i];
+//			parameters[1] = (float) y[i];
+//			parameters[2] = (float) z[i];
+//			parameters[3] = (float) intensity[i];
+//			parameters[4] = (float) frame[i];
+//			PeakResult r = new PeakResult((int) parameters[4], parameters[0], parameters[1], parameters[3]);
+//			r.setZPosition(parameters[2]);
+//			//AttributePeakResult ap = new AttributePeakResult(r);
+//			results.add(r);
+//		}
+		result.end();
+		result.sort();
+		// String name = threed_memory +"_DC";
+		String name = threed_memory + "_DC";
+		result.setName(name);
+		CalibrationWriter cw = new CalibrationWriter();
+		cw.setIntensityUnit(IntensityUnit.PHOTON);
+		cw.setDistanceUnit(DistanceUnit.NM);
+		cw.setTimeUnit(TimeUnit.FRAME);
+		cw.setExposureTime(30);
+		cw.setNmPerPixel(px_size);
+		cw.setCountPerPhoton(45);
+		cw.getBuilder().getCameraCalibrationBuilder().setCameraType(CameraType.EMCCD).setBias(100)
+				.setQuantumEfficiency(0.95).setReadNoise(1.6);
+		result.setCalibration(cw.getCalibration());
+
+		return result;
 	}
 
 	/**
@@ -456,60 +474,73 @@ public class DriftCorrection implements PlugIn {
 	 * @param fileName the name of the loaded data which stores in imageJ memory
 	 * @return
 	 */
-	private static LoadedResult load3DFile(String filePath, String fileName) {
-		Read3DFileCalib importer = new Read3DFileCalib();
-		double[][] data = null;
-		String fileExtension = getFileExtension(filePath);
-		if (!fileExtension.equals(".3d")) {
-			IJ.error(TITLE, "You must select a .3d file");
-		} else {
-			try {
-				data = importer.readCSVDouble(Paths.get(filePath), 0);
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-		}
-		return loadResult(data, fileName);
-	}
+//	private static LoadedResult load3DFile(String filePath) {
+//		Read3DFileCalib importer = new Read3DFileCalib();
+//		double[][] data = null;
+//		String fileExtension = getFileExtension(filePath);
+//		if (!fileExtension.equals(".3d")) {
+//			IJ.error(TITLE, "You must select a .3d file");
+//		} else {
+//			try {
+//				data = importer.readCSVDouble(Paths.get(filePath), 0);
+//			} catch (IOException e) {
+//				e.printStackTrace();
+//			}
+//		}
+//		return loadResult(data, threed_memory);
+//	}
 
 	// load the 3d file and show the data using result table
-	private static void load() {
-		MemoryPeakResults threed_result;
-		if (!memory3D) {
-			threed_result = load3DFile(threed_path, threed_memory).getResults();
-		} else {
-			threed_result = ResultsManager.loadInputResults(threedName, false, null, null);
-		}
-		if (threed_result == null) {
-			return;
-		}
-		if (threed_result.isEmpty()) {
-			IJ.error(TITLE, "No localisations could be loaded");
-			return;
-		}
-		if (threed_result.size() > 0) {
-			MemoryPeakResults.addResults(threed_result);
-		}
-		IJ.log(" ");
-		final String msg = "Loaded " + TextUtils.pleural(threed_result.size(), "lines");
-		IJ.log(" ");
-		IJ.showStatus(msg);
-		ImageJUtils.log(msg);
-		viewLoadedResult(threed_result, "Loaded_3d_file");
-	}
+//	private static void load() {
+//		// MemoryPeakResults threed_result;
+//		// if (!memory3D) {
+//		// threed_result = load3DFile(threed_path, threed_memory).getResults();
+//		// } else {
+//		MemoryPeakResults threed_result = ResultsManager.loadInputResults(threed_memory, true, DistanceUnit.PIXEL,
+//				IntensityUnit.PHOTON);
+//		// }
+//		if (threed_result == null) {
+//			return;
+//		}
+//		if (threed_result.isEmpty()) {
+//			IJ.error(TITLE, "No localisations could be loaded");
+//			return;
+//		}
+////		if (threed_result.size() > 0) {
+////			MemoryPeakResults.addResults(threed_result);
+////		}
+//		IJ.log(" ");
+//		final String msg = "Loaded " + TextUtils.pleural(threed_result.size(), "lines");
+//		IJ.log(" ");
+//		IJ.showStatus(msg);
+//		ImageJUtils.log(msg);
+//		viewLoadedResult(threed_result, "Loaded_3d_file");
+//	}
 
-	private static double[][] resultToArray(MemoryPeakResults results) {
+	private static double[][] resultToArray(MemoryPeakResults results, double px_size) {
 		if (MemoryPeakResults.isEmpty(results)) {
 			IJ.error(TITLE, "No results could be loaded");
 		}
 		int size = results.size();
 		double[][] r = new double[5][size];
-		for (int i = 0; i < size; i++) {
-			r[0][i] = results.get(i).getXPosition();
-			r[1][i] = results.get(i).getYPosition();
-			r[2][i] = results.get(i).getZPosition();
-			r[3][i] = results.get(i).getIntensity();
-			r[4][i] = results.get(i).getFrame();
+
+		if (results.getDistanceUnit() == DistanceUnit.PIXEL) {
+			for (int i = 0; i < size; i++) {
+				r[0][i] = px_size * results.get(i).getXPosition();
+				r[1][i] = px_size * results.get(i).getYPosition();
+				r[2][i] = px_size * results.get(i).getZPosition();
+				r[3][i] = results.get(i).getIntensity();
+				r[4][i] = results.get(i).getFrame();
+			}
+		} else if (results.getDistanceUnit() == DistanceUnit.NM) {
+			for (int i = 0; i < size; i++) {
+				r[0][i] = results.get(i).getXPosition();
+				r[1][i] = results.get(i).getYPosition();
+				r[2][i] = results.get(i).getZPosition();
+				r[3][i] = results.get(i).getIntensity();
+				r[4][i] = results.get(i).getFrame();
+			}
+
 		}
 		return r;
 	}
@@ -533,12 +564,12 @@ public class DriftCorrection implements PlugIn {
 			intensity[i] = results.get(i).getIntensity();
 		}
 		ResultsTable t = new ResultsTable();
-		t.setValues("Frame", SimpleArrayUtils.toDouble(frame));
-		t.setValues("Frame", new double[] { 1, 2, 3, 4, 5 });
 		t.setValues("X", SimpleArrayUtils.toDouble(x));
 		t.setValues("Y", SimpleArrayUtils.toDouble(y));
 		t.setValues("Z", SimpleArrayUtils.toDouble(z));
 		t.setValues("Intensity", SimpleArrayUtils.toDouble(intensity));
+		t.setValues("Frame", SimpleArrayUtils.toDouble(frame));
+		// t.setValues("Frame", new double[] { 1, 2, 3, 4, 5 });
 		t.show(windowTitle);
 	}
 
@@ -1137,19 +1168,26 @@ public class DriftCorrection implements PlugIn {
 	}
 
 	public static DCresult drift_correction(String threed_path, String threed_name, String selectedTitle,
-			String wl_path, DC_GeneralParas gp, DC_Paras paras) {
+			String wl_path, DC_GeneralParas gp, DC_Paras paras, double px_size) {
+
 		double[][] threed_data;
-		if (!memory3D) {
-			IJ.log("load from file" + threed_path);
-			threed_data = load3DFile(threed_path, threed_name).getResultArray();
-		} else {
-			IJ.log("load from memory" + threed_name);
-			MemoryPeakResults r = ResultsManager.loadInputResults(threed_name, false, null, null);
-			threed_data = resultToArray(r);
-		}
+		// if (!memory3D) {
+		// IJ.log("load from file" + threed_path);
+		// threed_data = load3DFile(threed_path, threed_name).getResultArray();
+		// } else {
+		IJ.log("loaded " + threed_name + " from memory.");
+		MemoryPeakResults re = MemoryPeakResults.getResults(threed_name);
+		// IJ.log(String.valueOf(re.getDistanceUnit()!= DistanceUnit.PIXEL));
+
+		// if (re.getDistanceUnit()!= DistanceUnit.PIXEL) {
+
+		// }
+
+		threed_data = resultToArray(re, px_size);
+		// }
 		int[][][] wlArray;
 		if (!memoryWL) {
-			IJ.log("load from file" + wl_path);
+			IJ.log("load from file " + wl_path);
 			wlArray = loadtifFile(wl_path, false);
 		} else {
 			IJ.log("load from window" + selectedTitle);
@@ -1167,6 +1205,7 @@ public class DriftCorrection implements PlugIn {
 		// reformat the data set
 		// in data_arr, one column contains all xyz intensity frame
 		// data_arr[i] = [x,y,z,intensity,frame]
+
 		double[][] data_arr = new double[threed_data[0].length][5];
 		for (int i = 0; i < threed_data[0].length; i++) {
 			data_arr[i] = new double[] { threed_data[0][i], threed_data[1][i], threed_data[2][i], threed_data[3][i],
@@ -1174,21 +1213,47 @@ public class DriftCorrection implements PlugIn {
 		}
 
 		// find the position of first frame
-		// sometimes there's multiple first frame, with different xyz value
+		// there can be multiple first frames, with different xyz values
 		ArrayList<Integer> locs1 = new ArrayList<Integer>();
-		double min = Integer.MAX_VALUE;
+		ArrayList<ArrayList<Double>> drift_by_frame = new ArrayList<>();
+		double min = Double.MAX_VALUE;
 		for (int i = 0; i < threed_data[4].length; i++) {
 			if (min > threed_data[4][i]) {
 				min = threed_data[4][i];
+				locs1.clear();
+				locs1.add(i);
+			} else if (min == threed_data[4][i]) {
 				locs1.add(i);
 			}
 		}
+
 		ArrayList<double[]> data_corrected = new ArrayList<>();
-		ArrayList<ArrayList<Double>> drift_by_frame = new ArrayList<>();
-//        double[][] data_corrected = new double[locs1.size()][5];
 		for (int i = 0; i < locs1.size(); i++) {
 			data_corrected.add(data_arr[locs1.get(i)]);
 		}
+
+//		double[][] data_arr = new double[threed_data[0].length][5];
+//		for (int i = 0; i < threed_data[0].length; i++) {
+//			data_arr[i] = new double[] { threed_data[0][i], threed_data[1][i], threed_data[2][i], threed_data[3][i],
+//					threed_data[4][i] };
+//		}
+//
+//		// find the position of first frame
+//		// sometimes there's multiple first frame, with different xyz value
+//		ArrayList<Integer> locs1 = new ArrayList<Integer>();
+//		double min = Integer.MAX_VALUE;
+//		for (int i = 0; i < threed_data[4].length; i++) {
+//			if (min > threed_data[4][i]) {
+//				min = threed_data[4][i];
+//				locs1.add(i);
+//			}
+//		}
+//		ArrayList<double[]> data_corrected = new ArrayList<>();
+//		ArrayList<ArrayList<Double>> drift_by_frame = new ArrayList<>();
+////        double[][] data_corrected = new double[locs1.size()][5];
+//		for (int i = 0; i < locs1.size(); i++) {
+//			data_corrected.add(data_arr[locs1.get(i)]);
+//		}
 		if (!paras.wl_occasional) {
 //            int[][][] wlArray = loadtifFile(wl_path);
 			double[][] f = normalise_dtype(wlArray[0], true, 4096);
@@ -1227,27 +1292,38 @@ public class DriftCorrection implements PlugIn {
 					data_to_correct[j] = data_arr[locs.get(j)];
 				}
 				double[] corr_x = new double[data_to_correct.length];
+//
+//				if (paras.flip_x) {
+//					for (int j = 0; j < corr_x.length; j++) {
+//						corr_x[j] = data_to_correct[j][0] - xx;
+//					}
+//				} else {
+//					for (int j = 0; j < corr_x.length; j++) {
+//						corr_x[j] = data_to_correct[j][0] + xx;
+//					}
+//				}
+//				double[] corr_y = new double[data_to_correct.length];
+//
+//				if (paras.flip_y) {
+//					for (int j = 0; j < corr_y.length; j++) {
+//						corr_y[j] = data_to_correct[j][1] - yy;
+//					}
+//				} else {
+//					for (int j = 0; j < corr_y.length; j++) {
+//						corr_y[j] = data_to_correct[j][1] + yy;
+//					}
+//				}
 
-				if (paras.flip_x) {
-					for (int j = 0; j < corr_x.length; j++) {
-						corr_x[j] = data_to_correct[j][0] - xx;
-					}
-				} else {
-					for (int j = 0; j < corr_x.length; j++) {
-						corr_x[j] = data_to_correct[j][0] + xx;
-					}
+				for (int j = 0; j < corr_x.length; j++) {
+					corr_x[j] = data_to_correct[j][0] + xx;
 				}
+
 				double[] corr_y = new double[data_to_correct.length];
 
-				if (paras.flip_y) {
-					for (int j = 0; j < corr_y.length; j++) {
-						corr_y[j] = data_to_correct[j][1] - yy;
-					}
-				} else {
-					for (int j = 0; j < corr_y.length; j++) {
-						corr_y[j] = data_to_correct[j][1] + yy;
-					}
+				for (int j = 0; j < corr_y.length; j++) {
+					corr_y[j] = data_to_correct[j][1] + yy;
 				}
+
 				double[][] corr_x_reshape = reshape(corr_x.length, 1, corr_x);
 				double[][] corr_y_reshape = reshape(corr_y.length, 1, corr_y);
 //                double[][] slice_data = new double[data_to_correct.length][3];
@@ -1277,8 +1353,9 @@ public class DriftCorrection implements PlugIn {
 				drift_by_frame.add(a);
 			}
 
-		} else if (paras.wl_occasional && !paras.correction_twice && paras.average_drift) {
+		} else if (paras.wl_occasional && !paras.correction_twice && paras.getAverage_drift() == "Average drift") {
 //            int[][][] wlArray = loadtifFile(wl_path);
+
 			double[][] f1 = normalise_dtype(wlArray[0], true, 4096);
 			double[] fxx = zeros1col(gp.burst);
 			double[] fyy = zeros1col(gp.burst);
@@ -1358,26 +1435,37 @@ public class DriftCorrection implements PlugIn {
 						data_to_correct[k] = data_arr[locs.get(k)];
 					}
 					double[] corr_x = new double[data_to_correct.length];
-					if (paras.flip_x) {
-						for (int k = 0; k < corr_x.length; k++) {
-							corr_x[k] = data_to_correct[k][0] - xx[j - 1] * gp.px_size;
-						}
-					} else {
-						for (int k = 0; k < corr_x.length; k++) {
-							corr_x[k] = data_to_correct[k][0] + xx[j - 1] * gp.px_size;
-						}
+//					if (paras.flip_x) {
+//						for (int k = 0; k < corr_x.length; k++) {
+//							corr_x[k] = data_to_correct[k][0] - xx[j - 1] * gp.px_size;
+//						}
+//					} else {
+//						for (int k = 0; k < corr_x.length; k++) {
+//							corr_x[k] = data_to_correct[k][0] + xx[j - 1] * gp.px_size;
+//						}
+//					}
+//					double[] corr_y = new double[data_to_correct.length];
+//
+//					if (paras.flip_y) {
+//						for (int k = 0; k < corr_y.length; k++) {
+//							corr_y[k] = data_to_correct[k][1] - yy[j - 1] * gp.px_size;
+//						}
+//					} else {
+//						for (int k = 0; k < corr_y.length; k++) {
+//							corr_y[k] = data_to_correct[k][1] + yy[j - 1] * gp.px_size;
+//						}
+//					}
+
+					for (int k = 0; k < corr_x.length; k++) {
+						corr_x[k] = data_to_correct[k][0] + xx[j - 1] * gp.px_size;
 					}
+
 					double[] corr_y = new double[data_to_correct.length];
 
-					if (paras.flip_y) {
-						for (int k = 0; k < corr_y.length; k++) {
-							corr_y[k] = data_to_correct[k][1] - yy[j - 1] * gp.px_size;
-						}
-					} else {
-						for (int k = 0; k < corr_y.length; k++) {
-							corr_y[k] = data_to_correct[k][1] + yy[j - 1] * gp.px_size;
-						}
+					for (int k = 0; k < corr_y.length; k++) {
+						corr_y[k] = data_to_correct[k][1] + yy[j - 1] * gp.px_size;
 					}
+
 					double[][] corr_x_reshape = reshape(corr_x.length, 1, corr_x);
 					double[][] corr_y_reshape = reshape(corr_y.length, 1, corr_y);
 					double[][] slice_data = new double[data_to_correct.length][3];
@@ -1423,7 +1511,7 @@ public class DriftCorrection implements PlugIn {
 					drift_by_frame.add(subList);
 				}
 			}
-		} else if (paras.wl_occasional && !paras.correction_twice && !paras.average_drift) {
+		} else if (paras.wl_occasional && !paras.correction_twice && paras.getAverage_drift() == "Average image") {
 //            int[][][] wlArray = loadtifFile(wl_path);
 			double[][][] wl_img = normalise_dtype(wlArray, true, 4096);
 			int num_burst = (int) Math.floor(wl_img.length / gp.burst);
@@ -1481,20 +1569,28 @@ public class DriftCorrection implements PlugIn {
 			for (int i = 0; i < data_arr[4].length; i++) {
 				double frm = data_arr[4][i];
 				double corr_x;
-				if (paras.flip_x) {
-					// data_Arr[1] is all y value
-					corr_x = threed_data[0][i] - xx.get((int) (frm - 1)) * gp.px_size;
-				} else {
-					corr_x = threed_data[0][i] + xx.get((int) (frm - 1)) * gp.px_size;
-				}
+
+//				if (paras.flip_x) {
+//					// data_Arr[1] is all y value
+//					corr_x = threed_data[0][i] - xx.get((int) (frm - 1)) * gp.px_size;
+//				} else {
+//					corr_x = threed_data[0][i] + xx.get((int) (frm - 1)) * gp.px_size;
+//				}
+//				double corr_y;
+//
+//				if (paras.flip_y) {
+//					// data_Arr[1] is all y value
+//					corr_y = threed_data[1][i] - yy.get((int) (frm - 1)) * gp.px_size;
+//				} else {
+//					corr_y = threed_data[1][i] + yy.get((int) (frm - 1)) * gp.px_size;
+//				}
+
+				corr_x = threed_data[0][i] + xx.get((int) (frm - 1)) * gp.px_size;
+
 				double corr_y;
 
-				if (paras.flip_y) {
-					// data_Arr[1] is all y value
-					corr_y = threed_data[1][i] - yy.get((int) (frm - 1)) * gp.px_size;
-				} else {
-					corr_y = threed_data[1][i] + yy.get((int) (frm - 1)) * gp.px_size;
-				}
+				corr_y = threed_data[1][i] + yy.get((int) (frm - 1)) * gp.px_size;
+
 				corr_x_list.add(corr_x);
 				corr_y_list.add(corr_y);
 			}
@@ -1505,7 +1601,7 @@ public class DriftCorrection implements PlugIn {
 			arrayMultiplicaion(yy, gp.px_size);
 			drift_by_frame = arrayListT(xx, yy);
 
-		} else if (paras.wl_occasional && paras.correction_twice && paras.average_drift) {
+		} else if (paras.wl_occasional && paras.correction_twice && paras.getAverage_drift() == "Average drift") {
 //            int[][][] wlArray = loadtifFile(wl_path);
 			double[][] f1 = normalise_dtype(wlArray[0], true, 4096);
 			double[] fxx = zeros1col(gp.burst);
@@ -1606,26 +1702,37 @@ public class DriftCorrection implements PlugIn {
 						data_to_correct[k] = data_arr[locs.get(k)];
 					}
 					double[] corr_x = new double[data_to_correct.length];
-					if (paras.flip_x) {
-						for (int k = 0; k < corr_x.length; k++) {
-							corr_x[k] = data_to_correct[k][0] - xx[j - 1] * gp.px_size;
-						}
-					} else {
-						for (int k = 0; k < corr_x.length; k++) {
-							corr_x[k] = data_to_correct[k][0] + xx[j - 1] * gp.px_size;
-						}
+//					if (paras.flip_x) {
+//						for (int k = 0; k < corr_x.length; k++) {
+//							corr_x[k] = data_to_correct[k][0] - xx[j - 1] * gp.px_size;
+//						}
+//					} else {
+//						for (int k = 0; k < corr_x.length; k++) {
+//							corr_x[k] = data_to_correct[k][0] + xx[j - 1] * gp.px_size;
+//						}
+//					}
+//					double[] corr_y = new double[data_to_correct.length];
+//
+//					if (paras.flip_y) {
+//						for (int k = 0; k < corr_y.length; k++) {
+//							corr_y[k] = data_to_correct[k][1] - yy[j - 1] * gp.px_size;
+//						}
+//					} else {
+//						for (int k = 0; k < corr_y.length; k++) {
+//							corr_y[k] = data_to_correct[k][1] + yy[j - 1] * gp.px_size;
+//						}
+//					}
+
+					for (int k = 0; k < corr_x.length; k++) {
+						corr_x[k] = data_to_correct[k][0] + xx[j - 1] * gp.px_size;
 					}
+
 					double[] corr_y = new double[data_to_correct.length];
 
-					if (paras.flip_y) {
-						for (int k = 0; k < corr_y.length; k++) {
-							corr_y[k] = data_to_correct[k][1] - yy[j - 1] * gp.px_size;
-						}
-					} else {
-						for (int k = 0; k < corr_y.length; k++) {
-							corr_y[k] = data_to_correct[k][1] + yy[j - 1] * gp.px_size;
-						}
+					for (int k = 0; k < corr_y.length; k++) {
+						corr_y[k] = data_to_correct[k][1] + yy[j - 1] * gp.px_size;
 					}
+
 					double[][] corr_x_reshape = reshape(corr_x.length, 1, corr_x);
 					double[][] corr_y_reshape = reshape(corr_y.length, 1, corr_y);
 //                    for(int k = 0; k < corr_y.length; k ++){
@@ -1662,7 +1769,7 @@ public class DriftCorrection implements PlugIn {
 			double[][] reshape_yyy = reshape(arrayListSize(yyy), 1, toArrayMul(yyyConcatenate, gp.px_size));
 
 			drift_by_frame = convertIntoArrayList(concatenateAxis1(reshape_xxx, reshape_yyy));
-		} else if (paras.wl_occasional && paras.correction_twice && !paras.average_drift) {
+		} else if (paras.wl_occasional && paras.correction_twice && paras.getAverage_drift() == "Average image") {
 //            int[][][] wlArray = loadtifFile(wl_path);
 			double[][][] wl_img = normalise_dtype(wlArray, true, 4096);
 			int num_burst = (int) Math.floor(wl_img.length / gp.burst);
@@ -1753,23 +1860,35 @@ public class DriftCorrection implements PlugIn {
 			for (int i = 0; i < threed_data[4].length; i++) {
 				double frm = threed_data[4][i];
 				double corr_x;
-				if (paras.flip_x) {
-					corr_x = threed_data[0][i] - xx.get((int) (frm - 1)) * gp.px_size;
-				} else {
-					corr_x = threed_data[0][i] + xx.get((int) (frm - 1)) * gp.px_size;
+//				if (paras.flip_x) {
+//					corr_x = threed_data[0][i] - xx.get((int) (frm - 1)) * gp.px_size;
+//				} else {
+//					corr_x = threed_data[0][i] + xx.get((int) (frm - 1)) * gp.px_size;
+////                    if(920<i && i <923){
+////                        System.out.println("i: "+i + " frm: " + frm + "\nxx: " + xx.get((int) (frm-1)) + "\npx_size: " + gp.px_size + "\nthread_data: " + threed_data[0][i] + "corr_x: "+ corr_x + "\n\n");
+////                    }
+//				}
+//				double corr_y;
+//				if (paras.flip_y) {
+//					corr_y = threed_data[1][i] - yy.get((int) (frm - 1)) * gp.px_size;
+//				} else {
+//					corr_y = threed_data[1][i] + yy.get((int) (frm - 1)) * gp.px_size;
+////                    if(920<i && i <923){
+////                        System.out.println("i: "+i + " frm: " + frm + "\nyy: " + yy.get((int) (frm-1)) + "\npx_size: " + gp.px_size + "\nthread_data: " + threed_data[1][i] + "corr_y: "+ corr_y + "\n\n");
+////                    }
+//				}
+
+				corr_x = threed_data[0][i] + xx.get((int) (frm - 1)) * gp.px_size;
 //                    if(920<i && i <923){
 //                        System.out.println("i: "+i + " frm: " + frm + "\nxx: " + xx.get((int) (frm-1)) + "\npx_size: " + gp.px_size + "\nthread_data: " + threed_data[0][i] + "corr_x: "+ corr_x + "\n\n");
 //                    }
-				}
+
 				double corr_y;
-				if (paras.flip_y) {
-					corr_y = threed_data[1][i] - yy.get((int) (frm - 1)) * gp.px_size;
-				} else {
-					corr_y = threed_data[1][i] + yy.get((int) (frm - 1)) * gp.px_size;
+
+				corr_y = threed_data[1][i] + yy.get((int) (frm - 1)) * gp.px_size;
 //                    if(920<i && i <923){
 //                        System.out.println("i: "+i + " frm: " + frm + "\nyy: " + yy.get((int) (frm-1)) + "\npx_size: " + gp.px_size + "\nthread_data: " + threed_data[1][i] + "corr_y: "+ corr_y + "\n\n");
 //                    }
-				}
 
 				corr_x_list.add(corr_x);
 				corr_y_list.add(corr_y);
@@ -1786,12 +1905,17 @@ public class DriftCorrection implements PlugIn {
 		}
 
 		double[][] drift_by_loc_inter = new double[data_corrected.size()][data_corrected.get(0).length];
+		// IJ.log("drift loc inter length " + drift_by_loc_inter.length);
+		// IJ.log("data_corrected.size() " + data_corrected.size());
+		// IJ.log("data_corrected.get(0).length " + data_corrected.get(0).length);
+
 		for (int i = 0; i < data_corrected.size(); i++) {
 			for (int j = 0; j < data_corrected.get(0).length; j++) {
 				drift_by_loc_inter[i][j] = data_corrected.get(i)[j] - data_arr[i][j];
 			}
 		}
 		double[][] drift_by_loc = arraySliceCol2dInverse(drift_by_loc_inter, 2);
+		// IJ.log("drift loc length " + drift_by_loc.length);
 
 		return new DCresult(data_corrected, drift_by_loc, drift_by_frame);
 
@@ -1846,6 +1970,7 @@ public class DriftCorrection implements PlugIn {
 
 		int minValue = 0;
 		int maxValue = drift_by_frame.size();
+		// IJ.log(String.valueOf(drift_by_frame.size()));
 
 		LookupPaintScale paintScale = new LookupPaintScale(minValue, maxValue, Color.BLUE);
 		paintScale.add(minValue, Color.BLUE);
@@ -1886,6 +2011,30 @@ public class DriftCorrection implements PlugIn {
 		double g = weight * c1.getGreen() + (1.0 - weight) * c2.getGreen();
 		double b = weight * c1.getBlue() + (1.0 - weight) * c2.getBlue();
 		return new Color((int) r, (int) g, (int) b);
+	}
+
+	private void saveData(ArrayList<ArrayList<Double>> drift_by_frame, String savePath, MemoryPeakResults r,
+			String threed_memory) {
+		String savePath2 = savePath + threed_memory + "_Drift_by_Frame.csv";
+		System.out.print("Path " + threed_memory + savePath2);
+		try (BufferedWriter writer = new BufferedWriter(new FileWriter(savePath2))) {
+			writer.write("X drift (nm),Y drift (nm)\n");
+			for (int n = 0; n < drift_by_frame.size(); n++) {
+				List<Double> row = drift_by_frame.get(n);
+				StringBuilder rowString = new StringBuilder();
+
+				for (int i = 0; i < row.size(); i++) {
+					rowString.append(row.get(i));
+					if (i < row.size() - 1) {
+						rowString.append(",");
+					}
+				}
+
+				writer.write(rowString.toString() + "\n");
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 
 	private static ArrayList<ArrayList<Double>> zoom(double[][] f, double upfac) {
@@ -1990,14 +2139,17 @@ public class DriftCorrection implements PlugIn {
 			throws Exception {
 		int[][][] wlArray;
 		File file = new File(wl_path);
-		String filename = file.getName();
+		String filename;
+		// String filename = file.getName();
 		ArrayList<double[][]> fs = new ArrayList<>();
 		if (!memoryWL) {
 //            IJ.log("load from file" + wl_path);
 			wlArray = loadtifFile(wl_path, false);
+			filename = file.getName();
 		} else {
 //            IJ.log("load from window" + selectedTitle);
 			wlArray = loadtifFile(selectedTitle, true);
+			filename = selectedTitle;
 		}
 		double[][][] wl_img = normalise_dtype(wlArray, true, 4096);
 		String address = saving_directory + filename;
@@ -2093,6 +2245,7 @@ public class DriftCorrection implements PlugIn {
 	}
 
 	private static void saveAsMultipageTIFF(String filename, ArrayList<double[][]> fs) throws Exception {
+
 		String outputFilename = filename.substring(0, filename.length() - 4) + "_corr.tif";
 		new File(outputFilename);
 
@@ -2141,7 +2294,7 @@ public class DriftCorrection implements PlugIn {
 
 		ImagePlus imp = new ImagePlus("Output", stack);
 		ij.IJ.saveAsTiff(imp, outputFilename);
-		IJ.log("corrected .tif file saved");
+		IJ.log("corrected.tif file saved");
 	}
 
 //    private static BufferedImage convertDoubleArrayToBufferedImage(double[][] data) {

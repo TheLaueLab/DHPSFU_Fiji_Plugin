@@ -28,14 +28,24 @@
  */
 package uk.ac.cam.dhpsfu.plugins;
 
+import java.awt.AWTEvent;
+import java.awt.Checkbox;
+import java.awt.GridLayout;
+import java.awt.Label;
+import java.awt.Panel;
+import java.awt.TextField;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.SplittableRandom;
 import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
 
 import ij.IJ;
+import ij.gui.DialogListener;
+import ij.gui.GenericDialog;
 import ij.measure.ResultsTable;
 import ij.plugin.PlugIn;
 import uk.ac.cam.dhpsfu.analysis.ArrayUtils;
@@ -43,7 +53,6 @@ import uk.ac.cam.dhpsfu.analysis.FileIndex;
 import uk.ac.cam.dhpsfu.analysis.PeakResultDHPSFU;
 import uk.ac.cam.dhpsfu.analysis.Read3DFileCalib;
 import uk.ac.sussex.gdsc.core.ij.ImageJUtils;
-import uk.ac.sussex.gdsc.core.ij.gui.ExtendedGenericDialog;
 import uk.ac.sussex.gdsc.core.utils.SimpleArrayUtils;
 import uk.ac.sussex.gdsc.core.utils.TextUtils;
 import uk.ac.sussex.gdsc.smlm.data.config.CalibrationWriter;
@@ -60,7 +69,7 @@ import uk.ac.sussex.gdsc.smlm.data.config.UnitProtos.TimeUnit;
 //import uk.ac.sussex.gdsc.smlm.ij.plugins.LoadLocalisationsSettings;
 import uk.ac.sussex.gdsc.smlm.ij.plugins.SmlmUsageTracker;
 
-public class LoadLocalisationFIle implements PlugIn {
+public class LoadLocalisationFIle implements PlugIn, DialogListener {
 	private static final String TITLE = "Load Localisations";
 
 	public static String fileType = "Peakfit";
@@ -80,6 +89,7 @@ public class LoadLocalisationFIle implements PlugIn {
 	private int precisionIndex = 13;
 	private FileIndex fileIndex = new FileIndex(frameIndex, xIndex, yIndex, zIndex, intensityIndex, precisionIndex);
 	private boolean ifManualIndex = false;
+	private List<Panel> fieldPanels = new ArrayList<>();
 
 	private int skipLines;
 
@@ -137,26 +147,54 @@ public class LoadLocalisationFIle implements PlugIn {
 	}
 
 	private boolean showDialog() {
-		ExtendedGenericDialog gd = new ExtendedGenericDialog(TITLE);
+		// ExtendedGenericDialog gd = new ExtendedGenericDialog(TITLE);
+		GenericDialog gd = new GenericDialog(TITLE);
 		gd.addMessage("File directory:");
 		Preferences preferences = Preferences.userNodeForPackage(LoadLocalisationFIle.class);
 		String defaultDirectory = preferences.get("defaultDirectory", "");
-		gd.addFilenameField("File_directory", defaultDirectory);
+		gd.addFileField("File_directory", defaultDirectory);
 		gd.addStringField("File_name", "Localisations");
 		String[] formats2 = { "Peakfit", "DHPSFU" };
 		gd.addChoice("Data_format", formats2, formats2[0]);
 		String[] formats = { ".3d", ".csv", ".xls" };
 		gd.addChoice("File_format", formats, formats[2]);
 		gd.addNumericField("Pixel size (nm)", pxSize, 1);
-		gd.addCheckbox("Manually set column Index", ifManualIndex);
-		gd.addMessage("Column index (Set to -1 if not reading.):");
-		gd.addNumericField("Header", skipLines, 0);
-		gd.addNumericField("Frame", fileIndex.getFrameIndex(), 0);
-		gd.addNumericField("X", fileIndex.getxIndex(), 0);
-		gd.addNumericField("Y", fileIndex.getyIndex(), 0);
-		gd.addNumericField("Z", fileIndex.getzIndex(), 0);
-		gd.addNumericField("Intensity", fileIndex.getIntensityIndex(), 0);
-		gd.addNumericField("Precision", fileIndex.getPrecisionIndex(), 0);
+//		gd.addCheckbox("Manually set column Index", ifManualIndex);
+//		gd.addMessage("Column index (Set to -1 if not reading.):");
+//		gd.addNumericField("Header", skipLines, 0);
+//		gd.addNumericField("Frame", fileIndex.getFrameIndex(), 0);
+//		gd.addNumericField("X", fileIndex.getxIndex(), 0);
+//		gd.addNumericField("Y", fileIndex.getyIndex(), 0);
+//		gd.addNumericField("Z", fileIndex.getzIndex(), 0);
+//		gd.addNumericField("Intensity", fileIndex.getIntensityIndex(), 0);
+//		gd.addNumericField("Precision", fileIndex.getPrecisionIndex(), 0);
+
+		gd.addCheckbox("Manually set column Index", false);
+
+		addFieldPanel(gd, "Header", skipLines);
+		addFieldPanel(gd, "Frame", fileIndex.getFrameIndex());
+		addFieldPanel(gd, "X", fileIndex.getxIndex());
+		addFieldPanel(gd, "Y", fileIndex.getyIndex());
+		addFieldPanel(gd, "Z", fileIndex.getzIndex());
+		addFieldPanel(gd, "Intensity", fileIndex.getIntensityIndex());
+		addFieldPanel(gd, "Precision", fileIndex.getPrecisionIndex());
+
+		// Initially hide all field panels
+		toggleFieldPanelsVisibility(gd, false);
+
+		gd.addDialogListener(this);
+
+		String html = "<html>" + "<h2>Instruction about Load Localisation File Plugin</h2>"
+				+ "*** For loading localisations from local file directory ***<br>" + "<br>"
+				+ " Available pre-defined formats are GDSC PeakFit output file (.xls) for 2D localisations and ViSP format (.3d) for 3D localisations. <br> "
+				+ "Any other format can be loaded by specifying custom columns. <br>" + " <br>"
+				+ " Dataset name: specify the name of the loaded dataset. NB! If name is set the same, it will overwrite the previous dataset in Fiji memory. <br>"
+				+ " Data format: Peakfit (GDSC PeakFit output file, .xls)  or DHPSFU (.3d). <br>"
+				+ " File format: Choose the corresponding file extension: .xls or .3d <br>"
+				+ " Pixel size (nm):  Camera pixel size in nm.    <br>" + "  <br>"
+				+ "  When specifying custom columns, indexing starts from 0. -1 means that the data does not contain such a column  <br>"
+				+ "<br>" + "</font>";
+		gd.addHelp(html);
 		gd.showDialog();
 		if (gd.wasCanceled()) {
 			return false;
@@ -205,6 +243,31 @@ public class LoadLocalisationFIle implements PlugIn {
 		}
 		return true;
 	} // End of shoeDialog
+
+	private void addFieldPanel(GenericDialog gd, String fieldName, int initialValue) {
+		Panel panel = new Panel(new GridLayout(1, 2)); // Set GridLayout to each panel
+		Label label = new Label(fieldName + ":");
+		TextField textField = new TextField(String.valueOf(initialValue), 10); // Set a fixed size for fields
+
+		panel.add(label);
+		panel.add(textField);
+		gd.addPanel(panel);
+		fieldPanels.add(panel);
+	}
+
+	@Override
+	public boolean dialogItemChanged(GenericDialog gd, AWTEvent e) {
+		Checkbox checkbox = (Checkbox) gd.getCheckboxes().get(0);
+		toggleFieldPanelsVisibility(gd, checkbox.getState());
+		return true;
+	}
+
+	private void toggleFieldPanelsVisibility(GenericDialog gd, boolean visible) {
+		for (Panel panel : fieldPanels) {
+			panel.setVisible(visible);
+		}
+		gd.pack(); // Adjust the dialog to accommodate the new layout
+	}
 
 	private FileIndex getColumnIndex(String fileType) {
 		FileIndex fileIndex = new FileIndex(frameIndex, xIndex, yIndex, zIndex, intensityIndex, precisionIndex);

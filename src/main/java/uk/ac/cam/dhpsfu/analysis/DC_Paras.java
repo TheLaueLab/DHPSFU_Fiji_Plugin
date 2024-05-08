@@ -34,12 +34,12 @@ public class DC_Paras {
 	public boolean correction_twice;
 	public boolean flip_x;
 	public boolean flip_y;
-	public boolean average_drift;
+	public String average_drift;
 	public boolean group_burst;
 	public boolean save_DC_WL;
 
 	public DC_Paras(boolean wl_occasional, boolean correction_twice, boolean flip_x, boolean flip_y,
-			boolean average_drift, boolean group_burst, boolean save_DC_WL) {
+			String average_drift, boolean group_burst, boolean save_DC_WL) {
 		this.wl_occasional = wl_occasional;
 		this.correction_twice = correction_twice;
 		this.flip_x = flip_x;
@@ -81,11 +81,11 @@ public class DC_Paras {
 		this.flip_y = flip_y;
 	}
 
-	public boolean getAverage_drift() {
+	public String getAverage_drift() {
 		return average_drift;
 	}
 
-	public void setAverage_drift(boolean average_drift) {
+	public void setAverage_drift(String average_drift) {
 		this.average_drift = average_drift;
 	}
 

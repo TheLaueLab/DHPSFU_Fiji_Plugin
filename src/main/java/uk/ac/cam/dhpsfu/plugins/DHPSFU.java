@@ -95,11 +95,11 @@ public class DHPSFU implements PlugIn {
 
 	// Filtering parameters
 	private boolean enableFilters = true; // true if enable all filters
-	private boolean enableFilterCalibRange; // remove localisations out of the angular range of calibration; if False,
+	private boolean enableFilterCalibRange = true; // remove localisations out of the angular range of calibration; if False,
 											// polynomial fit is extrapolated beyond the range.
-	private boolean enableFilterDistance; // remove dots with unexpected distances
+	private boolean enableFilterDistance = true; // remove dots with unexpected distances
 	private double distanceDev = 0.2; // relative deviation of the distance between dots, compared to calibration
-	private boolean enableFilterIntensityRatio; // filter based on the ratio of intensities between the dots
+	private boolean enableFilterIntensityRatio = true; // filter based on the ratio of intensities between the dots
 	private double intensityDev = 1; // relative deviation of the intensity difference between dots, compared to
 										// calibration
 	FilterParas filterParas = new FilterParas(enableFilters, enableFilterCalibRange, enableFilterDistance, distanceDev,
@@ -177,24 +177,24 @@ public class DHPSFU implements PlugIn {
 		gd.addChoice("Saving_format", formats, formats[0]);
 		String html = "<html>" + "<h2>Instruction about DHPSFU Plugin</h2>"
 		// +"<font size=+1>"
-				+ "Descriptions: <br>" + "- DHPSFU converts the peakfitted 2D data into 3D coordinates. <br>"
+				+ "Descriptions: <br>" + "- DHPSFU converts a list of 2D peaks into 3D localisations. <br>"
 				+ "- Simply select the calibration file and the data file from the Fiji memory. Make sure that both of them are in the memory. <br>"
-				+ "- The analysed 3D data will also be saved in the memory for later access. <br>" + "<br>"
+				+ "- The analysed 3D data will also be saved in the FIJI memory. <br>" + "<br>"
 				+ "Parameters:  <br>" + "- Pixel size (nm): Camera pixel size in nm. <br>"
-				+ "- Calibration step (nm): Calibration step size in nm.   <br>"
-				+ "- Precision cutoff (nm): Remove localisations with percision greater than this threshold.  <br>"
-				+ "- Fitting mode: Fitting mode, can be 'Frame', 'Angle', or 'Z'. Default is 'Frame'.   <br>"
-				+ "- Range to fit (from)/(to): Only fit data within this selected range. 'Frame' mode in number; 'Angle' mode in degrees; 'Z' mode in nm. <br>"
+				+ "- Calibration step (nm): The distance in z between consecutive frames of the calibration series, in nm.   <br>"
+				+ "- Precision cutoff (nm): Prior to analysis, exclude 2D peaks with precision greater than this threshold.  <br>"
+				+ "- Range units : Units in which the “Range to fit” is specified. Can be 'Frame', 'Angle', or 'Z'. Default is 'Frame'.   <br>"
+				+ "- Range to fit (from)/(to): Prior to model fitting, crop the calibration sequence to the selected range, in terms of the number of frames ('Frame' mode); DH angle in degrees ('Angle' mode); or z-range in nm ('Z' mode).  . <br>"
 				+ "<br>" + "Filtering options: <br>"
 				+ "- Enable filter calibration range: Remove localisations out of the angular range of calibration; if False, polynomial fit is extrapolated beyond the range.  <br>"
-				+ "- Enable filter distance: Remove DH pairs with unexpected distances.  <br>"
-				+ "** Initial distance filter (from)/(tos): Minimum and maximum distance between a pair of dots in pixel.<br>"
-				+ "** Distance deviation: Relative deviation of the distance between dots, compared to calibration.<br>"
-				+ "- Enable filter intensity ratio: Filter based on the ratio of intensities between the dots. <br>"
-				+ "** Intensity deviation: Relative deviation of the intensity between dots, compared to calibration.<br>"
+				+ "- Enable filter distance: Remove DH localisations with an unexpected distance between the lobes.  <br>"
+				+ "- Initial distance filter (from)/(tos):Minimum and maximum distance between a pair of dots for this pair to be considered a DH localisation (in pixels).<br>"
+				+ "** Distance deviation: Allowed relative deviation of the distance between dots, compared to calibration.<br>"
+				+ "- Enable filter intensity ratio: Remove DH localisations with an unexpected ratio of intensities between the lobes. <br>"
+				+ "** Intensity deviation: Allowed relative deviation of the intensity between dots, compared to calibration.<br>"
 				+ "<br>" + "File output:  <br>"
 				+ "- Save to file: Save the analysed data to user-speficied directory.  <br>"
-				+ "- Saving format: .3d (essentially a tsv. that can be visualised in ViSP) and .csv.  <br>" + "<br>"
+				+ "- Saving format: .3d (tab-separated, can be visualised directly in ViSP) or .csv (comma-separated). Data format: “x y z Intensity Frame”. <br>" + "<br>"
 				+ "</font>";
 		gd.addHelp(html);
 		gd.showDialog();
