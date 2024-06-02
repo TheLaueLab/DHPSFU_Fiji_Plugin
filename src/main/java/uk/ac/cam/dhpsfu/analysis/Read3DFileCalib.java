@@ -28,14 +28,37 @@
  */
 package uk.ac.cam.dhpsfu.analysis;
 
+import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.StringJoiner;
+
+import com.opencsv.CSVReader;
+import com.opencsv.exceptions.CsvValidationException;
 
 public class Read3DFileCalib {
+	
+	 public String readSpecificLine(String filePath, int lineNumber) throws IOException, CsvValidationException {
+	        try (CSVReader reader = new CSVReader(new FileReader(filePath))) {
+	            String[] line;
+	            int currentLine = 0;
+	            while ((line = reader.readNext()) != null) {
+	                currentLine++;
+	                if (currentLine == lineNumber) {
+	                    return String.join(", ", line); // Join the array elements into a single string
+	                }
+	            }
+	        }
+	        return null; // Return null if the file has fewer lines than the specified lineNumber
+	    }
+	
+    
+	
 	public List<List<String>> readCSV(Path filePath, int skipLines) throws IOException {
 		List<String> lines = Files.readAllLines(filePath);
 
@@ -94,8 +117,12 @@ public class Read3DFileCalib {
 		for (int i = linesToSkip; i < lines.size(); i++) {
 			String line = lines.get(i);
 			String[] values = line.split("\t");
+			
+			
+			
 			List<Double> row = new ArrayList<>();
 			for (String value : values) {
+				//System.out.println("e: " + value);
 				try {
 					row.add(Double.parseDouble(value));
 				} catch (NumberFormatException e) {
@@ -105,6 +132,7 @@ public class Read3DFileCalib {
 			}
 			data.add(row);
 		}
+		//System.out.println("Array length: " + lines.get(10).split("\t").length);
 
 		int numRows = data.size();
 		int numCols = data.get(0).size();

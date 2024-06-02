@@ -752,6 +752,7 @@ public class ResultManager implements PlugIn {
 		if (fileType == "None") {
 			ImageJUtils.log("Localisations are not saved.");
 		}
+		else {
 		// ImageJUtils.log("Diaglog File type is: " + fileType);
 		dataPath = gd.getNextString();
 
@@ -763,6 +764,7 @@ public class ResultManager implements PlugIn {
 			if (!d.yesPressed()) {
 				return false;
 			}
+		}
 		}
 		// ImageJUtils.log("Diaglog File path is: " + dataPath);
 		resultsSettings.getResultsFileSettingsBuilder().setResultsFilename(dataPath);

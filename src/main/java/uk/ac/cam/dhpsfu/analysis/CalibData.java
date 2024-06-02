@@ -31,6 +31,9 @@ package uk.ac.cam.dhpsfu.analysis;
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.SplittableRandom;
+
+import com.opencsv.exceptions.CsvValidationException;
+
 import uk.ac.sussex.gdsc.smlm.data.config.CalibrationProtos.CameraType;
 import uk.ac.sussex.gdsc.smlm.data.config.CalibrationWriter;
 import uk.ac.sussex.gdsc.smlm.data.config.PSFProtos.PSF;
@@ -57,19 +60,45 @@ public class CalibData {
 	   *
 	   * @param name the name of the results
 	   * @return the results
+	 * @throws CsvValidationException 
 	   */
-	  public static MemoryPeakResults createRandomResults(String name, String filePath) {
+	  public static MemoryPeakResults createRandomResults(String name, String filePath) throws CsvValidationException {
 		SplittableRandom rng = new SplittableRandom();
     	Read3DFileCalib importer = new Read3DFileCalib();
     	double [][] data = null;
     	double sx = 1.2;
+    	String line = "";
+    	double[] frame;
+    	double[] x;
+    	double[] y;
+    	double[] intensity;
+    	double[] precision;
+
 
         try {
             /*
         	List<List<String>> data = importer.readCSV(Paths.get(filePath), skipLines);
             for (List<String> row : data) {
             	*/
+  
+        	 try {
+                 line = importer.readSpecificLine(filePath, 9); 
+                 if (line != null) {
+//                     System.out.println("Header Line: " + line);
+                 } else {
+                     System.out.println("The file has fewer than 8 lines.");
+                 }
+             } catch (IOException | CsvValidationException e) {
+                 e.printStackTrace();
+             }
+            //System.out.println("CSV Headers: " + line);
+        	
         	 data = importer.readCSVDouble(Paths.get(filePath), skipLines);
+        	 
+//        	 System.out.println("Number of rows: " + data.length);
+             if (data.length > 0) {
+                 //System.out.println("Number of columns: " + data[0].length);
+             }
             /*
         	 for (double[] row : data) {
                  for (double value : row) {
@@ -82,12 +111,32 @@ public class CalibData {
              e.printStackTrace();
         }    
 	    
+        String firstThreeLetters = line.substring(0, 3);
+        //System.out.println("First three letters: " + firstThreeLetters);
+        if (firstThreeLetters.equals("#Fr")) {
+            if (data[0].length >= 14) { // Ensure there are at least 15 columns
+                frame = ArrayUtils.getColumn(data, 0);
+                x = ArrayUtils.getColumn(data, 9);
+                y = ArrayUtils.getColumn(data, 10);
+                intensity = ArrayUtils.getColumn(data, 8);
+                precision = ArrayUtils.getColumn(data, 13);
+            } else {
+                System.out.println("Not enough columns in data for header '#Fr'");
+                return null;
+            }
+        } else {
+            if (data[0].length >= 15) { // Ensure there are at least 15 columns
+                frame = ArrayUtils.getColumn(data, 1);
+                x = ArrayUtils.getColumn(data, 10);
+                y = ArrayUtils.getColumn(data, 11);
+                intensity = ArrayUtils.getColumn(data, 9);
+                precision = ArrayUtils.getColumn(data, 14);
+            } else {
+                System.out.println("Not enough columns in data for other headers");
+                return null;
+            }
+        }
         
-        double[] frame = ArrayUtils.getColumn(data, 0);
-        double[] x = ArrayUtils.getColumn(data, 9);
-        double[] y = ArrayUtils.getColumn(data, 10);
-        double[] intensity = ArrayUtils.getColumn(data, 8);
-        double[] precision = ArrayUtils.getColumn(data, 13);
         
 	    MemoryPeakResults results = new MemoryPeakResults();
 	    
@@ -100,7 +149,8 @@ public class CalibData {
 		      float s = (float) rng.nextDouble(sx * 0.9, sx * 1.3);
 		      
 		      
-		      parameters[PeakResultDHPSFU.BACKGROUND] = (float)frame[i];
+		      
+			parameters[PeakResultDHPSFU.BACKGROUND] = (float)frame[i];
 		      parameters[PeakResultDHPSFU.X] = (float)x[i];
 		      parameters[PeakResultDHPSFU.Y] = (float)y[i];
 		      // Ignore z

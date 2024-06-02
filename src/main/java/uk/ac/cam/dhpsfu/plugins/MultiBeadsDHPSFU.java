@@ -30,16 +30,14 @@ package uk.ac.cam.dhpsfu.plugins;
 
 import ij.IJ;
 import ij.ImageJ;
+import ij.Macro;
 import ij.measure.ResultsTable;
 import ij.plugin.PlugIn;
+import ij.plugin.frame.Recorder;
+
 import java.io.File;
 import java.net.URISyntaxException;
-import java.util.List;
 import java.util.*;
-import java.util.Arrays;
-import java.util.Map;
-import java.util.Collections;
-import java.util.ArrayList;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import uk.ac.sussex.gdsc.core.ij.ImageJUtils;
@@ -68,10 +66,15 @@ import uk.ac.cam.dhpsfu.analysis.FittingParas;
 import uk.ac.cam.dhpsfu.analysis.FilterParas;
 //import uk.ac.sussex.gdsc.smlm.ij.example.plugin.ResultManager;
 import org.apache.commons.math3.ml.distance.EuclideanDistance;
+import org.apache.commons.math3.stat.regression.OLSMultipleLinearRegression;
+
+import com.opencsv.exceptions.CsvValidationException;
+
 import java.awt.Button;
 import java.awt.FlowLayout;
 import java.awt.Label;
 import java.awt.Panel;
+import java.awt.TextField;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.BufferedWriter;
@@ -113,64 +116,38 @@ public class MultiBeadsDHPSFU implements PlugIn {
 	FilterParas filterParas = new FilterParas(enableFilters, enableFilterCalibRange, enableFilterDistance, distanceDev,
 			enableFilterIntensityRatio, intensityDev);
 
-	private static String dataPath = "E:/Fiji_sampledata/slice0.tif.results.xls"; // Data path
-	private static String savePath;
-
+	private static String dataPath = "C:/Users/yw525/Documents/test_data_may2024/test/Peakfit/slice0.tif.trim.results.xls"; // Data
+																															// //
+																															// path
+	private static String savePath = "C:/Users/yw525/Documents/test_data_may2024/test_Analysis/Peakfit/DHPSFU";
 	private static List<String> dataNames;
 	private String savingFormat = ".3d";
-
-	// Extra options
 	private boolean saveToFile = true;
 
 	@Override
 	public void run(String arg) {
-		System.out.println("Data names: ");
-		if (showDialog()) {
-			ImageJUtils.log("Test: " + dataNames);
+		String macroOptions = Macro.getOptions();
+		if (showDialog(macroOptions)) {
+			long startTime = System.currentTimeMillis();
+			ImageJUtils.log("Loaded Calibration Files: " + dataNames);
 			DH_calibration();
+			long endTime = System.currentTimeMillis();
+			long duration = endTime - startTime;
+			double seconds = (double) duration / 1000.0;
+			IJ.log("MultiBeads-DHPSFU runtime: " + seconds + " seconds");
 		}
 	}
 
-//	private void showInstruction() {
-//		IJ.log(" -------- Instruction about DHPSFU-MultiBeads Plugin ---------");
-//		IJ.log(" ");
-//		IJ.log(" Descriptions: ");
-//		IJ.log("   - On top of the DHPSFU plugin, this plugin allows you to import multiple calibration files.");
-//		IJ.log("   - This plugin corrects the lateral spacial variation of the DH across the FOV.");
-//		IJ.log("   - By importing calibration stacks of different regions of the imaging FOV, this algorithm can compute the degree of spacial variation and correct the imaging data. ");
-//		IJ.log(" ");
-//		IJ.log(" Parameters: ");
-//		IJ.log("   - Pixel size (nm): Camera pixel size in nm. ");
-//		IJ.log("   - Calibration step (nm): Calibration step size in nm. ");
-//		IJ.log("   - Precision cutoff (nm): Remove localisations with percision greater than this threshold. ");
-//		IJ.log("   - Fitting mode: Fitting mode, can be 'Frame', 'Angle', or 'Z'. Default is 'Frame'. ");
-//		IJ.log("   - Range to fit (from)/(to): Only fit data within this selected range. 'Frame' mode in number; 'Angle' mode in degrees; 'Z' mode in nm. ");
-//		IJ.log(" ");
-//		IJ.log(" Filtering options: ");
-//		IJ.log("   - Enable filter calibration range: Remove localisations out of the angular range of calibration; if False, polynomial fit is extrapolated beyond the range. ");
-//		IJ.log("   - Enable filter distance: Remove DH pairs with unexpected distances. ");
-//		IJ.log("       - Initial distance filter (from)/(to): Minimum and maximum distance between a pair of dots in pixel. ");
-//		IJ.log("       - Distance deviation: Relative deviation of the distance between dots, compared to calibration. ");
-//		IJ.log("   - Enable filter intensity ratio: Filter based on the ratio of intensities between the dots. ");
-//		IJ.log("       - Intensity deviation: Relative deviation of the intensity between dots, compared to calibration. ");
-//		IJ.log(" ");
-//		IJ.log(" File output: ");
-//		IJ.log("   - Save to file: Save the analysed data to user-speficied directory. ");
-//		IJ.log("   - Saving format: .3d (essentially a tsv. that can be visualised in ViSP) and .csv. ");
-//
-//	}
-
-	private boolean showDialog() {
+	private boolean showDialog(String arg) {
+		if (arg != null) {
+			parseArguments(arg);
+		}
 		ExtendedGenericDialog gd = new ExtendedGenericDialog(TITLE);
-		// Create a panel with a custom layout to hold the message and button
 		gd.addMessage("Calibration file format: Only support peakfit result from GDSC SMLM.");
 		Panel panel = new Panel();
 		panel.setLayout(new FlowLayout(FlowLayout.LEFT, 0, 0));
-
-		// Add the message to the panel
 		Label message = new Label("Select Multi Beads Calibration files from:");
 		panel.add(message);
-
 		Button button = new Button("Calib files");
 		button.addActionListener(new ActionListener() {
 			@Override
@@ -185,10 +162,12 @@ public class MultiBeadsDHPSFU implements PlugIn {
 			}
 		});
 		panel.add(button);
-
 		gd.addPanel(panel);
 		gd.addMessage("Data file: ");
-		ResultsManager.addInput(gd, input2, InputSource.MEMORY);
+		// Add input2 if running manually
+		if (arg == null || arg.length() == 0) { // Assuming no arguments means manual mode
+			ResultsManager.addInput(gd, input2, InputSource.MEMORY);
+		}
 		gd.addNumericField("Pixel size (nm)", pxSize, 1);
 		gd.addNumericField("Calibration step (nm)", calibStep, 1);
 		gd.addNumericField("Precision cutoff (nm)", precisionCutoff, 1);
@@ -203,19 +182,17 @@ public class MultiBeadsDHPSFU implements PlugIn {
 		gd.addNumericField("Distance deviation", distanceDev, 1);
 		gd.addCheckbox("Enable filter intensity ratio", enableFilterIntensityRatio);
 		gd.addNumericField("Intensity deviation", intensityDev, 1);
-		// HI
 		gd.addMessage("File output:");
-		gd.addCheckbox("Saving to file", saveToFile);
-
-		gd.addDirectoryField("Save_directory", "");
+		gd.addCheckbox("Save to file", saveToFile);
+		gd.addDirectoryField("Save_directory", "--Please_Select--");
 		String[] formats = { ".3d", ".csv" };
 		gd.addChoice("Saving_format", formats, formats[0]);
 		String html = "<html>" + "<h2>Instruction about DHPSFU-MultiBeads Plugin</h2>"
 		// +"<font size=+1>"
-				+ "Descriptions: <br>" + " - On top of the DHPSFU plugin, this plugin allows you to correct for the lateral spacial variation of the DH across the FOV by importing multiple calibration files from different regions of the FOV.. <br>"
+				+ "Descriptions: <br>"
+				+ " - On top of the DHPSFU plugin, this plugin allows you to correct for the lateral spacial variation of the DH across the FOV by importing multiple calibration files from different regions of the FOV.. <br>"
 				+ "- The peak xy coordinates in imported calibration files must correspond to their actual position within the FOV, and the FOV must be the same as in the data. <br>"
-			    + "<br>"
-				+ "Parameters:  <br>" + "- Pixel size (nm): Camera pixel size in nm. <br>"
+				+ "<br>" + "Parameters:  <br>" + "- Pixel size (nm): Camera pixel size in nm. <br>"
 				+ "- Calibration step (nm): The distance in z between consecutive frames of the calibration series, in nm.    <br>"
 				+ "- Precision cutoff (nm): Prior to analysis, exclude 2D peaks with precision greater than this threshold.   <br>"
 				+ "- Range units: Units in which the “Range to fit” is specified. Can be 'Frame', 'Angle', or 'Z'. Default is 'Frame'.    <br>"
@@ -229,32 +206,56 @@ public class MultiBeadsDHPSFU implements PlugIn {
 				+ "** Intensity deviation: Allowed relative deviation of the intensity between dots, compared to calibration.  <br>"
 				+ "<br>" + "File output:  <br>"
 				+ "- Save to file: Save the analysed data to user-speficied directory.  <br>"
-				+ "- Saving format: .3d (tab-separated, can be visualised directly in ViSP) or .csv (comma-separated). Data format: “x y z Intensity Frame”.  <br>" + "<br>"
-				+ "</font>";
+				+ "- Saving format: .3d (tab-separated, can be visualised directly in ViSP) or .csv (comma-separated). Data format: “x y z Intensity Frame”.  <br>"
+				+ "<br>" + "</font>";
 		gd.addHelp(html);
 		gd.showDialog();
 		if (gd.wasCanceled()) {
 			return false;
 		}
 
-		input2 = ResultsManager.getInputSource(gd);
+		if (arg == null || arg.length() == 0) {
+			input2 = ResultsManager.getInputSource(gd);
+		}
 		ResultsManager.loadInputResults(input2, true, DistanceUnit.PIXEL, IntensityUnit.PHOTON);
-		pxSize = gd.getNextNumber();
-		calibStep = gd.getNextNumber();
-		precisionCutoff = gd.getNextNumber();
-		fittingMode = gd.getNextChoice();
-		rangeToFit[0] = (int) gd.getNextNumber();
-		rangeToFit[1] = (int) gd.getNextNumber();
-		enableFilterCalibRange = gd.getNextBoolean();
-		enableFilterDistance = gd.getNextBoolean();
-		initialDistanceFilter[0] = (int) gd.getNextNumber();
-		initialDistanceFilter[1] = (int) gd.getNextNumber();
-		distanceDev = gd.getNextNumber();
-		enableFilterIntensityRatio = gd.getNextBoolean();
-		intensityDev = gd.getNextNumber();
-		saveToFile = gd.getNextBoolean();
-		savePath = gd.getNextString();
-		savingFormat = gd.getNextChoice();
+		Vector<?> numericFields = gd.getNumericFields();
+		if (numericFields != null && numericFields.size() >= 9) {
+			pxSize = getNumericFieldValue(numericFields, 0);
+			calibStep = getNumericFieldValue(numericFields, 1);
+			precisionCutoff = getNumericFieldValue(numericFields, 2);
+			rangeToFit[0] = (int) getNumericFieldValue(numericFields, 3);
+			rangeToFit[1] = (int) getNumericFieldValue(numericFields, 4);
+			initialDistanceFilter[0] = (int) getNumericFieldValue(numericFields, 5);
+			initialDistanceFilter[1] = (int) getNumericFieldValue(numericFields, 6);
+			distanceDev = getNumericFieldValue(numericFields, 7);
+			intensityDev = getNumericFieldValue(numericFields, 8);
+		}
+
+		if (arg == null || arg.length() == 0) {
+
+			fittingMode = gd.getNextChoice();
+			enableFilterCalibRange = gd.getNextBoolean();
+			enableFilterDistance = gd.getNextBoolean();
+
+		} else {
+			Vector<?> choiceFields = gd.getChoices();
+			if (choiceFields != null && choiceFields.size() >= 2) {
+				fittingMode = getChoiceFieldValue(choiceFields, 0);
+				savingFormat = getChoiceFieldValue(choiceFields, 1);
+			}
+			Vector<?> checkboxFields = gd.getCheckboxes();
+			if (checkboxFields != null && checkboxFields.size() >= 4) {
+				enableFilterCalibRange = getCheckboxFieldValue(checkboxFields, 0);
+				enableFilterDistance = getCheckboxFieldValue(checkboxFields, 1);
+				enableFilterIntensityRatio = getCheckboxFieldValue(checkboxFields, 2);
+				saveToFile = getCheckboxFieldValue(checkboxFields, 3);
+			}
+			Vector<?> stringFields = gd.getStringFields();
+			if (stringFields != null && stringFields.size() >= 2) {
+				savePath = getStringFieldValue(stringFields, 1);
+			}
+
+		}
 		name2 = input2;
 		generalParas.setPxSize(pxSize);
 		generalParas.setCalibStep(calibStep);
@@ -269,10 +270,126 @@ public class MultiBeadsDHPSFU implements PlugIn {
 		filterParas.setDistanceDev(distanceDev);
 		filterParas.setEnableFilterIntensityRatio(enableFilterIntensityRatio);
 		filterParas.setIntensityDev(intensityDev);
+
+		StringBuilder command = new StringBuilder();
+		command.append("run(\"DHPSFU-MultiBeads\", ");
+		command.append("\"Calib_input=").append(joinWithoutSpaces(dataNames)).append(" ");
+		command.append("Data_input=").append(input2).append(" ");
+		command.append("Pixel_size=").append(pxSize).append(" ");
+		command.append("Calibration_step=").append(calibStep).append(" ");
+		command.append("Precision_cutoff=").append(precisionCutoff).append(" ");
+		command.append("Fitting_mode=").append(fittingMode).append(" ");
+		command.append("Range_to_fit_from=").append(rangeToFit[0]).append(" ");
+		command.append("Range_to_fit_to=").append(rangeToFit[1]).append(" ");
+		command.append("Filter_calib_range=").append(enableFilterCalibRange).append(" ");
+		command.append("Filter_dist=").append(enableFilterDistance).append(" ");
+		command.append("Dist_from=").append(initialDistanceFilter[0]).append(" ");
+		command.append("Dist_to=").append(initialDistanceFilter[1]).append(" ");
+		command.append("Dist_deviation=").append(distanceDev).append(" ");
+		command.append("Filter_intensity_ratio=").append(enableFilterIntensityRatio).append(" ");
+		command.append("Intensity_deviation=").append(intensityDev).append(" ");
+		command.append("Save_to_file=").append(saveToFile).append(" ");
+		command.append("Save_directory=").append(savePath).append(" ");
+		command.append("Save_format=").append(savingFormat).append("\");");
+
+		if (Recorder.record) {
+			Recorder.recordString(command.toString());
+		}
+
 		return true;
 	} // End of shoeDialog
 
-	private static MemoryPeakResults getResults(String fileName, String filePath) {
+	private double getNumericFieldValue(Vector<?> numericFields, int index) {
+		TextField field = (TextField) numericFields.get(index);
+		try {
+			return Double.parseDouble(field.getText());
+		} catch (NumberFormatException e) {
+			IJ.log("Error parsing numeric value: " + e.getMessage());
+			return Double.NaN;
+		}
+	}
+
+	private static String getChoiceFieldValue(Vector<?> fields, int index) {
+		return ((java.awt.Choice) fields.get(index)).getSelectedItem();
+	}
+
+	private static boolean getCheckboxFieldValue(Vector<?> fields, int index) {
+		return ((java.awt.Checkbox) fields.get(index)).getState();
+	}
+
+	private static String getStringFieldValue(Vector<?> fields, int index) {
+		return ((java.awt.TextField) fields.get(index)).getText();
+	}
+
+	private void parseArguments(String arg) {
+		String[] params = arg.split(" ");
+		for (String param : params) {
+			String[] keyVal = param.split("=");
+			if (keyVal.length == 2) {
+				switch (keyVal[0]) {
+				case "Calib_input":
+					List<String> stringList = Arrays.asList(keyVal[1].split(","));
+					dataNames = stringList;
+					break;
+				case "Data_input":
+					input2 = keyVal[1];
+					break;
+				case "Pixel_size":
+					pxSize = Double.parseDouble(keyVal[1]);
+					break;
+				case "Calibration_step":
+					calibStep = Double.parseDouble(keyVal[1]);
+					break;
+				case "Precision_cutoff":
+					precisionCutoff = Double.parseDouble(keyVal[1]);
+					break;
+				case "Fitting_mode":
+					fittingMode = keyVal[1];
+					break;
+				case "Range_to_fit_from":
+					rangeToFit[0] = Integer.parseInt(keyVal[1]);
+					break;
+				case "Range_to_fit_to=":
+					rangeToFit[1] = Integer.parseInt(keyVal[1]);
+					break;
+				case "Filter_calib_range":
+					enableFilterCalibRange = Boolean.parseBoolean(keyVal[1]);
+					break;
+				case "Filter_dist":
+					enableFilterDistance = Boolean.parseBoolean(keyVal[1]);
+					break;
+				case "Dist_from":
+					initialDistanceFilter[0] = Integer.parseInt(keyVal[1]);
+					break;
+				case "Dist_to":
+					initialDistanceFilter[1] = Integer.parseInt(keyVal[1]);
+					break;
+				case "Dist_deviation":
+					distanceDev = Double.parseDouble(keyVal[1]);
+					break;
+				case "Filter_intensity_ratio":
+					enableFilterIntensityRatio = Boolean.parseBoolean(keyVal[1]);
+					break;
+				case "Intensity_deviation":
+					intensityDev = Double.parseDouble(keyVal[1]);
+					break;
+				case "Save_to_file":
+					saveToFile = Boolean.parseBoolean(keyVal[1]);
+					break;
+				case "Save_directory":
+					savePath = keyVal[1];
+					break;
+				case "Save_format":
+					savingFormat = keyVal[1];
+					break;
+
+				}
+			}
+			// IJ.log("Set " + keyVal[0] + " to " + keyVal[1]);
+		}
+	}
+
+	private static MemoryPeakResults getResults(String fileName, String filePath) throws CsvValidationException {
 		// Use a utility class and provide the name for the dataset
 		return CalibData.createRandomResults(fileName, filePath);
 	} // End of getResults
@@ -280,14 +397,19 @@ public class MultiBeadsDHPSFU implements PlugIn {
 	private List<String> LoadMultiBeadsCalib() {
 		ResultManager resultManager = new ResultManager();
 		List<String> dataNames = resultManager.batchLoad();
-		String dataNamesString = dataNames.toString();
-		System.out.println("Data names: " + dataNamesString);
 		return dataNames;
+	}
+
+	public static String joinWithoutSpaces(List<String> list) {
+		if (list == null || list.isEmpty()) {
+			return "";
+		}
+		return list.stream().collect(Collectors.joining(","));
 	}
 
 	private List<Integer> removeBadFrame(int[] frame) {
 		int frameNum = Arrays.stream(frame).max().getAsInt();
-		System.out.println("No. of calibration frames = " + frameNum);
+		// System.out.println("No. of calibration frames = " + frameNum);
 		List<Integer> frameList = Arrays.stream(frame).boxed().collect(Collectors.toList());
 		List<Integer> badFrames = IntStream.rangeClosed(1, frameNum)
 				.filter(i -> Collections.frequency(frameList, i) == 1 || Collections.frequency(frameList, i) > 2)
@@ -316,7 +438,7 @@ public class MultiBeadsDHPSFU implements PlugIn {
 				goodFrameIndex++;
 			}
 		}
-		return goodData;
+		return goodData; // = Calib_datalist in python
 	} // End of removeValuesForBadFrames
 
 	private double[][] DHPSFUCalculation(float[][] goodData) {
@@ -329,7 +451,6 @@ public class MultiBeadsDHPSFU implements PlugIn {
 		for (int i = 0; i < goodData.length; i++) {
 			xList.set(i, (double) goodData[i][1]);
 		}
-		System.out.println("Number of good data: " + xList.size());
 		List<Double> yList = Arrays.asList(new Double[goodData.length]);
 		for (int i = 0; i < goodData.length; i++) {
 			yList.set(i, (double) goodData[i][2]);
@@ -338,7 +459,6 @@ public class MultiBeadsDHPSFU implements PlugIn {
 		for (int i = 0; i < goodData.length; i++) {
 			intensityList.set(i, (double) goodData[i][3]);
 		}
-
 		List<Double> beadIDList = Arrays.asList(new Double[goodData.length]);
 		for (int i = 0; i < goodData.length; i++) {
 			beadIDList.set(i, (double) goodData[i][5]);
@@ -369,11 +489,89 @@ public class MultiBeadsDHPSFU implements PlugIn {
 				angle = angle + Math.PI;
 			}
 			calculated[i] = new double[] { oneFrame, avgX, avgY, distXY, avgIntensity, ratioIntensity, angle, beadID };
-		}
+		} // = profile in python
 		return calculated;
 	} // End of DHPSFUCalculation
 
-	private double[][] filterData(double[][] calculated, GeneralParas generalParas) {
+	private double[][] dataWithAngleDiff(double[][] calculated) {
+		int frameIndex = 0;
+		int angleIndex = 6;
+
+		List<double[]> dataWithAngleDiff = new ArrayList<>();
+		Map<Integer, List<double[]>> frameMap = Arrays.stream(calculated)
+				.collect(Collectors.groupingBy(row -> (int) row[frameIndex]));
+
+		double maxIntraangle = 0.5;
+		List<Integer> badFrames = new ArrayList<>();
+
+		for (Map.Entry<Integer, List<double[]>> entry : frameMap.entrySet()) {
+			int frame = entry.getKey();
+			List<double[]> frameRows = entry.getValue();
+			double meanAngle = frameRows.stream().mapToDouble(row -> row[angleIndex]).average().orElse(0.0);
+			double[] angleDiffs = frameRows.stream().mapToDouble(row -> row[angleIndex] - meanAngle).toArray();
+
+			if (Arrays.stream(angleDiffs).map(Math::abs).max().orElse(0.0) > maxIntraangle) {
+				badFrames.add(frame);
+			} else {
+				for (int i = 0; i < frameRows.size(); i++) {
+					double[] newRow = Arrays.copyOf(frameRows.get(i), frameRows.get(i).length + 1);
+					newRow[newRow.length - 1] = angleDiffs[i];
+					dataWithAngleDiff.add(newRow);
+				}
+			}
+		}
+
+		// Convert to array and filter out bad frames
+		double[][] profile = dataWithAngleDiff.stream().filter(row -> !badFrames.contains((int) row[frameIndex]))
+				.toArray(double[][]::new);
+		return profile;
+	}
+
+	private double[] linearRegression(double[][] profile) {
+
+		int avgXIndex = 1;
+		int avgYIndex = 2;
+		int beadIDIndex = 7;
+		int angleDiffIndex = 8;
+		int angleIndex = 6;
+
+		Map<Double, List<double[]>> beadIDMap = Arrays.stream(profile)
+				.collect(Collectors.groupingBy(row -> row[beadIDIndex], LinkedHashMap::new, Collectors.toList()));
+
+		List<Double> xAvgList = new ArrayList<>();
+		List<Double> yAvgList = new ArrayList<>();
+		List<Double> aAvgList = new ArrayList<>();
+
+		for (Map.Entry<Double, List<double[]>> entry : beadIDMap.entrySet()) {
+			List<double[]> rows = entry.getValue();
+			double xAvg = rows.stream().mapToDouble(row -> row[avgXIndex]).average().orElse(0.0);
+			double yAvg = rows.stream().mapToDouble(row -> row[avgYIndex]).average().orElse(0.0);
+			double aAvg = rows.stream().mapToDouble(row -> row[angleDiffIndex]).average().orElse(0.0);
+
+			xAvgList.add(xAvg);
+			yAvgList.add(yAvg);
+			aAvgList.add(aAvg);
+		}
+
+		double[] xAvg = xAvgList.stream().mapToDouble(Double::doubleValue).toArray();
+		double[] yAvg = yAvgList.stream().mapToDouble(Double::doubleValue).toArray();
+		double[] aAvg = aAvgList.stream().mapToDouble(Double::doubleValue).toArray();
+
+		// Perform linear regression
+		double[][] predictors = new double[xAvg.length][2];
+		for (int i = 0; i < xAvg.length; i++) {
+			predictors[i][0] = xAvg[i];
+			predictors[i][1] = yAvg[i];
+		}
+		// Perform plane fit
+		OLSMultipleLinearRegression regression = new OLSMultipleLinearRegression();
+		regression.newSampleData(aAvg, predictors);
+		double[] regressionParameters = regression.estimateRegressionParameters();
+
+		return regressionParameters;
+	}
+
+	private double[][] filterData(double[][] profile, double[] regressionParameters, GeneralParas generalParas) {
 		int distanceLowerBound = generalParas.getInitialDistanceFilter()[0];
 		int distanceUpperBound = generalParas.getInitialDistanceFilter()[1];
 		String fittingMode = generalParas.getFittingMode();
@@ -382,23 +580,45 @@ public class MultiBeadsDHPSFU implements PlugIn {
 		double calibStep = generalParas.getCalibStep();
 		int avgDistanceIndex = 3;
 		int frameIndex = 0;
-		int angleIndex = 6;
+		int angleCorrIndex = 9;
 		int numRows = 0;
-		for (double[] row : calculated) {
+		int avgXIndex = 1;
+		int avgYIndex = 2;
+		int angleIndex = 6;
+
+		double intercept = regressionParameters[0];
+		double coefficientX = regressionParameters[1];
+		double coefficientY = regressionParameters[2];
+
+		double[][] profileFinal = new double[profile.length][profile[0].length + 1];
+
+		double[] angleCorrected = new double[profile.length];
+		for (int i = 0; i < profile.length; i++) {
+			double predictedAngle = intercept + coefficientX * profile[i][avgXIndex]
+					+ coefficientY * profile[i][avgYIndex];
+			angleCorrected[i] = profile[i][angleIndex] - predictedAngle;
+		}
+
+		for (int i = 0; i < profile.length; i++) {
+			System.arraycopy(profile[i], 0, profileFinal[i], 0, profile[i].length);
+			profileFinal[i][profile[i].length] = angleCorrected[i];
+		}
+
+		for (double[] row : profileFinal) {
 			if (row[avgDistanceIndex] >= distanceLowerBound && row[avgDistanceIndex] <= distanceUpperBound) {
 				numRows++;
 			}
 		}
-		System.out.println(numRows);
-		double[][] filteredData = new double[numRows][calculated[0].length];
+
+		double[][] filteredData = new double[numRows][profileFinal[0].length];
 		int rowIndex = 0;
-		for (double[] row : calculated) {
+		for (double[] row : profileFinal) {
 			if (fittingMode.equals("Frame") && row[frameIndex] >= rangeLowerBound
 					&& row[frameIndex] <= rangeUpperBound) {
 				filteredData[rowIndex] = row;
 				rowIndex++;
-			} else if (fittingMode.equals("Angle") && row[angleIndex] >= (rangeLowerBound * Math.PI / 180)
-					&& row[angleIndex] <= (rangeLowerBound * Math.PI / 180)) {
+			} else if (fittingMode.equals("Angle") && row[angleCorrIndex] >= (rangeLowerBound * Math.PI / 180)
+					&& row[angleCorrIndex] <= (rangeLowerBound * Math.PI / 180)) {
 				filteredData[rowIndex] = row;
 				rowIndex++;
 			} else if (fittingMode.equals("Z") && row[frameIndex] * calibStep >= rangeLowerBound
@@ -407,8 +627,9 @@ public class MultiBeadsDHPSFU implements PlugIn {
 				rowIndex++;
 			}
 		}
-		System.out.println(rowIndex);
 		filteredData = Arrays.copyOf(filteredData, rowIndex);
+
+		System.out.println("Filtered:" + filteredData.length);
 		return filteredData;
 	} // End of filterData
 
@@ -422,16 +643,18 @@ public class MultiBeadsDHPSFU implements PlugIn {
 			}
 		}
 		double calibStep = generalParas.getCalibStep();
-		int angleIndex = 6;
 		int frameIndex = 0;
 		int avgXIndex = 1;
 		int avgYIndex = 2;
 		int avgDistanceIndex = 3;
+		int angleCorrIndex = 9;
 		int ratioIndex = 5;
 		int beadIDIndex = 7;
-		double angleMin = Arrays.stream(filteredData).mapToDouble(row -> row[angleIndex]).min().orElse(0.0);
-		double angleMax = Arrays.stream(filteredData).mapToDouble(row -> row[angleIndex]).max().orElse(0.0);
+
+		double angleMin = Arrays.stream(filteredData).mapToDouble(row -> row[angleCorrIndex]).min().orElse(0.0);
+		double angleMax = Arrays.stream(filteredData).mapToDouble(row -> row[angleCorrIndex]).max().orElse(0.0);
 		double[] angleRange = { angleMin, angleMax };
+
 		List<Double> xnormList = new ArrayList<>();
 		List<Double> ynormList = new ArrayList<>();
 		List<Integer> fnormList = new ArrayList<>();
@@ -441,6 +664,7 @@ public class MultiBeadsDHPSFU implements PlugIn {
 			beadObservations.put(beadID, beadObservations.getOrDefault(beadID, 0) + 1);
 		}
 		int maxOb = Collections.max(beadObservations.values());
+
 		List<Double> beadOrder = new ArrayList<>(beadObservations.keySet());
 		for (double b : beadOrder) {
 			List<Integer> poses = Arrays.stream(filteredData).filter(row -> row[beadIDIndex] == b)
@@ -460,6 +684,7 @@ public class MultiBeadsDHPSFU implements PlugIn {
 				fnormList.addAll(fnormBead);
 			}
 		}
+
 		double[] xnormArr = xnormList.stream().mapToDouble(Double::doubleValue).toArray();
 		double[] ynormArr = ynormList.stream().mapToDouble(Double::doubleValue).toArray();
 		int[] fnormArr = fnormList.stream().mapToInt(Integer::intValue).toArray();
@@ -468,9 +693,14 @@ public class MultiBeadsDHPSFU implements PlugIn {
 		// Fitting
 		double[] dx = polyFit2(IntStream.of(fnormArr).mapToDouble(f -> f * calibStep).toArray(), xnormArr, 5);
 		double[] dy = polyFit2(IntStream.of(fnormArr).mapToDouble(f -> f * calibStep).toArray(), ynormArr, 5);
-		double[] dz = polyFit(filteredData, angleIndex, frameIndex, 1, calibStep, 5);
-		double[] dd = polyFit(filteredData, angleIndex, avgDistanceIndex, 1, 1, 8);
-		double[] dr = polyFit(filteredData, angleIndex, ratioIndex, 1, 1, 8);
+		double[] dz = polyFit(filteredData, angleCorrIndex, frameIndex, 1, calibStep, 5);
+		double[] dd = polyFit(filteredData, angleCorrIndex, avgDistanceIndex, 1, 1, 8);
+		double[] dr = polyFit(filteredData, angleCorrIndex, ratioIndex, 1, 1, 8);
+
+		for (double value : dz) {
+			System.out.println("dz=" + value);
+		}
+
 		return new FittingParas(dx, dy, dz, dd, dr, angleRange);
 	} // End of polyFitting
 
@@ -502,7 +732,7 @@ public class MultiBeadsDHPSFU implements PlugIn {
 		PrecisionResultProcedure p = new PrecisionResultProcedure(PeakfitData);
 		p.getPrecision(true);
 		double[] precisions = p.precisions;
-		System.out.println("Precision = " + precisions.length);
+		// System.out.println("Precision = " + precisions.length);
 		StandardResultProcedure s = new StandardResultProcedure(PeakfitData, DistanceUnit.PIXEL, IntensityUnit.PHOTON);
 		PeakfitData.getCalibration();
 
@@ -528,7 +758,6 @@ public class MultiBeadsDHPSFU implements PlugIn {
 		for (int i = 0; i < filteredData.size(); i++) {
 			DataFilteredPrecision[i] = filteredData.get(i);
 		}
-
 		return DataFilteredPrecision;
 	} // End of filterDataByPrecision
 
@@ -548,6 +777,7 @@ public class MultiBeadsDHPSFU implements PlugIn {
 				filteredData.add(row);
 			}
 		}
+
 		return filteredData;
 	} // End of filterDataByFrame
 
@@ -563,7 +793,8 @@ public class MultiBeadsDHPSFU implements PlugIn {
 		return distances;
 	} // End of calculateDistances
 
-	private List<List<Double>> processData(double[][] DataFilteredPrecision, GeneralParas generalParas) {
+	private List<List<Double>> processData(double[][] DataFilteredPrecision, GeneralParas generalParas,
+			double[] regressionParameters) {
 		Set<Integer> uniqueFrames = getUniqueFrames(DataFilteredPrecision);
 		List<List<Double>> processedResult = new ArrayList<>();
 
@@ -574,7 +805,9 @@ public class MultiBeadsDHPSFU implements PlugIn {
 		List<Double> angle = new ArrayList<>();
 		List<Double> ratio = new ArrayList<>();
 		List<Double> intensity = new ArrayList<>();
-
+		double intercept = regressionParameters[0];
+		double coefficientX = regressionParameters[1];
+		double coefficientY = regressionParameters[2];
 		for (int frame : uniqueFrames) {
 			List<double[]> frameData = filterDataByFrame(DataFilteredPrecision, frame);
 			double[] xs = frameData.stream().mapToDouble(row -> row[1]).toArray();
@@ -620,6 +853,27 @@ public class MultiBeadsDHPSFU implements PlugIn {
 				}
 			}
 		}
+		// Convert lists to arrays
+		double[] xArray = x.stream().mapToDouble(Double::doubleValue).toArray();
+		double[] yArray = y.stream().mapToDouble(Double::doubleValue).toArray();
+		double[] angleArray = angle.stream().mapToDouble(Double::doubleValue).toArray();
+
+		// Reshape arrays for prediction
+		double[][] xyArray = new double[xArray.length][2];
+		for (int i = 0; i < xArray.length; i++) {
+			xyArray[i][0] = xArray[i];
+			xyArray[i][1] = yArray[i];
+		}
+
+		// Adjust angles using the regression model
+		for (int i = 0; i < angleArray.length; i++) {
+			double predictedAngle = intercept + coefficientX * xyArray[i][0] + coefficientY * xyArray[i][1];
+			angleArray[i] -= predictedAngle;
+		}
+
+		// Update the angle list with the adjusted values
+		angle = Arrays.stream(angleArray).boxed().collect(Collectors.toList());
+
 		processedResult.add(frames);
 		processedResult.add(dists);
 		processedResult.add(x);
@@ -627,13 +881,16 @@ public class MultiBeadsDHPSFU implements PlugIn {
 		processedResult.add(angle);
 		processedResult.add(ratio);
 		processedResult.add(intensity);
+		System.out.println("Processed result line= " + processedResult.get(0).size());
 
 		return processedResult;
 	} // End of processData
 
 	private List<List<Double>> calculateCoordinates(List<List<Double>> processedResult, FittingParas fittingParas,
 			GeneralParas generalParas) {
+
 		double zMin = polyval(fittingParas.getDz(), fittingParas.getAngleRange()[0]);
+
 		List<Double> zN = processedResult.get(4).stream().map(angle -> polyval(fittingParas.getDz(), angle))
 				.collect(Collectors.toList());
 		List<Double> xN = new ArrayList<>();
@@ -651,6 +908,7 @@ public class MultiBeadsDHPSFU implements PlugIn {
 		xyzN.add(xN);
 		xyzN.add(yN);
 		xyzN.add(zN);
+
 		return xyzN;
 	} // End of calculateCoordinates
 
@@ -799,6 +1057,7 @@ public class MultiBeadsDHPSFU implements PlugIn {
 		int index = 0;
 		for (String c : dataNames) {
 			MemoryPeakResults results = ResultsManager.loadInputResults(c, false, null, null);
+			System.out.println(dataNames);
 			System.out.println(c);
 			if (MemoryPeakResults.isEmpty(results)) {
 				IJ.error(TITLE, "No calibration results could be loaded");
@@ -835,7 +1094,10 @@ public class MultiBeadsDHPSFU implements PlugIn {
 				concatenatedData[currentRow++] = row;
 			}
 		}
-		double[][] filteredData = filterData(concatenatedData, generalParas);
+		double[][] profile = dataWithAngleDiff(concatenatedData);
+		double[] regressionParameters = linearRegression(profile);
+		double[][] filteredData = filterData(profile, regressionParameters, generalParas);
+
 		FittingParas fittingParas = polyFitting(filteredData, generalParas);
 		System.out.println("concatenatedData: " + concatenatedData.length);
 		System.out.println("filteredData: " + filteredData.length);
@@ -848,10 +1110,10 @@ public class MultiBeadsDHPSFU implements PlugIn {
 		double[][] DataFilteredPrecision = filterDataByPrecision(PeakfitData, precisionCutoff);
 		System.out.println("DataFilteredPrecision: " + DataFilteredPrecision.length);
 
-		List<List<Double>> processedResult = processData(DataFilteredPrecision, generalParas);
+		List<List<Double>> processedResult = processData(DataFilteredPrecision, generalParas, regressionParameters);
 		List<List<Double>> xyzN = calculateCoordinates(processedResult, fittingParas, generalParas);
 		List<List<Double>> filteredPeakResult = filterPeakfitData(processedResult, xyzN, filterParas, fittingParas);
-		if (saveToFile = true) {
+		if (saveToFile == true) {
 			saveTo3D(filteredPeakResult, name2, savingFormat);
 		}
 		// View localisation
@@ -868,7 +1130,8 @@ public class MultiBeadsDHPSFU implements PlugIn {
 		cw.getBuilder().getCameraCalibrationBuilder().setCameraType(CameraType.EMCCD).setBias(100)
 				.setQuantumEfficiency(0.95).setReadNoise(1.6);
 		finalResult.setCalibration(cw.getCalibration());
-		System.out.println("No. of localisation left: " + filteredPeakResult.size());
+		IJ.log("No. of 3D localisations: " + filteredPeakResult.size());
+		System.out.println("Number of localisation left: " + filteredPeakResult.size());
 	} // End of DH_calibration
 
 	private double[][] toDouble(List<List<Double>> list) {
@@ -886,9 +1149,10 @@ public class MultiBeadsDHPSFU implements PlugIn {
 	 * the plugin, e.g. after setting breakpoints.
 	 *
 	 * @param args unused
-	 * @throws URISyntaxException if the URL cannot be converted to a URI
+	 * @throws URISyntaxException     if the URL cannot be converted to a URI
+	 * @throws CsvValidationException
 	 */
-	public static void main(String[] args) throws URISyntaxException {
+	public static void main(String[] args) throws URISyntaxException, CsvValidationException {
 		// Set the base directory for plugins
 		// see: https://stackoverflow.com/a/7060464/1207769
 		Class<MultiBeadsDHPSFU> clazz = MultiBeadsDHPSFU.class;
@@ -921,4 +1185,10 @@ public class MultiBeadsDHPSFU implements PlugIn {
 		// Run the plugin
 		IJ.runPlugIn(clazz.getName(), "");
 	} // End of main
-} // End of class
+		// End of class
+
+//public static void main(String[] args) {
+//	new MultiBeadsDHPSFU().run(
+//			"fileType=DHPSFU savingFormat=.3d pxSize=100 ifManualIndex=false dataPath=C:/Users/yw525/Documents/cell2_2nM_slice7_corr.3d");
+//}
+}

@@ -29,15 +29,13 @@
 package uk.ac.cam.dhpsfu.plugins;
 
 import ij.IJ;
+import ij.Macro;
 import ij.measure.ResultsTable;
 import ij.plugin.PlugIn;
+import ij.plugin.frame.Recorder;
 
 import java.util.*;
 import java.util.stream.IntStream;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
 
 import uk.ac.sussex.gdsc.core.ij.ImageJUtils;
 import uk.ac.sussex.gdsc.core.ij.gui.ExtendedGenericDialog;
@@ -52,6 +50,8 @@ import uk.ac.sussex.gdsc.smlm.ij.plugins.ResultsManager.InputSource;
 import uk.ac.sussex.gdsc.smlm.results.MemoryPeakResults;
 import uk.ac.sussex.gdsc.smlm.results.PeakResult;
 import uk.ac.cam.dhpsfu.analysis.PeakResultDHPSFU;
+
+import java.awt.TextField;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -78,13 +78,22 @@ public class BlinkingCorrection implements PlugIn {
 
 	@Override
 	public void run(String arg) {
+		String macroOptions = Macro.getOptions();
+		long startTime = System.currentTimeMillis();
 		// showInstruction();
-		if (showDialog()) {
+		if (showDialog(macroOptions)) {
 			blinkingCorrection();
+			long endTime = System.currentTimeMillis();
+			long duration = endTime - startTime;
+			double seconds = (double) duration / 1000.0;
+			IJ.log("Blinking Correction runtime: " + seconds + " seconds");
 		}
 	}
 
-	private boolean showDialog() {
+	private boolean showDialog(String arg) {
+		if (arg != null) {
+			parseArguments(arg);
+		}
 		ExtendedGenericDialog gd = new ExtendedGenericDialog(TITLE);
 		gd.addMessage("Localisation file: ");
 		ResultsManager.addInput(gd, input, InputSource.MEMORY);
@@ -92,7 +101,7 @@ public class BlinkingCorrection implements PlugIn {
 		// gd.addCheckbox("Is data unit in Pixel?", PixUnit);
 		// String[] formats = { "Pixel", "nm" };
 		// gd.addChoice("Distance Unit", formats, formats[0]);
-		gd.addNumericField("Pixel size", pxSize, 1);
+		gd.addNumericField("Pixel_size", pxSize, 1);
 		gd.addNumericField("Dimensions", numDimension, 0);
 		gd.addNumericField("MaxJumpDist", maxJumpDist, 0);
 		gd.addNumericField("MaxFrameGap", maxFrameGap, 0);
@@ -101,7 +110,8 @@ public class BlinkingCorrection implements PlugIn {
 		gd.addCheckbox("Save corrected localisations", saveToFile);
 		gd.addCheckbox("Save track info", saveInfoToFile);
 		gd.addCheckbox("Save assigned track", saveAssignedTrack);
-		gd.addDirectoryField("Save_directory", "");
+		gd.addDirectoryField("Save_directory", "--Please_Select--");
+
 		String html = "<html>" + "<h2>Instruction about Blinking Correction Plugin</h2>"
 		// +"<font size=+1>"
 				+ "*** For temporal grouping of localisations ***<br>" + "<br>"
@@ -127,27 +137,153 @@ public class BlinkingCorrection implements PlugIn {
 		if (gd.wasCanceled()) {
 			return false;
 		}
-
 		input = ResultsManager.getInputSource(gd);
-		if (input == "Pixel") {
-			ResultsManager.loadInputResults(input, true, DistanceUnit.PIXEL, IntensityUnit.PHOTON);
-		} else {
-			ResultsManager.loadInputResults(input, true, DistanceUnit.NM, IntensityUnit.PHOTON);
-		}
+		// if (input == "Pixel") {
+		ResultsManager.loadInputResults(input, true, IntensityUnit.PHOTON);
+		// } else {
+		// ResultsManager.loadInputResults(input, true, DistanceUnit.NM,
+		// IntensityUnit.PHOTON);
+		// }
 		// PixUnit = gd.getNextChoice();
-		pxSize = gd.getNextNumber();
-		numDimension = (int) gd.getNextNumber();
-		maxJumpDist = gd.getNextNumber();
-		maxFrameGap = (int) gd.getNextNumber();
-		minNumPos = (int) gd.getNextNumber();
-		saveToFile = gd.getNextBoolean();
-		saveInfoToFile = gd.getNextBoolean();
-		saveAssignedTrack = gd.getNextBoolean();
-		savePath = gd.getNextString();
-		name1 = input;
-		System.out.print(name1);
+		if (arg == null || arg.length() == 0) {
+			pxSize = gd.getNextNumber();
+			numDimension = (int) gd.getNextNumber();
+			maxJumpDist = gd.getNextNumber();
+			maxFrameGap = (int) gd.getNextNumber();
+			minNumPos = (int) gd.getNextNumber();
+			saveToFile = gd.getNextBoolean();
+			saveInfoToFile = gd.getNextBoolean();
+			saveAssignedTrack = gd.getNextBoolean();
+			savePath = gd.getNextString();
+			name1 = input;
+		} else {
+
+		Vector<?> numericFields = gd.getNumericFields();
+		if (numericFields != null && numericFields.size() >= 5) {
+			pxSize = getNumericFieldValue(numericFields, 0);
+			numDimension = (int) getNumericFieldValue(numericFields, 1);
+			maxJumpDist = getNumericFieldValue(numericFields, 2);
+			maxFrameGap = (int) getNumericFieldValue(numericFields, 3);
+			minNumPos = (int) getNumericFieldValue(numericFields, 4);
+		}
+
+			// Parse checkbox fields
+			Vector<?> checkboxFields = gd.getCheckboxes();
+			if (checkboxFields != null && checkboxFields.size() >= 3) {
+				saveToFile = getCheckboxFieldValue(checkboxFields, 0);
+				saveInfoToFile = getCheckboxFieldValue(checkboxFields, 1);
+				saveAssignedTrack = getCheckboxFieldValue(checkboxFields, 2);
+			}
+
+			// Parse string fields
+			Vector<?> stringFields = gd.getStringFields();
+			if (stringFields != null && stringFields.size() >= 2) {
+				savePath = getStringFieldValue(stringFields, 1);
+			}
+			name1 = input;
+			// fittingMode = gd.getNextChoice();
+//			IJ.log("pxSize=" + pxSize);
+////		//enableFilterCalibRange = gd.getNextBoolean();
+//			IJ.log("numDimension=" + numDimension);
+////		//enableFilterDistance = gd.getNextBoolean();
+//			IJ.log("maxJumpDist=" + maxJumpDist);
+////		//enableFilterIntensityRatio = gd.getNextBoolean();
+//			IJ.log("maxFrameGap=" + maxFrameGap);
+////		//saveToFile = gd.getNextBoolean();
+//			IJ.log("minNumPos=" + minNumPos);
+////		//savePath = gd.getNextString();
+//			IJ.log("saveToFile=" + saveToFile);
+//			IJ.log("saveInfoToFile=" + saveInfoToFile);
+//			IJ.log("saveAssignedTrack=" + saveAssignedTrack);
+//			IJ.log("savePath=" + savePath);
+
+
+		}
+
+		StringBuilder command = new StringBuilder();
+		command.append("run(\"Blinking Correction\", ");
+		command.append("\"Input=").append(input).append(" ");
+		command.append("Pixel_size=").append(pxSize).append(" ");
+		command.append("Dimensions=").append(numDimension).append(" ");
+		command.append("MaxJumpDist=").append(maxJumpDist).append(" ");
+		command.append("MaxFrameGap=").append(maxFrameGap).append(" ");
+		command.append("MinNumLocs=").append(minNumPos).append(" ");
+		command.append("Save_corrected_localisations=").append(saveToFile).append(" ");
+		command.append("Save_track_info=").append(saveInfoToFile).append(" ");
+		command.append("Save_assigned_track=").append(saveAssignedTrack).append(" ");
+		command.append("Save_directory=").append(savePath).append("\");");
+		if (Recorder.record) {
+			Recorder.recordString(command.toString());
+		}
+
+		// System.out.print(name1);
 		return true;
 	} // End of shoeDialog
+
+	private void parseArguments(String arg) {
+		String[] params = arg.split(" ");
+		for (String param : params) {
+			String[] keyVal = param.split("=");
+			if (keyVal.length == 2) {
+				switch (keyVal[0]) {
+				case "Input":
+					input = keyVal[1];
+					break;
+				case "Pixel_size":
+					pxSize = Double.parseDouble(keyVal[1]);
+					break;
+				case "Dimensions":
+					numDimension = Integer.parseInt(keyVal[1]);
+					break;
+				case "MaxJumpDist":
+					maxJumpDist = Double.parseDouble(keyVal[1]);
+					break;
+				case "MaxFrameGap":
+					maxFrameGap = Integer.parseInt(keyVal[1]);
+					break;
+				case "MinNumLocs":
+					minNumPos = Integer.parseInt(keyVal[1]);
+					break;
+				case "Save_corrected_localisations":
+					saveToFile = Boolean.parseBoolean(keyVal[1]);
+					break;
+				case "Save_track_info":
+					saveInfoToFile = Boolean.parseBoolean(keyVal[1]);
+					break;
+				case "Save_assigned_track":
+					saveAssignedTrack = Boolean.parseBoolean(keyVal[1]);
+					break;
+				case "Save_directory":
+					savePath = keyVal[1];
+					break;
+
+				}
+			}
+			// IJ.log("Set " + keyVal[0] + " to " + keyVal[1]);
+		}
+	}
+
+	private double getNumericFieldValue(Vector<?> numericFields, int index) {
+		TextField field = (TextField) numericFields.get(index);
+		try {
+			return Double.parseDouble(field.getText());
+		} catch (NumberFormatException e) {
+			IJ.log("Error parsing numeric value: " + e.getMessage());
+			return Double.NaN;
+		}
+	}
+
+	private static String getChoiceFieldValue(Vector<?> fields, int index) {
+		return ((java.awt.Choice) fields.get(index)).getSelectedItem();
+	}
+
+	private static boolean getCheckboxFieldValue(Vector<?> fields, int index) {
+		return ((java.awt.Checkbox) fields.get(index)).getState();
+	}
+
+	private static String getStringFieldValue(Vector<?> fields, int index) {
+		return ((java.awt.TextField) fields.get(index)).getText();
+	}
 
 	private static double[][] resultToArray(MemoryPeakResults results, double pxSize) {
 		if (MemoryPeakResults.isEmpty(results)) {

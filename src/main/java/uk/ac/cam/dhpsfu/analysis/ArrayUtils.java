@@ -36,6 +36,9 @@ public class ArrayUtils {
 		for (int i = 0; i < numRows; i++) {
 			column[i] = data[i][columnIndex];
 		}
+		//System.out.print("Column length="+column.length);
+		//System.out.print("Row length="+numRows);
 		return column;
+		
 	}
 }

@@ -28,6 +28,7 @@
  */
 package uk.ac.cam.dhpsfu.plugins;
 
+import java.awt.TextField;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
@@ -42,20 +43,27 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.Vector;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.apache.commons.math3.fitting.PolynomialCurveFitter;
 import org.apache.commons.math3.fitting.WeightedObservedPoints;
 import org.apache.commons.math3.ml.distance.EuclideanDistance;
+
+import com.opencsv.exceptions.CsvValidationException;
+
 import ij.IJ;
 import ij.ImageJ;
+import ij.Macro;
 import ij.measure.ResultsTable;
 import ij.plugin.PlugIn;
+import ij.plugin.frame.Recorder;
 import uk.ac.cam.dhpsfu.analysis.CalibData;
 import uk.ac.cam.dhpsfu.analysis.FilterParas;
 import uk.ac.cam.dhpsfu.analysis.FittingParas;
 import uk.ac.cam.dhpsfu.analysis.GeneralParas;
 import uk.ac.cam.dhpsfu.analysis.PeakResultDHPSFU;
+import uk.ac.sussex.gdsc.core.ij.ImageJUtils;
 import uk.ac.sussex.gdsc.core.ij.gui.ExtendedGenericDialog;
 import uk.ac.sussex.gdsc.smlm.data.config.CalibrationProtos.CameraType;
 import uk.ac.sussex.gdsc.smlm.data.config.CalibrationWriter;
@@ -95,8 +103,9 @@ public class DHPSFU implements PlugIn {
 
 	// Filtering parameters
 	private boolean enableFilters = true; // true if enable all filters
-	private boolean enableFilterCalibRange = true; // remove localisations out of the angular range of calibration; if False,
-											// polynomial fit is extrapolated beyond the range.
+	private boolean enableFilterCalibRange = true; // remove localisations out of the angular range of calibration; if
+													// False,
+	// polynomial fit is extrapolated beyond the range.
 	private boolean enableFilterDistance = true; // remove dots with unexpected distances
 	private double distanceDev = 0.2; // relative deviation of the distance between dots, compared to calibration
 	private boolean enableFilterIntensityRatio = true; // filter based on the ratio of intensities between the dots
@@ -104,58 +113,45 @@ public class DHPSFU implements PlugIn {
 										// calibration
 	FilterParas filterParas = new FilterParas(enableFilters, enableFilterCalibRange, enableFilterDistance, distanceDev,
 			enableFilterIntensityRatio, intensityDev);
-
 	// Data paths
-	private static String calibPath = "E:/Fiji_sampledata/badcalib.xls"; // Path for the calibration file
-	private static String dataPath = "E:/Fiji_sampledata/slice0.tif.results.xls"; // Data path
+	private static String calibPath = "C:/Users/yw525/Documents/Multibeads/Calibration1_3_bead1.results.xls"; 
+	private static String dataPath = "C:/Users/yw525/Documents/test_data_may2024/test/Peakfit/slice0.tif.trim.results.xls"; 
 	private static String savePath;
 	private String savingFormat = ".3d";
 
 	// Extra options
 	private boolean saveToFile = true;
 
-//	public void showInstruction() {
-//		IJ.log(" -------- Instruction about DHPSFU Plugin ---------");
-//		IJ.log(" ");
-//		IJ.log(" Descriptions: ");
-//		IJ.log("   - DHPSFU converts the peakfitted 2D data into 3D coordinates.");
-//		IJ.log("   - Simply select the calibration file and the data file from the Fiji memory. Make sure that both of them are in the memory.");
-//		IJ.log("   - The analysed 3D data will also be saved in the memory for later access.");
-//
-//		IJ.log(" ");
-//		IJ.log(" Parameters: ");
-//		IJ.log("   - Pixel size (nm): Camera pixel size in nm. ");
-//		IJ.log("   - Calibration step (nm): Calibration step size in nm. ");
-//		IJ.log("   - Precision cutoff (nm): Remove localisations with percision greater than this threshold. ");
-//		IJ.log("   - Fitting mode: Fitting mode, can be 'Frame', 'Angle', or 'Z'. Default is 'Frame'. ");
-//		IJ.log("   - Range to fit (from)/(to): Only fit data within this selected range. 'Frame' mode in number; 'Angle' mode in degrees; 'Z' mode in nm. ");
-//		IJ.log(" ");
-//		IJ.log(" Filtering options: ");
-//		IJ.log("   - Enable filter calibration range: Remove localisations out of the angular range of calibration; if False, polynomial fit is extrapolated beyond the range. ");
-//		IJ.log("   - Enable filter distance: Remove DH pairs with unexpected distances. ");
-//		IJ.log("       - Initial distance filter (from)/(to): Minimum and maximum distance between a pair of dots in pixel. ");
-//		IJ.log("       - Distance deviation: Relative deviation of the distance between dots, compared to calibration. ");
-//		IJ.log("   - Enable filter intensity ratio: Filter based on the ratio of intensities between the dots. ");
-//		IJ.log("       - Intensity deviation: Relative deviation of the intensity between dots, compared to calibration. ");
-//		IJ.log(" ");
-//		IJ.log(" File output: ");
-//		IJ.log("   - Save to file: Save the analysed data to user-speficied directory. ");
-//		IJ.log("   - Saving format: .3d (essentially a tsv. that can be visualised in ViSP) and .csv. ");
-//	}
-
 	@Override
 	public void run(String arg) {
-		if (showDialog()) {
+		
+		String macroOptions = Macro.getOptions();
+		if (showDialog(macroOptions)) {
+			long startTime = System.currentTimeMillis();
 			DH_calibration();
+			ImageJUtils.log("Loaded Calibration Files: " + name1);
+			long endTime = System.currentTimeMillis();
+			long duration = endTime - startTime;
+			double seconds = (double) duration / 1000.0;
+			IJ.log("DHPSFU runtime: " + seconds + " seconds");
 		}
 	}
 
-	private boolean showDialog() {
+	private boolean showDialog(String arg) {
+		if (arg != null) {
+			parseArguments(arg);
+		}
+
 		ExtendedGenericDialog gd = new ExtendedGenericDialog(TITLE);
 		gd.addMessage("Calibration file: ");
+
 		ResultsManager.addInput(gd, input, InputSource.MEMORY);
+
 		gd.addMessage("Data file: ");
-		ResultsManager.addInput(gd, input2, InputSource.MEMORY);
+		if (arg == null || arg.length() == 0) { // Assuming no arguments means manual mode
+			ResultsManager.addInput(gd, input, InputSource.MEMORY);
+			IJ.log("1Input2=" + input2);
+		}
 		gd.addNumericField("Pixel size (nm)", pxSize, 1);
 		gd.addNumericField("Calibration step (nm)", calibStep, 1);
 		gd.addNumericField("Precision cutoff (nm)", precisionCutoff, 1);
@@ -172,15 +168,15 @@ public class DHPSFU implements PlugIn {
 		gd.addNumericField("Intensity deviation", intensityDev, 1);
 		gd.addMessage("File output:");
 		gd.addCheckbox("Saving to file", saveToFile);
-		gd.addDirectoryField("Save_directory", "");
+		gd.addDirectoryField("Save_directory", "--Please_Select--");
 		String[] formats = { ".3d", ".csv" };
 		gd.addChoice("Saving_format", formats, formats[0]);
 		String html = "<html>" + "<h2>Instruction about DHPSFU Plugin</h2>"
 		// +"<font size=+1>"
 				+ "Descriptions: <br>" + "- DHPSFU converts a list of 2D peaks into 3D localisations. <br>"
 				+ "- Simply select the calibration file and the data file from the Fiji memory. Make sure that both of them are in the memory. <br>"
-				+ "- The analysed 3D data will also be saved in the FIJI memory. <br>" + "<br>"
-				+ "Parameters:  <br>" + "- Pixel size (nm): Camera pixel size in nm. <br>"
+				+ "- The analysed 3D data will also be saved in the FIJI memory. <br>" + "<br>" + "Parameters:  <br>"
+				+ "- Pixel size (nm): Camera pixel size in nm. <br>"
 				+ "- Calibration step (nm): The distance in z between consecutive frames of the calibration series, in nm.   <br>"
 				+ "- Precision cutoff (nm): Prior to analysis, exclude 2D peaks with precision greater than this threshold.  <br>"
 				+ "- Range units : Units in which the “Range to fit” is specified. Can be 'Frame', 'Angle', or 'Z'. Default is 'Frame'.   <br>"
@@ -194,43 +190,93 @@ public class DHPSFU implements PlugIn {
 				+ "** Intensity deviation: Allowed relative deviation of the intensity between dots, compared to calibration.<br>"
 				+ "<br>" + "File output:  <br>"
 				+ "- Save to file: Save the analysed data to user-speficied directory.  <br>"
-				+ "- Saving format: .3d (tab-separated, can be visualised directly in ViSP) or .csv (comma-separated). Data format: “x y z Intensity Frame”. <br>" + "<br>"
-				+ "</font>";
+				+ "- Saving format: .3d (tab-separated, can be visualised directly in ViSP) or .csv (comma-separated). Data format: “x y z Intensity Frame”. <br>"
+				+ "<br>" + "</font>";
 		gd.addHelp(html);
 		gd.showDialog();
 		if (gd.wasCanceled()) {
 			return false;
 		}
-		input = ResultsManager.getInputSource(gd);
-		input2 = ResultsManager.getInputSource(gd);
-//		MemoryPeakResults calibresults = ResultsManager.loadInputResults(input, true, DistanceUnit.PIXEL,
-//				IntensityUnit.PHOTON);
-		// MemoryPeakResults calibresults = getResults(input, calibPath);
-		// MemoryPeakResults.addResults(calibresults);
-		// calibresults.setName(input);
-//		MemoryPeakResults dataresults = ResultsManager.loadInputResults(input2, true, DistanceUnit.PIXEL,
-//				IntensityUnit.PHOTON);
-		// MemoryPeakResults.addResults(dataresults);
-		// dataresults.setName(input2);
 
-		pxSize = gd.getNextNumber();
-		calibStep = gd.getNextNumber();
-		precisionCutoff = gd.getNextNumber();
-		fittingMode = gd.getNextChoice();
-		rangeToFit[0] = (int) gd.getNextNumber();
-		rangeToFit[1] = (int) gd.getNextNumber();
-		enableFilterCalibRange = gd.getNextBoolean();
-		enableFilterDistance = gd.getNextBoolean();
-		initialDistanceFilter[0] = (int) gd.getNextNumber();
-		initialDistanceFilter[1] = (int) gd.getNextNumber();
-		distanceDev = gd.getNextNumber();
-		enableFilterIntensityRatio = gd.getNextBoolean();
-		intensityDev = gd.getNextNumber();
-		saveToFile = gd.getNextBoolean();
-		savePath = gd.getNextString();
-		savingFormat = gd.getNextChoice();
+		input = ResultsManager.getInputSource(gd);
+		IJ.log("2Input=" + input);
+
+		if (arg == null || arg.length() == 0) {
+
+			input2 = ResultsManager.getInputSource(gd);
+			IJ.log("2Input2=" + input2);
+		}
+
+		Vector<?> numericFields = gd.getNumericFields();
+		if (numericFields != null && numericFields.size() >= 9) {
+			pxSize = getNumericFieldValue(numericFields, 0);
+			calibStep = getNumericFieldValue(numericFields, 1);
+			precisionCutoff = getNumericFieldValue(numericFields, 2);
+			rangeToFit[0] = (int) getNumericFieldValue(numericFields, 3);
+			rangeToFit[1] = (int) getNumericFieldValue(numericFields, 4);
+			initialDistanceFilter[0] = (int) getNumericFieldValue(numericFields, 5);
+			initialDistanceFilter[1] = (int) getNumericFieldValue(numericFields, 6);
+			distanceDev = getNumericFieldValue(numericFields, 7);
+			intensityDev = getNumericFieldValue(numericFields, 8);
+		}
+
+		if (arg == null || arg.length() == 0) {
+			fittingMode = gd.getNextChoice();
+//			IJ.log("Fitting=" + fittingMode);
+			enableFilterCalibRange = gd.getNextBoolean();
+			//IJ.log("enableFilterCalibRange=" + enableFilterCalibRange);
+			enableFilterDistance = gd.getNextBoolean();
+			//IJ.log("enableFilterDistance=" + enableFilterDistance);
+			enableFilterIntensityRatio = gd.getNextBoolean();
+		//	IJ.log("enableFilterIntensityRatio=" + enableFilterIntensityRatio);
+			saveToFile = gd.getNextBoolean();
+		//	IJ.log("saveToFile=" + saveToFile);
+			savePath = gd.getNextString();
+		//	IJ.log("savePath=" + savePath);
+			savingFormat = gd.getNextChoice();
+		//	IJ.log("savingFormat=" + savingFormat);
+
+		} else {
+			Vector<?> choiceFields = gd.getChoices();
+			if (choiceFields != null && choiceFields.size() >= 3) {
+				fittingMode = getChoiceFieldValue(choiceFields, 1);
+				savingFormat = getChoiceFieldValue(choiceFields, 2);
+			}
+
+			// Parse checkbox fields
+			Vector<?> checkboxFields = gd.getCheckboxes();
+			if (checkboxFields != null && checkboxFields.size() >= 4) {
+				enableFilterCalibRange = getCheckboxFieldValue(checkboxFields, 0);
+				enableFilterDistance = getCheckboxFieldValue(checkboxFields, 1);
+				enableFilterIntensityRatio = getCheckboxFieldValue(checkboxFields, 2);
+				saveToFile = getCheckboxFieldValue(checkboxFields, 3);
+			}
+
+			// Parse string fields
+			Vector<?> stringFields = gd.getStringFields();
+			if (stringFields != null && stringFields.size() >= 2) {
+				savePath = getStringFieldValue(stringFields, 1);
+			}
+			// fittingMode = gd.getNextChoice();
+			IJ.log("Fitting=" + fittingMode);
+//		//enableFilterCalibRange = gd.getNextBoolean();
+			IJ.log("enableFilterCalibRange=" + enableFilterCalibRange);
+//		//enableFilterDistance = gd.getNextBoolean();
+			IJ.log("enableFilterDistance=" + enableFilterDistance);
+//		//enableFilterIntensityRatio = gd.getNextBoolean();
+			IJ.log("enableFilterIntensityRatio=" + enableFilterIntensityRatio);
+//		//saveToFile = gd.getNextBoolean();
+			IJ.log("saveToFile=" + saveToFile);
+//		//savePath = gd.getNextString();
+			IJ.log("savePath=" + savePath);
+//		//savingFormat = gd.getNextChoice();
+			IJ.log("savingFormat=" + savingFormat);
+
+		}
+
 		name1 = input;
 		name2 = input2;
+
 		generalParas.setPxSize(pxSize);
 		generalParas.setCalibStep(calibStep);
 		generalParas.setPrecisionCutoff(precisionCutoff);
@@ -243,10 +289,125 @@ public class DHPSFU implements PlugIn {
 		filterParas.setDistanceDev(distanceDev);
 		filterParas.setEnableFilterIntensityRatio(enableFilterIntensityRatio);
 		filterParas.setIntensityDev(intensityDev);
+
+		StringBuilder command = new StringBuilder();
+		command.append("run(\"DHPSFU\", ");
+		command.append("\"Calib_input=").append(input).append(" ");
+		command.append("Data_input=").append(input2).append(" ");
+		command.append("Pixel_size=").append(pxSize).append(" ");
+		command.append("Calibration_step=").append(calibStep).append(" ");
+		command.append("Precision_cutoff=").append(precisionCutoff).append(" ");
+		command.append("Fitting_mode=").append(fittingMode).append(" ");
+		command.append("Range_to_fit_from=").append(rangeToFit[0]).append(" ");
+		command.append("Range_to_fit_to=").append(rangeToFit[1]).append(" ");
+		command.append("Filter_calib_range=").append(enableFilterCalibRange).append(" ");
+		command.append("Filter_dist=").append(enableFilterDistance).append(" ");
+		command.append("Dist_from=").append(initialDistanceFilter[0]).append(" ");
+		command.append("Dist_to=").append(initialDistanceFilter[1]).append(" ");
+		command.append("Dist_deviation=").append(distanceDev).append(" ");
+		command.append("Filter_intensity_ratio=").append(enableFilterIntensityRatio).append(" ");
+		command.append("Intensity_deviation=").append(intensityDev).append(" ");
+		command.append("Save_to_file=").append(saveToFile).append(" ");
+		command.append("Save_directory=").append(savePath).append(" ");
+		command.append("Save_format=").append(savingFormat).append("\");");
+
+		if (Recorder.record) {
+			Recorder.recordString(command.toString());
+		}
+
 		return true;
 	} // End of shoeDialog
 
-	private static MemoryPeakResults getResults(String fileName, String filePath) {
+	private double getNumericFieldValue(Vector<?> numericFields, int index) {
+		TextField field = (TextField) numericFields.get(index);
+		try {
+			return Double.parseDouble(field.getText());
+		} catch (NumberFormatException e) {
+			IJ.log("Error parsing numeric value: " + e.getMessage());
+			return Double.NaN;
+		}
+	}
+
+	private static String getChoiceFieldValue(Vector<?> fields, int index) {
+		return ((java.awt.Choice) fields.get(index)).getSelectedItem();
+	}
+
+	private static boolean getCheckboxFieldValue(Vector<?> fields, int index) {
+		return ((java.awt.Checkbox) fields.get(index)).getState();
+	}
+
+	private static String getStringFieldValue(Vector<?> fields, int index) {
+		return ((java.awt.TextField) fields.get(index)).getText();
+	}
+
+	private void parseArguments(String arg) {
+		String[] params = arg.split(" ");
+		for (String param : params) {
+			String[] keyVal = param.split("=");
+			if (keyVal.length == 2) {
+				switch (keyVal[0]) {
+				case "Calib_input":
+					input = keyVal[1];
+					break;
+				case "Data_input":
+					input2 = keyVal[1];
+					break;
+				case "Pixel_size":
+					pxSize = Double.parseDouble(keyVal[1]);
+					break;
+				case "Calibration_step":
+					calibStep = Double.parseDouble(keyVal[1]);
+					break;
+				case "Precision_cutoff":
+					precisionCutoff = Double.parseDouble(keyVal[1]);
+					break;
+				case "Fitting_mode":
+					fittingMode = keyVal[1];
+					break;
+				case "Range_to_fit_from":
+					rangeToFit[0] = Integer.parseInt(keyVal[1]);
+					break;
+				case "Range_to_fit_to=":
+					rangeToFit[1] = Integer.parseInt(keyVal[1]);
+					break;
+				case "Filter_calib_range":
+					enableFilterCalibRange = Boolean.parseBoolean(keyVal[1]);
+					break;
+				case "Filter_dist":
+					enableFilterDistance = Boolean.parseBoolean(keyVal[1]);
+					break;
+				case "Dist_from":
+					initialDistanceFilter[0] = Integer.parseInt(keyVal[1]);
+					break;
+				case "Dist_to":
+					initialDistanceFilter[1] = Integer.parseInt(keyVal[1]);
+					break;
+				case "Dist_deviation":
+					distanceDev = Double.parseDouble(keyVal[1]);
+					break;
+				case "Filter_intensity_ratio":
+					enableFilterIntensityRatio = Boolean.parseBoolean(keyVal[1]);
+					break;
+				case "Intensity_deviation":
+					intensityDev = Double.parseDouble(keyVal[1]);
+					break;
+				case "Save_to_file":
+					saveToFile = Boolean.parseBoolean(keyVal[1]);
+					break;
+				case "Save_directory":
+					savePath = keyVal[1];
+					break;
+				case "Save_format":
+					savingFormat = keyVal[1];
+					break;
+
+				}
+			}
+			// IJ.log("Set " + keyVal[0] + " to " + keyVal[1]);
+		}
+	}
+
+	private static MemoryPeakResults getResults(String fileName, String filePath) throws CsvValidationException {
 		// Use a utility class and provide the name for the dataset
 		return CalibData.createRandomResults(fileName, filePath);
 	} // End of getResults
@@ -289,6 +450,9 @@ public class DHPSFU implements PlugIn {
 	// Calculate the x, y, distance, intensity, intensity ration and angle of the
 	// given dataset.
 	private double[][] DHPSFUCalculation(float[][] goodData) {
+		if (goodData == null || goodData.length == 0) {
+			throw new IllegalArgumentException("goodData must not be null or empty");
+		}
 		List<Integer> frameList = Arrays.asList(new Integer[goodData.length]);
 		for (int i = 0; i < goodData.length; i++) {
 			frameList.set(i, (int) goodData[i][0]);
@@ -335,6 +499,9 @@ public class DHPSFU implements PlugIn {
 
 	// Filter the calibration data
 	private double[][] filterData(double[][] calculated, GeneralParas generalParas) {
+		if (calculated == null || calculated.length == 0) {
+			throw new IllegalArgumentException("calculated must not be null or empty");
+		}
 		int distanceLowerBound = generalParas.getInitialDistanceFilter()[0];
 		int distanceUpperBound = generalParas.getInitialDistanceFilter()[1];
 		String fittingMode = generalParas.getFittingMode();
@@ -756,11 +923,12 @@ public class DHPSFU implements PlugIn {
 		List<List<Double>> processedResult = processData(DataFilteredPrecision, generalParas);
 		List<List<Double>> xyzN = calculateCoordinates(processedResult, fittingParas, generalParas);
 		List<List<Double>> filteredPeakResult = filterPeakfitData(processedResult, xyzN, filterParas, fittingParas);
-
+		
 		// Save files
-		if (saveToFile = true) {
+		if (saveToFile == true) {
 			saveTo3D(filteredPeakResult, input2, savingFormat);
 		}
+		
 
 		// View localisation
 		view3DResult(filteredPeakResult);
@@ -776,7 +944,7 @@ public class DHPSFU implements PlugIn {
 		cw.getBuilder().getCameraCalibrationBuilder().setCameraType(CameraType.EMCCD).setBias(100)
 				.setQuantumEfficiency(0.95).setReadNoise(1.6);
 		finalResult.setCalibration(cw.getCalibration());
-		System.out.println("No. of localisation left: " + filteredPeakResult.size());
+		System.out.println("Number of localisation left: " + filteredPeakResult.size());
 	} // End of DH_calibration
 
 	// Convert the List<List<Double>> object into double [][]
@@ -795,9 +963,10 @@ public class DHPSFU implements PlugIn {
 	 * the plugin, e.g. after setting breakpoints.
 	 *
 	 * @param args unused
-	 * @throws URISyntaxException if the URL cannot be converted to a URI
+	 * @throws URISyntaxException     if the URL cannot be converted to a URI
+	 * @throws CsvValidationException
 	 */
-	public static void main(String[] args) throws URISyntaxException {
+	public static void main(String[] args) throws URISyntaxException, CsvValidationException {
 		// Set the base directory for plugins
 		// see: https://stackoverflow.com/a/7060464/1207769
 		Class<DHPSFU> clazz = DHPSFU.class;

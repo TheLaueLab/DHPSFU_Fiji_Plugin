@@ -33,6 +33,7 @@ import ij.ImagePlus;
 import ij.WindowManager;
 import ij.measure.ResultsTable;
 import ij.plugin.PlugIn;
+import ij.plugin.frame.Recorder;
 import ij.process.ImageProcessor;
 import org.apache.commons.math3.complex.Complex;
 import org.apache.commons.math3.linear.Array2DRowFieldMatrix;
@@ -69,9 +70,9 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Vector;
 import java.util.prefs.Preferences;
 
-import uk.ac.sussex.gdsc.smlm.ij.plugins.SmlmUsageTracker;
 import uk.ac.sussex.gdsc.smlm.results.MemoryPeakResults;
 import uk.ac.sussex.gdsc.smlm.results.PeakResult;
 import org.jfree.chart.ChartFactory;
@@ -87,6 +88,7 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 //import java.awt.image.BufferedImage;
 import java.util.stream.Collectors;
 import ij.ImageStack;
+import ij.Macro;
 import ij.process.FloatProcessor;
 
 public class DriftCorrection implements PlugIn {
@@ -109,13 +111,21 @@ public class DriftCorrection implements PlugIn {
 	private static String threed_memory = ""; // the name that you want to store in the fiji memory
 	public static DC_GeneralParas dc_generalParas = new DC_GeneralParas(210, 100, 20, 500);
 	public static DC_Paras dc_paras = new DC_Paras(false, false, false, false, average_drift, false, true);
+	Boolean WL_oca = dc_paras.getWl_occasional();
+	Boolean DCtwice = dc_paras.getCorrectionTwice();
+	Boolean saveDCIm = dc_paras.getSave_DC_WL();
+
 	private static String savePath;
 	private String savingFormat = ".3d";
 
 	// Extra options
-	private boolean saveToFile = true;
+	private boolean saveToFile;
 
-	private boolean showDialog() {
+	private boolean showDialog(String arg) {
+		if (arg != null) {
+			parseArguments(arg);
+		}
+
 		final ExtendedGenericDialog gd = new ExtendedGenericDialog(TITLE);
 		gd.addMessage("Load .3d file from ImageJ memory:");
 		// gd.addCheckbox("Load .3d file from ImageJ memory", memory3D);
@@ -130,22 +140,19 @@ public class DriftCorrection implements PlugIn {
 		// gd.addStringField("File_name", "3D");
 		// white light image input
 		gd.addCheckbox("Load Ref image from opened window", memoryWL);
-		Checkbox wl_image = gd.getLastCheckbox();
-		memoryWL = wl_image.getState();
+
 		String[] imageTitles = WindowManager.getImageTitles();
-		if (imageTitles.length != 0) {
-			gd.addChoice("Select opened image", imageTitles, "--Please Select--");
-		} else {
-			gd.addChoice("Select opened image", new String[] { "No Image Opened" }, "No Image Opened");
-		}
+
+		gd.addChoice("Select opened image", imageTitles, "--Please_Select--");
+
 		gd.addMessage("Select Ref image from File Directory ");
-		gd.addFilenameField(".tif_File_directory", "--Please Select--");
+		gd.addFilenameField(".tif_File_directory", "--Please_Select--");
 		// parameters
-		Checkbox white_light_occasional = gd.addAndGetCheckbox("Ref occasional", dc_paras.wl_occasional);
-		Checkbox correction_twice = gd.addAndGetCheckbox("Drift correction twice", dc_paras.correction_twice);
+		gd.addCheckbox("Ref occasional", dc_paras.wl_occasional);
+		gd.addCheckbox("Drift correction twice", dc_paras.correction_twice);
 		// Checkbox flip_x = gd.addAndGetCheckbox("Flip FOV in x ", dc_paras.flip_x);
 		// Checkbox flip_y = gd.addAndGetCheckbox("Flip FOV in y", dc_paras.flip_y);
-		String[] formats = { "Average drift", "Average image" };
+		String[] formats = { "Average_drift", "Average_image" };
 		gd.addChoice("Drift averaging", formats, formats[1]);
 		// Checkbox group_burst = gd.addAndGetCheckbox("Group burst",
 		// dc_paras.group_burst);
@@ -154,10 +161,10 @@ public class DriftCorrection implements PlugIn {
 		gd.addNumericField("No. of Ref frames in each burst", dc_generalParas.burst);
 		gd.addNumericField("No. of SR frames in each cycle", dc_generalParas.cycle);
 		gd.addMessage("File Output:");
-		Checkbox save_DC_WL = gd.addAndGetCheckbox("Save drift corrected WL images", dc_paras.save_DC_WL);
-		gd.addDirectoryField("Ref save directory", "");
+		gd.addCheckbox("Save drift corrected WL images", dc_paras.save_DC_WL);
+		gd.addDirectoryField("Ref save directory", "--Please_Select--");
 		gd.addCheckbox("Saving data", saveToFile);
-		gd.addDirectoryField("Data save directory", "");
+		gd.addDirectoryField("Data save directory", "--Please_Select--");
 		String[] formats2 = { ".3d", ".csv" };
 		gd.addChoice("Saving_format", formats2, formats2[0]);
 		String html = "<html>" + "<h2>Instruction about Drift Correction Plugin</h2>"
@@ -188,54 +195,214 @@ public class DriftCorrection implements PlugIn {
 		}
 
 		threed_memory = ResultsManager.getInputSource(gd);
-		// memory3D = load_3D_file.getState();
-		// IJ.log("3d: " + memory3D);
-		// memoryWL = wl_image.getState();
-		// IJ.log("wl: " + memoryWL);
-		// threed_path = gd.getNextString();
-		// threed_memory = gd.getNextString();
-		selectedTitle = gd.getNextChoice();
-		// IJ.log(selectedTitle);
-		WL_path = gd.getNextString();
-		average_drift = gd.getNextChoice();
-		saving_directory = gd.getNextString();
-		saveToFile = gd.getNextBoolean();
-		savePath = gd.getNextString();
-		savingFormat = gd.getNextChoice();
+		// IJ.log("3dfile=" + threed_memory);
+
+		if (arg == null || arg.length() == 0) {
+			memoryWL = gd.getNextBoolean();
+			selectedTitle = gd.getNextChoice();
+			WL_path = gd.getNextString();
+			WL_oca = gd.getNextBoolean();
+			DCtwice = gd.getNextBoolean();
+			average_drift = gd.getNextChoice();
+			px_size = gd.getNextNumber();
+			upFactor = gd.getNextNumber();
+			burst = gd.getNextNumber();
+			cycle = gd.getNextNumber();
+			saveDCIm = gd.getNextBoolean();
+			saving_directory = gd.getNextString();
+			saveToFile = gd.getNextBoolean();
+			savePath = gd.getNextString();
+			savingFormat = gd.getNextChoice();
+
+		} else {
+			Vector<?> numericFields = gd.getNumericFields();
+			if (numericFields != null && numericFields.size() >= 4) {
+				px_size = getNumericFieldValue(numericFields, 0);
+				upFactor = getNumericFieldValue(numericFields, 1);
+				burst = getNumericFieldValue(numericFields, 2);
+				cycle = getNumericFieldValue(numericFields, 3);
+			}
+
+			Vector<?> choiceFields = gd.getChoices();
+			if (choiceFields != null && choiceFields.size() >= 4) {
+				selectedTitle = getChoiceFieldValue(choiceFields, 1);
+				average_drift = getChoiceFieldValue(choiceFields, 2);
+				savingFormat = getChoiceFieldValue(choiceFields, 3);
+			}
+
+			// Parse checkbox fields
+			Vector<?> checkboxFields = gd.getCheckboxes();
+			if (checkboxFields != null && checkboxFields.size() >= 6) {
+				memoryWL = getCheckboxFieldValue(checkboxFields, 1);
+				WL_oca = getCheckboxFieldValue(checkboxFields, 2);
+				DCtwice = getCheckboxFieldValue(checkboxFields, 3);
+				saveDCIm = getCheckboxFieldValue(checkboxFields, 4);
+				saveToFile = getCheckboxFieldValue(checkboxFields, 5);
+			}
+
+			// Parse string fields
+			Vector<?> stringFields = gd.getStringFields();
+			if (stringFields != null && stringFields.size() >= 4) {
+				WL_path = getStringFieldValue(stringFields, 1);
+				saving_directory = getStringFieldValue(stringFields, 2);
+				savePath = getStringFieldValue(stringFields, 3);
+
+			}
+//			IJ.log("px_size=" + px_size);
+//			IJ.log("upFactor=" + upFactor);
+//			IJ.log("burst=" + burst);
+//			IJ.log("cycle=" + cycle);
+//			IJ.log("memoryWL=" + memoryWL);
+//			IJ.log("Title=" + selectedTitle);
+//			IJ.log("WL_path=" + WL_path);
+//			IJ.log("WL_oca=" + WL_oca);
+//			IJ.log("DCtwice=" + DCtwice);
+//			IJ.log("average_drift=" + average_drift);
+//			IJ.log("saveDCIm=" + saveDCIm);
+//			IJ.log("saving_directory=" + saving_directory);
+//			IJ.log("saveToFile=" + saveToFile);
+//			IJ.log("savePath=" + savePath);
+//			IJ.log("savingFormat=" + savingFormat);
+
+		}
 
 		// update parameters
-		dc_paras.setWl_occasional(white_light_occasional.getState());
-		dc_paras.setCorrection_twice(correction_twice.getState());
+		dc_paras.setWl_occasional(WL_oca);
+		dc_paras.setCorrection_twice(DCtwice);
 		// dc_paras.setFlip_x(flip_x.getState());
 		// dc_paras.setFlip_y(flip_y.getState());
 		dc_paras.setAverage_drift(average_drift);
-		// IJ.log(average_drift);
-		// dc_paras.setGroup_burst(group_burst.getState());
-		dc_paras.setSave_DC_WL(save_DC_WL.getState());
-		px_size = gd.getNextNumber();
-		upFactor = gd.getNextNumber();
-		burst = gd.getNextNumber();
-		cycle = gd.getNextNumber();
+		dc_paras.setSave_DC_WL(saveDCIm);
 		dc_generalParas.setPxSize(px_size);
 		dc_generalParas.setUpFactor(upFactor);
 		dc_generalParas.setBurst(burst);
 		dc_generalParas.setCycle(cycle);
+
+		StringBuilder command = new StringBuilder();
+		command.append("run(\"Drift Correction\", ");
+		command.append("\"Data_input=").append(threed_memory).append(" ");
+		command.append("Load_WL=").append(memoryWL).append(" ");
+		command.append("WL_input=").append(selectedTitle).append(" ");
+		command.append("WL_directory=").append(WL_path).append(" ");
+
+		command.append("WL_occasional=").append(WL_oca).append(" ");
+		command.append("DCtwice=").append(DCtwice).append(" ");
+		command.append("Average_drift=").append(average_drift).append(" ");
+		command.append("Pixel_size=").append(px_size).append(" ");
+		command.append("Up_factor=").append(upFactor).append(" ");
+		command.append("WL_Burst=").append(burst).append(" ");
+		command.append("SR_Burst=").append(cycle).append(" ");
+		command.append("Save_DC_image=").append(saveDCIm).append(" ");
+		command.append("Ref_directory=").append(saving_directory).append(" ");
+		command.append("Save_to_file=").append(saveToFile).append(" ");
+		command.append("Save_directory=").append(savePath).append(" ");
+		command.append("Save_format=").append(savingFormat).append("\");");
+
+		if (Recorder.record) {
+			Recorder.recordString(command.toString());
+		}
+
 		return true;
+	}
+
+	private void parseArguments(String arg) {
+		String[] params = arg.split(" ");
+		for (String param : params) {
+			String[] keyVal = param.split("=");
+			if (keyVal.length == 2) {
+				switch (keyVal[0]) {
+				case "Data_input":
+					threed_memory = keyVal[1];
+					break;
+				case "Load_WL":
+					memoryWL = Boolean.parseBoolean(keyVal[1]);
+					break;
+				case "WL_input":
+					selectedTitle = keyVal[1];
+					break;
+				case "WL_directory":
+					WL_path = keyVal[1];
+					break;
+				case "WL_occasional":
+					WL_oca = Boolean.parseBoolean(keyVal[1]);
+					break;
+				case "DCtwice":
+					DCtwice = Boolean.parseBoolean(keyVal[1]);
+					break;
+				case "Average_drift":
+					average_drift = keyVal[1];
+					break;
+				case "Pixel_size=":
+					px_size = Double.parseDouble(keyVal[1]);
+					break;
+				case "Up_factor":
+					upFactor = Double.parseDouble(keyVal[1]);
+					break;
+				case "WL_Burst":
+					burst = Double.parseDouble(keyVal[1]);
+					break;
+				case "SR_Burst":
+					cycle = Double.parseDouble(keyVal[1]);
+					break;
+				case "Save_DC_image":
+					saveDCIm = Boolean.parseBoolean(keyVal[1]);
+					break;
+				case "Ref_directory":
+					saving_directory = keyVal[1];
+					break;
+				case "Save_to_file":
+					saveToFile = Boolean.parseBoolean(keyVal[1]);
+					break;
+				case "Save_directory":
+					savePath = keyVal[1];
+					break;
+				case "Save_format":
+					savingFormat = keyVal[1];
+					break;
+
+				}
+			}
+			//IJ.log("Set " + keyVal[0] + " to " + keyVal[1]);
+		}
+	}
+
+	private double getNumericFieldValue(Vector<?> numericFields, int index) {
+		TextField field = (TextField) numericFields.get(index);
+		try {
+			return Double.parseDouble(field.getText());
+		} catch (NumberFormatException e) {
+			IJ.log("Error parsing numeric value: " + e.getMessage());
+			return Double.NaN;
+		}
+	}
+
+	private static String getChoiceFieldValue(Vector<?> fields, int index) {
+		return ((java.awt.Choice) fields.get(index)).getSelectedItem();
+	}
+
+	private static boolean getCheckboxFieldValue(Vector<?> fields, int index) {
+		return ((java.awt.Checkbox) fields.get(index)).getState();
+	}
+
+	private static String getStringFieldValue(Vector<?> fields, int index) {
+		return ((java.awt.TextField) fields.get(index)).getText();
 	}
 
 	@Override
 	public void run(String arg) {
-		SmlmUsageTracker.recordPlugin(this.getClass(), arg);
-		if (showDialog()) {
-			if (saving_directory.equals("") && dc_paras.save_DC_WL) {
+		String macroOptions = Macro.getOptions();
+		if (showDialog(macroOptions)) {
+			 long startTime = System.currentTimeMillis();
+			if (saving_directory.equals("--Please_Select--") && dc_paras.save_DC_WL) {
+				IJ.log("Save wl corr is " + dc_paras.save_DC_WL);
 				IJ.error("Please select a place to save your corrected white light image ");
 				return;
 				// } else if (!memory3D && threed_path.equals("--Please Select--")) {
 				// IJ.error("Please select a 3d file");
 				// return;
-			} else if (memoryWL && WL_path.equals("--Please Select--")) {
+			} else if (memoryWL && !WL_path.equals("--Please_Select--")) {
 				// IJ.log("WL " + String.valueOf(memoryWL));
-				IJ.error("Please select a opened image");
+				IJ.error("Please select an opened image");
 				return;
 			} else {
 				// load();
@@ -255,16 +422,22 @@ public class DriftCorrection implements PlugIn {
 				dCresult.getDrift_by_loc();
 
 				// IJ.log(threed_memory+"_Drift_by_Frame.csv");
-				saveData(dbf, savePath, dcFinalResult, threed_memory);
+
 				// saveLocData(dCresult.getDrift_by_loc(), savePath, dcFinalResult,
 				// threed_memory);
 
 				// Save files
-				if (saveToFile = true) {
+				if (saveToFile == true) {
+					IJ.log("saveToFile is " + saveToFile);
+					saveData(dbf, savePath, dcFinalResult, threed_memory);
 					List<List<Double>> doubleList = memoryPeakResultToDoubleList(dcFinalResult);
 					saveTo3D(doubleList, threed_memory, savingFormat, dcFinalResult);
 				}
 				viewLoadedResult(dcFinalResult, "Drift corrected result");
+				long endTime = System.currentTimeMillis();
+				long duration = endTime - startTime;
+				double seconds = (double) duration / 1000.0;
+				IJ.log("Drift Correction runtime: " + seconds + " seconds");
 				JFreeChart chart = createChartPanel(dbf);
 				JFrame frame = new JFrame();
 				frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
@@ -1353,7 +1526,7 @@ public class DriftCorrection implements PlugIn {
 				drift_by_frame.add(a);
 			}
 
-		} else if (paras.wl_occasional && !paras.correction_twice && paras.getAverage_drift() == "Average drift") {
+		} else if (paras.wl_occasional && !paras.correction_twice && paras.getAverage_drift() == "Average_drift") {
 //            int[][][] wlArray = loadtifFile(wl_path);
 
 			double[][] f1 = normalise_dtype(wlArray[0], true, 4096);
@@ -1511,7 +1684,7 @@ public class DriftCorrection implements PlugIn {
 					drift_by_frame.add(subList);
 				}
 			}
-		} else if (paras.wl_occasional && !paras.correction_twice && paras.getAverage_drift() == "Average image") {
+		} else if (paras.wl_occasional && !paras.correction_twice && paras.getAverage_drift() == "Average_image") {
 //            int[][][] wlArray = loadtifFile(wl_path);
 			double[][][] wl_img = normalise_dtype(wlArray, true, 4096);
 			int num_burst = (int) Math.floor(wl_img.length / gp.burst);
@@ -1601,7 +1774,7 @@ public class DriftCorrection implements PlugIn {
 			arrayMultiplicaion(yy, gp.px_size);
 			drift_by_frame = arrayListT(xx, yy);
 
-		} else if (paras.wl_occasional && paras.correction_twice && paras.getAverage_drift() == "Average drift") {
+		} else if (paras.wl_occasional && paras.correction_twice && paras.getAverage_drift() == "Average_drift") {
 //            int[][][] wlArray = loadtifFile(wl_path);
 			double[][] f1 = normalise_dtype(wlArray[0], true, 4096);
 			double[] fxx = zeros1col(gp.burst);
@@ -1769,7 +1942,7 @@ public class DriftCorrection implements PlugIn {
 			double[][] reshape_yyy = reshape(arrayListSize(yyy), 1, toArrayMul(yyyConcatenate, gp.px_size));
 
 			drift_by_frame = convertIntoArrayList(concatenateAxis1(reshape_xxx, reshape_yyy));
-		} else if (paras.wl_occasional && paras.correction_twice && paras.getAverage_drift() == "Average image") {
+		} else if (paras.wl_occasional && paras.correction_twice && paras.getAverage_drift() == "Average_image") {
 //            int[][][] wlArray = loadtifFile(wl_path);
 			double[][][] wl_img = normalise_dtype(wlArray, true, 4096);
 			int num_burst = (int) Math.floor(wl_img.length / gp.burst);
