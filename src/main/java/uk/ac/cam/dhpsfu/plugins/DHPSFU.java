@@ -127,13 +127,10 @@ public class DHPSFU implements PlugIn {
 		
 		String macroOptions = Macro.getOptions();
 		if (showDialog(macroOptions)) {
-			long startTime = System.currentTimeMillis();
+			
 			DH_calibration();
 			ImageJUtils.log("Loaded Calibration Files: " + name1);
-			long endTime = System.currentTimeMillis();
-			long duration = endTime - startTime;
-			double seconds = (double) duration / 1000.0;
-			IJ.log("DHPSFU runtime: " + seconds + " seconds");
+			
 		}
 	}
 
@@ -890,6 +887,7 @@ public class DHPSFU implements PlugIn {
 
 	// Main function for DHPSFU
 	private void DH_calibration() {
+		long startTime = System.currentTimeMillis();
 		// Processing the calibration data
 		MemoryPeakResults results = ResultsManager.loadInputResults(name1, false, null, null);
 		System.out.println(name1);
@@ -945,6 +943,10 @@ public class DHPSFU implements PlugIn {
 				.setQuantumEfficiency(0.95).setReadNoise(1.6);
 		finalResult.setCalibration(cw.getCalibration());
 		System.out.println("Number of localisation left: " + filteredPeakResult.size());
+		long endTime = System.currentTimeMillis();
+		long duration = endTime - startTime;
+		double seconds = (double) duration / 1000.0;
+		IJ.log("DHPSFU runtime: " + seconds + " seconds");
 	} // End of DH_calibration
 
 	// Convert the List<List<Double>> object into double [][]

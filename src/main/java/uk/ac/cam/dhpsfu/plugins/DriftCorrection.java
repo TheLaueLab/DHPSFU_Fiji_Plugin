@@ -392,7 +392,7 @@ public class DriftCorrection implements PlugIn {
 	public void run(String arg) {
 		String macroOptions = Macro.getOptions();
 		if (showDialog(macroOptions)) {
-			 long startTime = System.currentTimeMillis();
+			 
 			if (saving_directory.equals("--Please_Select--") && dc_paras.save_DC_WL) {
 				IJ.log("Save wl corr is " + dc_paras.save_DC_WL);
 				IJ.error("Please select a place to save your corrected white light image ");
@@ -406,6 +406,7 @@ public class DriftCorrection implements PlugIn {
 				return;
 			} else {
 				// load();
+				long startTime = System.currentTimeMillis();
 				DCresult dCresult = drift_correction(threed_path, threed_memory, selectedTitle, WL_path,
 						dc_generalParas, dc_paras, px_size);
 
@@ -437,7 +438,7 @@ public class DriftCorrection implements PlugIn {
 				long endTime = System.currentTimeMillis();
 				long duration = endTime - startTime;
 				double seconds = (double) duration / 1000.0;
-				IJ.log("Drift Correction runtime: " + seconds + " seconds");
+				IJ.log("Drift correction runtime: " + seconds + " seconds");
 				JFreeChart chart = createChartPanel(dbf);
 				JFrame frame = new JFrame();
 				frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);

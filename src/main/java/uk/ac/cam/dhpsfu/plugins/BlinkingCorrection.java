@@ -79,14 +79,11 @@ public class BlinkingCorrection implements PlugIn {
 	@Override
 	public void run(String arg) {
 		String macroOptions = Macro.getOptions();
-		long startTime = System.currentTimeMillis();
+		
 		// showInstruction();
 		if (showDialog(macroOptions)) {
 			blinkingCorrection();
-			long endTime = System.currentTimeMillis();
-			long duration = endTime - startTime;
-			double seconds = (double) duration / 1000.0;
-			IJ.log("Blinking Correction runtime: " + seconds + " seconds");
+		
 		}
 	}
 
@@ -181,23 +178,6 @@ public class BlinkingCorrection implements PlugIn {
 				savePath = getStringFieldValue(stringFields, 1);
 			}
 			name1 = input;
-			// fittingMode = gd.getNextChoice();
-//			IJ.log("pxSize=" + pxSize);
-////		//enableFilterCalibRange = gd.getNextBoolean();
-//			IJ.log("numDimension=" + numDimension);
-////		//enableFilterDistance = gd.getNextBoolean();
-//			IJ.log("maxJumpDist=" + maxJumpDist);
-////		//enableFilterIntensityRatio = gd.getNextBoolean();
-//			IJ.log("maxFrameGap=" + maxFrameGap);
-////		//saveToFile = gd.getNextBoolean();
-//			IJ.log("minNumPos=" + minNumPos);
-////		//savePath = gd.getNextString();
-//			IJ.log("saveToFile=" + saveToFile);
-//			IJ.log("saveInfoToFile=" + saveInfoToFile);
-//			IJ.log("saveAssignedTrack=" + saveAssignedTrack);
-//			IJ.log("savePath=" + savePath);
-
-
 		}
 
 		StringBuilder command = new StringBuilder();
@@ -273,9 +253,9 @@ public class BlinkingCorrection implements PlugIn {
 		}
 	}
 
-	private static String getChoiceFieldValue(Vector<?> fields, int index) {
-		return ((java.awt.Choice) fields.get(index)).getSelectedItem();
-	}
+//	private static String getChoiceFieldValue(Vector<?> fields, int index) {
+//		return ((java.awt.Choice) fields.get(index)).getSelectedItem();
+//	}
 
 	private static boolean getCheckboxFieldValue(Vector<?> fields, int index) {
 		return ((java.awt.Checkbox) fields.get(index)).getState();
@@ -618,6 +598,7 @@ public class BlinkingCorrection implements PlugIn {
 	} // End of view3DResult
 
 	private void blinkingCorrection() {
+		long startTime = System.currentTimeMillis();
 		double[][] threed_data;
 		IJ.log("load from memory: " + name1);
 		MemoryPeakResults r = MemoryPeakResults.getResults(name1);
@@ -666,6 +647,10 @@ public class BlinkingCorrection implements PlugIn {
 		cw.getBuilder().getCameraCalibrationBuilder().setCameraType(CameraType.EMCCD).setBias(100)
 				.setQuantumEfficiency(0.95).setReadNoise(1.6);
 		finalResult.setCalibration(cw.getCalibration());
+		long endTime = System.currentTimeMillis();
+		long duration = endTime - startTime;
+		double seconds = (double) duration / 1000.0;
+		IJ.log("Blinking Correction runtime: " + seconds + " seconds");
 	} // End of blinkingCorrection
 
 	/*

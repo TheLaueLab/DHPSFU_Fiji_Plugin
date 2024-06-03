@@ -128,13 +128,9 @@ public class MultiBeadsDHPSFU implements PlugIn {
 	public void run(String arg) {
 		String macroOptions = Macro.getOptions();
 		if (showDialog(macroOptions)) {
-			long startTime = System.currentTimeMillis();
 			ImageJUtils.log("Loaded Calibration Files: " + dataNames);
 			DH_calibration();
-			long endTime = System.currentTimeMillis();
-			long duration = endTime - startTime;
-			double seconds = (double) duration / 1000.0;
-			IJ.log("MultiBeads-DHPSFU runtime: " + seconds + " seconds");
+
 		}
 	}
 
@@ -533,7 +529,6 @@ public class MultiBeadsDHPSFU implements PlugIn {
 		int avgYIndex = 2;
 		int beadIDIndex = 7;
 		int angleDiffIndex = 8;
-		int angleIndex = 6;
 
 		Map<Double, List<double[]>> beadIDMap = Arrays.stream(profile)
 				.collect(Collectors.groupingBy(row -> row[beadIDIndex], LinkedHashMap::new, Collectors.toList()));
@@ -1053,6 +1048,8 @@ public class MultiBeadsDHPSFU implements PlugIn {
 	} // End of view3DResult
 
 	private void DH_calibration() {
+		long startTime = System.currentTimeMillis();
+
 		List<double[][]> calibDataList = new ArrayList<>();
 		int index = 0;
 		for (String c : dataNames) {
@@ -1132,6 +1129,10 @@ public class MultiBeadsDHPSFU implements PlugIn {
 		finalResult.setCalibration(cw.getCalibration());
 		IJ.log("No. of 3D localisations: " + filteredPeakResult.size());
 		System.out.println("Number of localisation left: " + filteredPeakResult.size());
+		long endTime = System.currentTimeMillis();
+		long duration = endTime - startTime;
+		double seconds = (double) duration / 1000.0;
+		IJ.log("DHPSFU runtime: " + seconds + " seconds");
 	} // End of DH_calibration
 
 	private double[][] toDouble(List<List<Double>> list) {
