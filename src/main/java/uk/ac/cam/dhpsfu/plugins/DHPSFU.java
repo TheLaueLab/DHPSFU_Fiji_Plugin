@@ -812,9 +812,10 @@ public class DHPSFU implements PlugIn {
 
 	// Save the final filtered result to .3D file
 	private void saveTo3D(List<List<Double>> filteredPeakResult, String fileName, String savingFormat) {
+		String name = fileName + "_DH";
 		Path outputPath;
 		if (savingFormat == ".3d") {
-			outputPath = Paths.get(savePath, fileName + savingFormat);
+			outputPath = Paths.get(savePath, name + savingFormat);
 			try (BufferedWriter writer = Files.newBufferedWriter(outputPath)) {
 				for (List<Double> row : filteredPeakResult) {
 					String csvRow = row.stream().map(Object::toString).collect(Collectors.joining("\t"));
@@ -822,11 +823,11 @@ public class DHPSFU implements PlugIn {
 					writer.newLine();
 				}
 			} catch (IOException e) {
-				System.err.println("Error writing to file: " + fileName);
+				System.err.println("Error writing to file: " + name);
 				e.printStackTrace();
 			}
 		} else {
-			outputPath = Paths.get(savePath, fileName + savingFormat);
+			outputPath = Paths.get(savePath, name + savingFormat);
 			try (BufferedWriter writer = Files.newBufferedWriter(outputPath)) {
 				for (List<Double> row : filteredPeakResult) {
 					String csvRow = row.stream().map(Object::toString).collect(Collectors.joining(","));
@@ -834,7 +835,7 @@ public class DHPSFU implements PlugIn {
 					writer.newLine();
 				}
 			} catch (IOException e) {
-				System.err.println("Error writing to file: " + fileName);
+				System.err.println("Error writing to file: " + name);
 				e.printStackTrace();
 			}
 		}
@@ -857,8 +858,8 @@ public class DHPSFU implements PlugIn {
 		t.show("DHPSFU results");
 	} // End of view3DResult
 
-	private MemoryPeakResults saveToMemory(List<List<Double>> filteredPeakResult) {
-		String name = "DHPSFUresult";
+	private MemoryPeakResults saveToMemory(String input, List<List<Double>> filteredPeakResult) {
+		String name = input + "_DH";
 		double[][] doubleFilteredPeakResult = toDouble(filteredPeakResult);
 		double[] frame = doubleFilteredPeakResult[4];
 		double[] x = doubleFilteredPeakResult[0];
@@ -930,7 +931,7 @@ public class DHPSFU implements PlugIn {
 
 		// View localisation
 		view3DResult(filteredPeakResult);
-		MemoryPeakResults finalResult = saveToMemory(filteredPeakResult);
+		MemoryPeakResults finalResult = saveToMemory(input2,filteredPeakResult);
 		MemoryPeakResults.addResults(finalResult);
 		CalibrationWriter cw = finalResult.getCalibrationWriterSafe();
 		cw.setIntensityUnit(IntensityUnit.PHOTON);
