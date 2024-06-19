@@ -31,6 +31,7 @@ package uk.ac.cam.dhpsfu.plugins;
 import ij.IJ;
 import ij.ImageJ;
 import ij.Macro;
+import ij.gui.Plot;
 import ij.measure.ResultsTable;
 import ij.plugin.PlugIn;
 import ij.plugin.frame.Recorder;
@@ -152,7 +153,7 @@ public class MultiBeadsDHPSFU implements PlugIn {
 					@Override
 					public void run() {
 						dataNames = LoadMultiBeadsCalib();
-						ImageJUtils.log("Loaded: " + dataNames.toString());
+						ImageJUtils.log("Loaded calibration files: " + dataNames.toString());
 					}
 				}).start();
 			}
@@ -212,6 +213,7 @@ public class MultiBeadsDHPSFU implements PlugIn {
 
 		if (arg == null || arg.length() == 0) {
 			input2 = ResultsManager.getInputSource(gd);
+			IJ.log("Data file selected: " + input2);
 		}
 		ResultsManager.loadInputResults(input2, true, DistanceUnit.PIXEL, IntensityUnit.PHOTON);
 		Vector<?> numericFields = gd.getNumericFields();
@@ -692,9 +694,7 @@ public class MultiBeadsDHPSFU implements PlugIn {
 		double[] dd = polyFit(filteredData, angleCorrIndex, avgDistanceIndex, 1, 1, 8);
 		double[] dr = polyFit(filteredData, angleCorrIndex, ratioIndex, 1, 1, 8);
 
-		for (double value : dz) {
-			System.out.println("dz=" + value);
-		}
+		
 
 		return new FittingParas(dx, dy, dz, dd, dr, angleRange);
 	} // End of polyFitting
@@ -904,6 +904,29 @@ public class MultiBeadsDHPSFU implements PlugIn {
 		xyzN.add(yN);
 		xyzN.add(zN);
 
+		// plot
+		// Generate a series of z values within the desired range
+		final int points = 200; // Number of points to generate for the plot
+		double angleMin = fittingParas.getAngleRange()[0];
+		double angleMax = fittingParas.getAngleRange()[1];
+
+		double[] coefficientsZ = fittingParas.getDz();
+		double[] angleArray = IntStream.rangeClosed(0, points)
+				.mapToDouble(i -> angleMin + i * (angleMax - angleMin) / points).toArray();
+		double[] zArray = new double[angleArray.length];
+
+		for (int i = 0; i < angleArray.length; i++) {
+			zArray[i] = polyval(coefficientsZ, angleArray[i]);
+		}
+
+		double zMax = Arrays.stream(zArray).max().getAsDouble();
+
+		Plot plot = new Plot("Calibration curve", "Angle (Radian)", "Z (nm)");
+		plot.setLimits(angleMin, angleMax, zMin, zMax);
+		plot.addPoints(angleArray, zArray, Plot.LINE);
+
+		plot.show();
+
 		return xyzN;
 	} // End of calculateCoordinates
 
@@ -1013,9 +1036,9 @@ public class MultiBeadsDHPSFU implements PlugIn {
 		double[] z = doubleFilteredPeakResult[2];
 		double[] intensity = doubleFilteredPeakResult[3];
 		ResultsTable t = new ResultsTable();
-		t.setValues("X (px)", x);
-		t.setValues("Y (px)", y);
-		t.setValues("Z (px)", z);
+		t.setValues("X (nm)", x);
+		t.setValues("Y (nm)", y);
+		t.setValues("Z (nm)", z);
 		t.setValues("Intensity (photon)", intensity);
 		t.setValues("Frame", frame);
 		t.show("DHPSFU results");
@@ -1129,7 +1152,8 @@ public class MultiBeadsDHPSFU implements PlugIn {
 				.setQuantumEfficiency(0.95).setReadNoise(1.6);
 		finalResult.setCalibration(cw.getCalibration());
 		IJ.log("No. of 3D localisations: " + filteredPeakResult.size());
-		System.out.println("Number of localisation left: " + filteredPeakResult.size());
+		// System.out.println("Number of localisation left: " +
+		// filteredPeakResult.size());
 		long endTime = System.currentTimeMillis();
 		long duration = endTime - startTime;
 		double seconds = (double) duration / 1000.0;

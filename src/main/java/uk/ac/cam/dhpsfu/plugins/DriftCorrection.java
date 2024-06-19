@@ -31,6 +31,7 @@ package uk.ac.cam.dhpsfu.plugins;
 import ij.IJ;
 import ij.ImagePlus;
 import ij.WindowManager;
+import ij.gui.Plot;
 import ij.measure.ResultsTable;
 import ij.plugin.PlugIn;
 import ij.plugin.frame.Recorder;
@@ -38,16 +39,16 @@ import ij.process.ImageProcessor;
 import org.apache.commons.math3.complex.Complex;
 import org.apache.commons.math3.linear.Array2DRowFieldMatrix;
 import org.apache.commons.math3.linear.FieldMatrix;
-import org.jfree.chart.ChartUtils;
-import org.jfree.chart.axis.NumberAxis;
-import org.jfree.chart.axis.NumberTickUnit;
-import org.jfree.chart.axis.TickUnits;
-import org.jfree.chart.block.BlockBorder;
-import org.jfree.chart.plot.PlotOrientation;
-import org.jfree.chart.renderer.LookupPaintScale;
-import org.jfree.chart.title.PaintScaleLegend;
-import org.jfree.chart.ui.RectangleEdge;
-import org.jfree.chart.ui.RectangleInsets;
+//import org.jfree.chart.ChartUtils;
+//import org.jfree.chart.axis.NumberAxis;
+//import org.jfree.chart.axis.NumberTickUnit;
+//import org.jfree.chart.axis.TickUnits;
+//import org.jfree.chart.block.BlockBorder;
+//import org.jfree.chart.plot.PlotOrientation;
+//import org.jfree.chart.renderer.LookupPaintScale;
+//import org.jfree.chart.title.PaintScaleLegend;
+//import org.jfree.chart.ui.RectangleEdge;
+//import org.jfree.chart.ui.RectangleInsets;
 import org.jtransforms.fft.DoubleFFT_2D;
 import uk.ac.cam.dhpsfu.analysis.*;
 import uk.ac.sussex.gdsc.core.ij.gui.ExtendedGenericDialog;
@@ -75,16 +76,16 @@ import java.util.prefs.Preferences;
 
 import uk.ac.sussex.gdsc.smlm.results.MemoryPeakResults;
 import uk.ac.sussex.gdsc.smlm.results.PeakResult;
-import org.jfree.chart.ChartFactory;
-import org.jfree.chart.ChartPanel;
-import org.jfree.chart.JFreeChart;
-import org.jfree.chart.plot.XYPlot;
-import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
-import org.jfree.data.xy.XYSeries;
-import org.jfree.data.xy.XYSeriesCollection;
-
-import javax.swing.*;
-import javax.swing.filechooser.FileNameExtensionFilter;
+//import org.jfree.chart.ChartFactory;
+//import org.jfree.chart.ChartPanel;
+//import org.jfree.chart.JFreeChart;
+//import org.jfree.chart.plot.XYPlot;
+//import org.jfree.chart.renderer.xy.XYLineAndShapeRenderer;
+//import org.jfree.data.xy.XYSeries;
+//import org.jfree.data.xy.XYSeriesCollection;
+//
+//import javax.swing.*;
+//import javax.swing.filechooser.FileNameExtensionFilter;
 //import java.awt.image.BufferedImage;
 import java.util.stream.Collectors;
 import ij.ImageStack;
@@ -168,7 +169,7 @@ public class DriftCorrection implements PlugIn {
 		String[] formats2 = { ".3d", ".csv" };
 		gd.addChoice("Saving_format", formats2, formats2[0]);
 		String html = "<html>" + "<h2>Instruction about Drift Correction Plugin</h2>"
-				+ "Load the localisation file for drift correction from FIJI memory. <br>" + "<br>"
+				+ "Load the localisation file for drift correction from ImageJ memory. <br>" + "<br>"
 				+ "If \\\"Load Ref image from opened window\\\" is ticked: <br>"
 				+ "- The program will use the image saved in the \\\"Select opened image\\\" field.  <br>"
 				+ "- Else it will use the image selected in \\\".tif file directory\\\". <br>" + "<br>"
@@ -186,7 +187,7 @@ public class DriftCorrection implements PlugIn {
 				+ "- No. of Ref frames in each burst: Number of reference frames taken in each burst. <br>"
 				+ "- No. of SR frames in each cycle: Number of SR frames taken in each cycle. <br>" + "<br>"
 				+ "File output:  <br>"
-				+ "- Save drift-corrected Ref images: Save the drift corrected reference images in a TIFF stack.  <br>"
+				+ "- Save drift-corrected Ref images: Save the drift corrected reference images in a TIFF stack. (This can take a long time)  <br>"
 				+ "- Save directory: Directory for the drift corrected reference stack.  <br>" + "<br>" + "</font>";
 		gd.addHelp(html);
 		gd.showDialog();
@@ -439,17 +440,18 @@ public class DriftCorrection implements PlugIn {
 				long duration = endTime - startTime;
 				double seconds = (double) duration / 1000.0;
 				IJ.log("Drift correction runtime: " + seconds + " seconds");
-				JFreeChart chart = createChartPanel(dbf);
-				JFrame frame = new JFrame();
-				frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-				JButton saveButton = new JButton("Save Chart");
-				saveButton.addActionListener(e -> saveChart(chart));
-				frame.add(saveButton, BorderLayout.SOUTH);
-				ChartPanel panel = new ChartPanel(chart);
-				frame.add(panel, BorderLayout.CENTER);
-				frame.setSize(800, 600);
-				frame.pack();
-				frame.setVisible(true);
+				//JFreeChart chart = createChartPanel(dbf);
+				createPlot(dbf);
+				//JFrame frame = new JFrame();
+				//frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+				//JButton saveButton = new JButton("Save Chart");
+				//saveButton.addActionListener(e -> saveChart(chart));
+				//frame.add(saveButton, BorderLayout.SOUTH);
+				//ChartPanel panel = new ChartPanel(chart);
+				//frame.add(panel, BorderLayout.CENTER);
+				//frame.setSize(800, 600);
+				//frame.pack();
+				//frame.setVisible(true);
 				if (dc_paras.save_DC_WL) {
 					try {
 						IJ.log(" ");
@@ -535,29 +537,29 @@ public class DriftCorrection implements PlugIn {
 		}
 	}
 
-	private void saveChart(JFreeChart chart) {
-		JFileChooser fileChooser = new JFileChooser();
-		FileNameExtensionFilter pngFilter = new FileNameExtensionFilter("PNG Images", "png");
-		FileNameExtensionFilter jpegFilter = new FileNameExtensionFilter("JPEG Images", "jpeg", "jpg");
-		fileChooser.addChoosableFileFilter(pngFilter);
-		fileChooser.addChoosableFileFilter(jpegFilter);
-		fileChooser.setFileFilter(pngFilter);
-		int userSelection = fileChooser.showSaveDialog(null);
-		if (userSelection == JFileChooser.APPROVE_OPTION) {
-			File fileToSave = fileChooser.getSelectedFile();
-			String filePath = fileToSave.getAbsolutePath();
-			String ext = ((FileNameExtensionFilter) fileChooser.getFileFilter()).getExtensions()[0];
-			try {
-				if ("png".equals(ext)) {
-					ChartUtils.saveChartAsPNG(new File(filePath + ".png"), chart, 600, 400);
-				} else if ("jpeg".equals(ext) || "jpg".equals(ext)) {
-					ChartUtils.saveChartAsJPEG(new File(filePath + ".jpg"), chart, 600, 400);
-				}
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-		}
-	}
+//	private void saveChart(JFreeChart chart) {
+//		JFileChooser fileChooser = new JFileChooser();
+//		FileNameExtensionFilter pngFilter = new FileNameExtensionFilter("PNG Images", "png");
+//		FileNameExtensionFilter jpegFilter = new FileNameExtensionFilter("JPEG Images", "jpeg", "jpg");
+//		fileChooser.addChoosableFileFilter(pngFilter);
+//		fileChooser.addChoosableFileFilter(jpegFilter);
+//		fileChooser.setFileFilter(pngFilter);
+//		int userSelection = fileChooser.showSaveDialog(null);
+//		if (userSelection == JFileChooser.APPROVE_OPTION) {
+//			File fileToSave = fileChooser.getSelectedFile();
+//			String filePath = fileToSave.getAbsolutePath();
+//			String ext = ((FileNameExtensionFilter) fileChooser.getFileFilter()).getExtensions()[0];
+//			try {
+//				if ("png".equals(ext)) {
+//					ChartUtils.saveChartAsPNG(new File(filePath + ".png"), chart, 600, 400);
+//				} else if ("jpeg".equals(ext) || "jpg".equals(ext)) {
+//					ChartUtils.saveChartAsJPEG(new File(filePath + ".jpg"), chart, 600, 400);
+//				}
+//			} catch (Exception e) {
+//				e.printStackTrace();
+//			}
+//		}
+//	}
 
 //	private static void writeCorrected(ArrayList<double[]> a, String filename) {
 //		try (BufferedWriter writer = new BufferedWriter(new FileWriter(filename))) {
@@ -2096,96 +2098,146 @@ public class DriftCorrection implements PlugIn {
 	}
 	// algorithm ends
 
-	private static JFreeChart createChartPanel(ArrayList<ArrayList<Double>> drift_by_frame) {
+//	private static JFreeChart createChartPanel(ArrayList<ArrayList<Double>> drift_by_frame) {
+//
+//		XYSeriesCollection dataset = new XYSeriesCollection();
+//		XYSeries series = new XYSeries("Trajectory");
+//
+//		for (ArrayList<Double> point : drift_by_frame) {
+//			series.add(point.get(0), point.get(1));
+//		}
+//
+//		dataset.addSeries(series);
+//		JFreeChart chart = ChartFactory.createXYLineChart("Trajectory Plot", "X", "Y", dataset,
+//				PlotOrientation.VERTICAL, true, true, false);
+//
+//		XYPlot plot = chart.getXYPlot();
+//		XYLineAndShapeRenderer renderer = (XYLineAndShapeRenderer) plot.getRenderer();
+//		plot.setBackgroundPaint(Color.WHITE);
+//
+////        for (int i = 0; i < dataset.getSeriesCount() - 1; i++) {
+//////            renderer.setSeriesStroke(i, new BasicStroke(0.5f));
+////            renderer.setSeriesShapesVisible(i, false);
+//////            renderer.setSeriesPaint(i, getColorForValue(i, drift_by_frame.size()));
+////        }
+//		renderer.setSeriesShapesVisible(0, false);
+//		renderer.setSeriesStroke(0, new BasicStroke(2.0f));
+//		NumberAxis domainAxis = (NumberAxis) plot.getDomainAxis();
+//		domainAxis.setTickUnit(new NumberTickUnit(100));
+//		NumberAxis rangeAxis = (NumberAxis) plot.getRangeAxis();
+//		rangeAxis.setTickUnit(new NumberTickUnit(50));
+////        IJ.log("series: " + dataset.getSeriesCount());
+//
+//		renderer = new XYLineAndShapeRenderer(true, false) {
+//			@Override
+//			public Paint getItemPaint(int row, int col) {
+//				XYSeries series = dataset.getSeries(row);
+//				int itemCount = series.getItemCount();
+//				float ratio = (float) col / (float) itemCount;
+//				Color startColor = Color.BLUE;
+//				Color endColor = Color.GREEN;
+//				int red = (int) (startColor.getRed() * (1 - ratio) + endColor.getRed() * ratio);
+//				int green = (int) (startColor.getGreen() * (1 - ratio) + endColor.getGreen() * ratio);
+//				int blue = (int) (startColor.getBlue() * (1 - ratio) + endColor.getBlue() * ratio);
+//				return new Color(red, green, blue);
+//			}
+//		};
+//		plot.setRenderer(renderer);
+//
+//		int minValue = 0;
+//		int maxValue = drift_by_frame.size();
+//		// IJ.log(String.valueOf(drift_by_frame.size()));
+//
+//		LookupPaintScale paintScale = new LookupPaintScale(minValue, maxValue, Color.BLUE);
+//		paintScale.add(minValue, Color.BLUE);
+//		double interval = (maxValue - minValue) / 100.0; // Divide the range into four segments
+//
+//		for (int i = 1; i < 100; i++) {
+//			paintScale.add(minValue + interval * i, mixColors(Color.BLUE, Color.GREEN, (100 - i) * (0.01)));
+//		}
+////        paintScale.add(minValue + 2 * interval, mixColors(Color.BLUE, Color.GREEN, 0.5));
+////        paintScale.add(minValue + 3 * interval, mixColors(Color.BLUE, Color.GREEN, 0.25));
+//		paintScale.add(maxValue, Color.GREEN);
+//
+//		NumberAxis scaleAxis = new NumberAxis("");
+//		scaleAxis.setAxisLinePaint(Color.white);
+//		scaleAxis.setTickMarkPaint(Color.white);
+//		scaleAxis.setRange(minValue, maxValue);
+//
+//		TickUnits customUnits = new TickUnits();
+//		customUnits.add(new NumberTickUnit(maxValue - minValue));
+//		scaleAxis.setStandardTickUnits(customUnits);
+//
+//		PaintScaleLegend legend = new PaintScaleLegend(paintScale, scaleAxis);
+//		legend.setAxisOffset(5.0);
+//		legend.setMargin(new RectangleInsets(5, 5, 5, 5));
+//		legend.setFrame(new BlockBorder(Color.white));
+//		legend.setPadding(new RectangleInsets(10, 10, 10, 10));
+//		legend.setStripWidth(10.0);
+//		legend.setPosition(RectangleEdge.RIGHT);
+//
+//		chart.addSubtitle(legend);
+//
+////        plot.setRenderer(renderer);
+//		return chart;
+//	}
 
-		XYSeriesCollection dataset = new XYSeriesCollection();
-		XYSeries series = new XYSeries("Trajectory");
+	
+	 private static void createPlot(ArrayList<ArrayList<Double>> drift_by_frame) {
+	        // Create arrays for x and y data
+	        double[] xData = new double[drift_by_frame.size()];
+	        double[] yData = new double[drift_by_frame.size()];
 
-		for (ArrayList<Double> point : drift_by_frame) {
-			series.add(point.get(0), point.get(1));
-		}
+	        // Populate arrays with data
+	        for (int i = 0; i < drift_by_frame.size(); i++) {
+	            xData[i] = drift_by_frame.get(i).get(0);
+	            yData[i] = drift_by_frame.get(i).get(1);
+	        }
 
-		dataset.addSeries(series);
-		JFreeChart chart = ChartFactory.createXYLineChart("Trajectory Plot", "X", "Y", dataset,
-				PlotOrientation.VERTICAL, true, true, false);
+	        // Create the plot
+	       
+	        Plot plot = new Plot("Drift Trajectory", "X (nm)", "Y (nm)");
+	        plot.setLimits(getMinValue(xData), getMaxValue(xData), getMinValue(yData), getMaxValue(yData));
+	        plot.setColor(Color.BLACK);
+	        plot.setLineWidth(2);
+	        plot.addPoints(xData, yData, Plot.LINE);
 
-		XYPlot plot = chart.getXYPlot();
-		XYLineAndShapeRenderer renderer = (XYLineAndShapeRenderer) plot.getRenderer();
-		plot.setBackgroundPaint(Color.WHITE);
+	        // Customize the plot
+	        plot.setBackgroundColor(Color.WHITE);
+	        plot.setFrameSize(800, 600);
+	        plot.setLimits(getMinValue(xData), getMaxValue(xData), getMinValue(yData), getMaxValue(yData));
+	        plot.addLegend("Trajectory");
 
-//        for (int i = 0; i < dataset.getSeriesCount() - 1; i++) {
-////            renderer.setSeriesStroke(i, new BasicStroke(0.5f));
-//            renderer.setSeriesShapesVisible(i, false);
-////            renderer.setSeriesPaint(i, getColorForValue(i, drift_by_frame.size()));
-//        }
-		renderer.setSeriesShapesVisible(0, false);
-		renderer.setSeriesStroke(0, new BasicStroke(2.0f));
-		NumberAxis domainAxis = (NumberAxis) plot.getDomainAxis();
-		domainAxis.setTickUnit(new NumberTickUnit(100));
-		NumberAxis rangeAxis = (NumberAxis) plot.getRangeAxis();
-		rangeAxis.setTickUnit(new NumberTickUnit(50));
-//        IJ.log("series: " + dataset.getSeriesCount());
+	        // Display the plot in a new window
+	        plot.show();
+	    }
 
-		renderer = new XYLineAndShapeRenderer(true, false) {
-			@Override
-			public Paint getItemPaint(int row, int col) {
-				XYSeries series = dataset.getSeries(row);
-				int itemCount = series.getItemCount();
-				float ratio = (float) col / (float) itemCount;
-				Color startColor = Color.BLUE;
-				Color endColor = Color.GREEN;
-				int red = (int) (startColor.getRed() * (1 - ratio) + endColor.getRed() * ratio);
-				int green = (int) (startColor.getGreen() * (1 - ratio) + endColor.getGreen() * ratio);
-				int blue = (int) (startColor.getBlue() * (1 - ratio) + endColor.getBlue() * ratio);
-				return new Color(red, green, blue);
-			}
-		};
-		plot.setRenderer(renderer);
+	    private static double getMinValue(double[] array) {
+	        double min = Double.MAX_VALUE;
+	        for (double v : array) {
+	            if (v < min) {
+	                min = v;
+	            }
+	        }
+	        return min;
+	    }
 
-		int minValue = 0;
-		int maxValue = drift_by_frame.size();
-		// IJ.log(String.valueOf(drift_by_frame.size()));
-
-		LookupPaintScale paintScale = new LookupPaintScale(minValue, maxValue, Color.BLUE);
-		paintScale.add(minValue, Color.BLUE);
-		double interval = (maxValue - minValue) / 100.0; // Divide the range into four segments
-
-		for (int i = 1; i < 100; i++) {
-			paintScale.add(minValue + interval * i, mixColors(Color.BLUE, Color.GREEN, (100 - i) * (0.01)));
-		}
-//        paintScale.add(minValue + 2 * interval, mixColors(Color.BLUE, Color.GREEN, 0.5));
-//        paintScale.add(minValue + 3 * interval, mixColors(Color.BLUE, Color.GREEN, 0.25));
-		paintScale.add(maxValue, Color.GREEN);
-
-		NumberAxis scaleAxis = new NumberAxis("");
-		scaleAxis.setAxisLinePaint(Color.white);
-		scaleAxis.setTickMarkPaint(Color.white);
-		scaleAxis.setRange(minValue, maxValue);
-
-		TickUnits customUnits = new TickUnits();
-		customUnits.add(new NumberTickUnit(maxValue - minValue));
-		scaleAxis.setStandardTickUnits(customUnits);
-
-		PaintScaleLegend legend = new PaintScaleLegend(paintScale, scaleAxis);
-		legend.setAxisOffset(5.0);
-		legend.setMargin(new RectangleInsets(5, 5, 5, 5));
-		legend.setFrame(new BlockBorder(Color.white));
-		legend.setPadding(new RectangleInsets(10, 10, 10, 10));
-		legend.setStripWidth(10.0);
-		legend.setPosition(RectangleEdge.RIGHT);
-
-		chart.addSubtitle(legend);
-
-//        plot.setRenderer(renderer);
-		return chart;
-	}
-
-	private static Color mixColors(Color c1, Color c2, double weight) {
-		double r = weight * c1.getRed() + (1.0 - weight) * c2.getRed();
-		double g = weight * c1.getGreen() + (1.0 - weight) * c2.getGreen();
-		double b = weight * c1.getBlue() + (1.0 - weight) * c2.getBlue();
-		return new Color((int) r, (int) g, (int) b);
-	}
+	    private static double getMaxValue(double[] array) {
+	        double max = Double.MIN_VALUE;
+	        for (double v : array) {
+	            if (v > max) {
+	                max = v;
+	            }
+	        }
+	        return max;
+	    }
+	
+//	private static Color mixColors(Color c1, Color c2, double weight) {
+//		double r = weight * c1.getRed() + (1.0 - weight) * c2.getRed();
+//		double g = weight * c1.getGreen() + (1.0 - weight) * c2.getGreen();
+//		double b = weight * c1.getBlue() + (1.0 - weight) * c2.getBlue();
+//		return new Color((int) r, (int) g, (int) b);
+//	}
 
 	private void saveData(ArrayList<ArrayList<Double>> drift_by_frame, String savePath, MemoryPeakResults r,
 			String threed_memory) {

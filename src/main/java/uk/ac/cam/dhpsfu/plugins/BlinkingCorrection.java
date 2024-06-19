@@ -112,11 +112,11 @@ public class BlinkingCorrection implements PlugIn {
 		String html = "<html>" + "<h2>Instruction about Blinking Correction Plugin</h2>"
 		// +"<font size=+1>"
 				+ "*** For temporal grouping of localisations ***<br>" + "<br>"
-				+ "  - Input data: a list of 3D localisations in <font color=red>FIJI MEMORY</font> (in .3d format: tab-separated “x y z Intensity Frame”. <br>"
+				+ "  - Input data: a list of 2D/3D localisations in <font color=red>ImageJ MEMORY</font>. <br>"
 				+ "               (You can load file from directory using the Load Localisation function) <br>"
-				+ "  - Need to spefify the distance unit of the data, Pixel or nm. <br>"
-				+ "  - Make sure to choose the <font color=red>CORRECT DISTANCE UNIT</font> of the data. It might be different when you import the file from directory. <br>"
-				+ "<br>" + "Parameters:  <br>" + "  - Dimensions: Number of dimensions of the data. Default = 3.  <br>"
+				+ "<br>" + "Parameters:  <br>" 
+				+ "  - Pixel size (nm): Camera pixel size in nm. <br>"
+				+ "  - Dimensions: Number of dimensions of the data. Default = 3.  <br>"
 				+ "  - MaxJumpDist: Maximum jump distance allowed between frames to count the two localisations as originating from the same molecule.   <br>"
 				+ "  - MaxFrameGap: Mmaximum change in frame number for two consecutive positions of the same molecule.  <br>"
 				+ "  - MinNumLocs: A filter on the minimum number of localisations originating from the same molecule.  <br>"
@@ -128,13 +128,17 @@ public class BlinkingCorrection implements PlugIn {
 				+ "  ** deltaFrame: the number of frames this track covers, i.e. last frame – first frame.  <br>"
 				+ "  ** averageIntensity/averageX/averageY/averageZ: average intensity/x/y/z of all localisations within this track. <br>"
 				+ "  - Save assigned track: save the original localisations and track assignment, containing: <br>"
-				+ "  ** # track, x, y, z, internsity, frame  <br>" + "<br>" + "</font>";
+				+ "  ** # track, x, y, z, internsity, frame  <br>" + "<br>" 
+				+ "- Save directory: Save the processed data to user-speficied directory.  <br>"
+				+ "</font>";
+		
 		gd.addHelp(html);
 		gd.showDialog();
 		if (gd.wasCanceled()) {
 			return false;
 		}
 		input = ResultsManager.getInputSource(gd);
+		
 		// if (input == "Pixel") {
 		ResultsManager.loadInputResults(input, true, IntensityUnit.PHOTON);
 		// } else {
@@ -344,12 +348,11 @@ public class BlinkingCorrection implements PlugIn {
 		// Sort the filteredTracks based on frame
 		Collections.sort(filteredTracks, Comparator.comparingInt(track -> track.frame.get(0)));
 
-		final String msg = "Number of tracks after filtering for >= " + minNumPositions + " positions = "
+		final String msg = "Number of localisations after filtering for >= " + minNumPositions + " positions = "
 				+ filteredTracks.size();
 		IJ.showStatus(msg);
 		ImageJUtils.log(msg);
-		System.out.println(
-				"Number of tracks after filtering for >= " + minNumPositions + " positions = " + filteredTracks.size());
+
 		return filteredTracks;
 	} // End of determineTracks
 
@@ -600,7 +603,7 @@ public class BlinkingCorrection implements PlugIn {
 	private void blinkingCorrection() {
 		long startTime = System.currentTimeMillis();
 		double[][] threed_data;
-		IJ.log("load from memory: " + name1);
+		IJ.log("Data file selected: " + input);
 		MemoryPeakResults r = MemoryPeakResults.getResults(name1);
 //		CalibrationWriter cw1 = new CalibrationWriter();
 //		cw1.setIntensityUnit(IntensityUnit.PHOTON);
@@ -613,8 +616,8 @@ public class BlinkingCorrection implements PlugIn {
 //				.setQuantumEfficiency(0.95).setReadNoise(1.6);
 //		r.setCalibration(cw1.getCalibration());
 		threed_data = resultToArray(r, pxSize);
-		System.out.print(threed_data.length + " = Row");
-		System.out.print(threed_data[1].length + " = Column");
+		//System.out.print(threed_data.length + " = Row");
+		//System.out.print(threed_data[1].length + " = Column");
 		List<BC_track> filteredTracks = determineTracks(threed_data, maxJumpDist, maxFrameGap, minNumPos);
 		List<List<Double>> result = saveTracksToMemory(filteredTracks);
 		view3DResult(result);

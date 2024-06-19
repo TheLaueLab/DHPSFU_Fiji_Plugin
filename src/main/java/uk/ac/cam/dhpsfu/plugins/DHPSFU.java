@@ -55,6 +55,7 @@ import com.opencsv.exceptions.CsvValidationException;
 import ij.IJ;
 import ij.ImageJ;
 import ij.Macro;
+import ij.gui.Plot;
 import ij.measure.ResultsTable;
 import ij.plugin.PlugIn;
 import ij.plugin.frame.Recorder;
@@ -63,7 +64,6 @@ import uk.ac.cam.dhpsfu.analysis.FilterParas;
 import uk.ac.cam.dhpsfu.analysis.FittingParas;
 import uk.ac.cam.dhpsfu.analysis.GeneralParas;
 import uk.ac.cam.dhpsfu.analysis.PeakResultDHPSFU;
-import uk.ac.sussex.gdsc.core.ij.ImageJUtils;
 import uk.ac.sussex.gdsc.core.ij.gui.ExtendedGenericDialog;
 import uk.ac.sussex.gdsc.smlm.data.config.CalibrationProtos.CameraType;
 import uk.ac.sussex.gdsc.smlm.data.config.CalibrationWriter;
@@ -114,8 +114,8 @@ public class DHPSFU implements PlugIn {
 	FilterParas filterParas = new FilterParas(enableFilters, enableFilterCalibRange, enableFilterDistance, distanceDev,
 			enableFilterIntensityRatio, intensityDev);
 	// Data paths
-	private static String calibPath = "C:/Users/yw525/Documents/Multibeads/Calibration1_3_bead1.results.xls"; 
-	private static String dataPath = "C:/Users/yw525/Documents/test_data_may2024/test/Peakfit/slice0.tif.trim.results.xls"; 
+	private static String calibPath;
+	private static String dataPath;
 	private static String savePath;
 	private String savingFormat = ".3d";
 
@@ -124,13 +124,11 @@ public class DHPSFU implements PlugIn {
 
 	@Override
 	public void run(String arg) {
-		
+
 		String macroOptions = Macro.getOptions();
 		if (showDialog(macroOptions)) {
-			
 			DH_calibration();
-			ImageJUtils.log("Loaded Calibration Files: " + name1);
-			
+			// ImageJUtils.log("Loaded Calibration Files: " + name1);
 		}
 	}
 
@@ -147,7 +145,7 @@ public class DHPSFU implements PlugIn {
 		gd.addMessage("Data file: ");
 		if (arg == null || arg.length() == 0) { // Assuming no arguments means manual mode
 			ResultsManager.addInput(gd, input, InputSource.MEMORY);
-			IJ.log("1Input2=" + input2);
+			// IJ.log("1Input2=" + input2);
 		}
 		gd.addNumericField("Pixel size (nm)", pxSize, 1);
 		gd.addNumericField("Calibration step (nm)", calibStep, 1);
@@ -171,8 +169,8 @@ public class DHPSFU implements PlugIn {
 		String html = "<html>" + "<h2>Instruction about DHPSFU Plugin</h2>"
 		// +"<font size=+1>"
 				+ "Descriptions: <br>" + "- DHPSFU converts a list of 2D peaks into 3D localisations. <br>"
-				+ "- Simply select the calibration file and the data file from the Fiji memory. Make sure that both of them are in the memory. <br>"
-				+ "- The analysed 3D data will also be saved in the FIJI memory. <br>" + "<br>" + "Parameters:  <br>"
+				+ "- Simply select the calibration file and the data file from the ImageJ memory. Make sure that both of them are in the memory. <br>"
+				+ "- The processed 3D data will also be saved in the ImageJ memory. <br>" + "<br>" + "Parameters:  <br>"
 				+ "- Pixel size (nm): Camera pixel size in nm. <br>"
 				+ "- Calibration step (nm): The distance in z between consecutive frames of the calibration series, in nm.   <br>"
 				+ "- Precision cutoff (nm): Prior to analysis, exclude 2D peaks with precision greater than this threshold.  <br>"
@@ -186,7 +184,7 @@ public class DHPSFU implements PlugIn {
 				+ "- Enable filter intensity ratio: Remove DH localisations with an unexpected ratio of intensities between the lobes. <br>"
 				+ "** Intensity deviation: Allowed relative deviation of the intensity between dots, compared to calibration.<br>"
 				+ "<br>" + "File output:  <br>"
-				+ "- Save to file: Save the analysed data to user-speficied directory.  <br>"
+				+ "- Save to file: Save the analysed data to user-specified directory.  <br>"
 				+ "- Saving format: .3d (tab-separated, can be visualised directly in ViSP) or .csv (comma-separated). Data format: “x y z Intensity Frame”. <br>"
 				+ "<br>" + "</font>";
 		gd.addHelp(html);
@@ -196,12 +194,12 @@ public class DHPSFU implements PlugIn {
 		}
 
 		input = ResultsManager.getInputSource(gd);
-		IJ.log("2Input=" + input);
+		IJ.log("Calibration file selected: " + input);
 
 		if (arg == null || arg.length() == 0) {
 
 			input2 = ResultsManager.getInputSource(gd);
-			IJ.log("2Input2=" + input2);
+			IJ.log("Data file selected: " + input2);
 		}
 
 		Vector<?> numericFields = gd.getNumericFields();
@@ -221,17 +219,17 @@ public class DHPSFU implements PlugIn {
 			fittingMode = gd.getNextChoice();
 //			IJ.log("Fitting=" + fittingMode);
 			enableFilterCalibRange = gd.getNextBoolean();
-			//IJ.log("enableFilterCalibRange=" + enableFilterCalibRange);
+			// IJ.log("enableFilterCalibRange=" + enableFilterCalibRange);
 			enableFilterDistance = gd.getNextBoolean();
-			//IJ.log("enableFilterDistance=" + enableFilterDistance);
+			// IJ.log("enableFilterDistance=" + enableFilterDistance);
 			enableFilterIntensityRatio = gd.getNextBoolean();
-		//	IJ.log("enableFilterIntensityRatio=" + enableFilterIntensityRatio);
+			// IJ.log("enableFilterIntensityRatio=" + enableFilterIntensityRatio);
 			saveToFile = gd.getNextBoolean();
-		//	IJ.log("saveToFile=" + saveToFile);
+			// IJ.log("saveToFile=" + saveToFile);
 			savePath = gd.getNextString();
-		//	IJ.log("savePath=" + savePath);
+			// IJ.log("savePath=" + savePath);
 			savingFormat = gd.getNextChoice();
-		//	IJ.log("savingFormat=" + savingFormat);
+			// IJ.log("savingFormat=" + savingFormat);
 
 		} else {
 			Vector<?> choiceFields = gd.getChoices();
@@ -715,6 +713,7 @@ public class DHPSFU implements PlugIn {
 	private List<List<Double>> calculateCoordinates(List<List<Double>> processedResult, FittingParas fittingParas,
 			GeneralParas generalParas) {
 		double zMin = polyval(fittingParas.getDz(), fittingParas.getAngleRange()[0]);
+		// double zMax = polyval(fittingParas.getDz(), fittingParas.getAngleRange()[1]);
 		List<Double> zN = processedResult.get(4).stream().map(angle -> polyval(fittingParas.getDz(), angle))
 				.collect(Collectors.toList());
 		List<Double> xN = new ArrayList<>();
@@ -731,6 +730,30 @@ public class DHPSFU implements PlugIn {
 		xyzN.add(xN);
 		xyzN.add(yN);
 		xyzN.add(zN);
+
+		// plot
+		// Generate a series of z values within the desired range
+		final int points = 200; // Number of points to generate for the plot
+		double angleMin = fittingParas.getAngleRange()[0];
+		double angleMax = fittingParas.getAngleRange()[1];
+
+		double[] coefficientsZ = fittingParas.getDz();
+		double[] angleArray = IntStream.rangeClosed(0, points)
+				.mapToDouble(i -> angleMin + i * (angleMax - angleMin) / points).toArray();
+		double[] zArray = new double[angleArray.length];
+
+		for (int i = 0; i < angleArray.length; i++) {
+			zArray[i] = polyval(coefficientsZ, angleArray[i]);
+		}
+
+		double zMax = Arrays.stream(zArray).max().getAsDouble();
+
+		Plot plot = new Plot("Calibration curve", "Angle (Radian)", "Z (nm)");
+		plot.setLimits(angleMin, angleMax, zMin, zMax);
+		plot.addPoints(angleArray, zArray, Plot.LINE);
+
+		plot.show();
+
 		return xyzN;
 	} // End of calculateCoordinates
 
@@ -850,9 +873,9 @@ public class DHPSFU implements PlugIn {
 		double[] z = doubleFilteredPeakResult[2];
 		double[] intensity = doubleFilteredPeakResult[3];
 		ResultsTable t = new ResultsTable();
-		t.setValues("X (px)", x);
-		t.setValues("Y (px)", y);
-		t.setValues("Z (px)", z);
+		t.setValues("X (nm)", x);
+		t.setValues("Y (nm)", y);
+		t.setValues("Z (nm)", z);
 		t.setValues("Intensity (photon)", intensity);
 		t.setValues("Frame", frame);
 		t.show("DHPSFU results");
@@ -891,7 +914,7 @@ public class DHPSFU implements PlugIn {
 		long startTime = System.currentTimeMillis();
 		// Processing the calibration data
 		MemoryPeakResults results = ResultsManager.loadInputResults(name1, false, null, null);
-		System.out.println(name1);
+		// System.out.println(name1);
 		if (MemoryPeakResults.isEmpty(results)) {
 			IJ.error(TITLE, "No calibration results could be loaded");
 			return;
@@ -921,17 +944,17 @@ public class DHPSFU implements PlugIn {
 		double[][] DataFilteredPrecision = filterDataByPrecision(PeakfitData, precisionCutoff);
 		List<List<Double>> processedResult = processData(DataFilteredPrecision, generalParas);
 		List<List<Double>> xyzN = calculateCoordinates(processedResult, fittingParas, generalParas);
+		// plotPolynomial(xyzN);
 		List<List<Double>> filteredPeakResult = filterPeakfitData(processedResult, xyzN, filterParas, fittingParas);
-		
+
 		// Save files
 		if (saveToFile == true) {
 			saveTo3D(filteredPeakResult, input2, savingFormat);
 		}
-		
 
 		// View localisation
 		view3DResult(filteredPeakResult);
-		MemoryPeakResults finalResult = saveToMemory(input2,filteredPeakResult);
+		MemoryPeakResults finalResult = saveToMemory(input2, filteredPeakResult);
 		MemoryPeakResults.addResults(finalResult);
 		CalibrationWriter cw = finalResult.getCalibrationWriterSafe();
 		cw.setIntensityUnit(IntensityUnit.PHOTON);
@@ -943,7 +966,9 @@ public class DHPSFU implements PlugIn {
 		cw.getBuilder().getCameraCalibrationBuilder().setCameraType(CameraType.EMCCD).setBias(100)
 				.setQuantumEfficiency(0.95).setReadNoise(1.6);
 		finalResult.setCalibration(cw.getCalibration());
-		System.out.println("Number of localisation left: " + filteredPeakResult.size());
+		IJ.log("No. of 3D localisations: " + filteredPeakResult.size());
+		// System.out.println("Number of localisation left: " +
+		// filteredPeakResult.size());
 		long endTime = System.currentTimeMillis();
 		long duration = endTime - startTime;
 		double seconds = (double) duration / 1000.0;
