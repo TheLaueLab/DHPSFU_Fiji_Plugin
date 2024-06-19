@@ -28,6 +28,7 @@
  */
 package uk.ac.cam.dhpsfu.plugins;
 
+import java.awt.Color;
 import java.awt.TextField;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -105,7 +106,6 @@ public class DHPSFU implements PlugIn {
 	private boolean enableFilters = true; // true if enable all filters
 	private boolean enableFilterCalibRange = true; // remove localisations out of the angular range of calibration; if
 													// False,
-	// polynomial fit is extrapolated beyond the range.
 	private boolean enableFilterDistance = true; // remove dots with unexpected distances
 	private double distanceDev = 0.2; // relative deviation of the distance between dots, compared to calibration
 	private boolean enableFilterIntensityRatio = true; // filter based on the ratio of intensities between the dots
@@ -124,11 +124,9 @@ public class DHPSFU implements PlugIn {
 
 	@Override
 	public void run(String arg) {
-
 		String macroOptions = Macro.getOptions();
 		if (showDialog(macroOptions)) {
 			DH_calibration();
-			// ImageJUtils.log("Loaded Calibration Files: " + name1);
 		}
 	}
 
@@ -136,16 +134,12 @@ public class DHPSFU implements PlugIn {
 		if (arg != null) {
 			parseArguments(arg);
 		}
-
 		ExtendedGenericDialog gd = new ExtendedGenericDialog(TITLE);
 		gd.addMessage("Calibration file: ");
-
 		ResultsManager.addInput(gd, input, InputSource.MEMORY);
-
 		gd.addMessage("Data file: ");
 		if (arg == null || arg.length() == 0) { // Assuming no arguments means manual mode
 			ResultsManager.addInput(gd, input, InputSource.MEMORY);
-			// IJ.log("1Input2=" + input2);
 		}
 		gd.addNumericField("Pixel size (nm)", pxSize, 1);
 		gd.addNumericField("Calibration step (nm)", calibStep, 1);
@@ -197,7 +191,6 @@ public class DHPSFU implements PlugIn {
 		IJ.log("Calibration file selected: " + input);
 
 		if (arg == null || arg.length() == 0) {
-
 			input2 = ResultsManager.getInputSource(gd);
 			IJ.log("Data file selected: " + input2);
 		}
@@ -214,7 +207,6 @@ public class DHPSFU implements PlugIn {
 			distanceDev = getNumericFieldValue(numericFields, 7);
 			intensityDev = getNumericFieldValue(numericFields, 8);
 		}
-
 		if (arg == null || arg.length() == 0) {
 			fittingMode = gd.getNextChoice();
 //			IJ.log("Fitting=" + fittingMode);
@@ -238,7 +230,6 @@ public class DHPSFU implements PlugIn {
 				savingFormat = getChoiceFieldValue(choiceFields, 2);
 			}
 
-			// Parse checkbox fields
 			Vector<?> checkboxFields = gd.getCheckboxes();
 			if (checkboxFields != null && checkboxFields.size() >= 4) {
 				enableFilterCalibRange = getCheckboxFieldValue(checkboxFields, 0);
@@ -247,25 +238,17 @@ public class DHPSFU implements PlugIn {
 				saveToFile = getCheckboxFieldValue(checkboxFields, 3);
 			}
 
-			// Parse string fields
 			Vector<?> stringFields = gd.getStringFields();
 			if (stringFields != null && stringFields.size() >= 2) {
 				savePath = getStringFieldValue(stringFields, 1);
 			}
-			// fittingMode = gd.getNextChoice();
-			IJ.log("Fitting=" + fittingMode);
-//		//enableFilterCalibRange = gd.getNextBoolean();
-			IJ.log("enableFilterCalibRange=" + enableFilterCalibRange);
-//		//enableFilterDistance = gd.getNextBoolean();
-			IJ.log("enableFilterDistance=" + enableFilterDistance);
-//		//enableFilterIntensityRatio = gd.getNextBoolean();
-			IJ.log("enableFilterIntensityRatio=" + enableFilterIntensityRatio);
-//		//saveToFile = gd.getNextBoolean();
-			IJ.log("saveToFile=" + saveToFile);
-//		//savePath = gd.getNextString();
-			IJ.log("savePath=" + savePath);
-//		//savingFormat = gd.getNextChoice();
-			IJ.log("savingFormat=" + savingFormat);
+//			IJ.log("Fitting=" + fittingMode);
+//			IJ.log("enableFilterCalibRange=" + enableFilterCalibRange);
+//			IJ.log("enableFilterDistance=" + enableFilterDistance);
+//			IJ.log("enableFilterIntensityRatio=" + enableFilterIntensityRatio);
+//			IJ.log("saveToFile=" + saveToFile);
+//			IJ.log("savePath=" + savePath);
+//			IJ.log("savingFormat=" + savingFormat);
 
 		}
 
@@ -442,8 +425,7 @@ public class DHPSFU implements PlugIn {
 		return goodData;
 	} // End of removeValuesForBadFrames
 
-	// Calculate the x, y, distance, intensity, intensity ration and angle of the
-	// given dataset.
+	// Calculate the x, y, distance, intensity, intensity ration and angle of the given dataset.
 	private double[][] DHPSFUCalculation(float[][] goodData) {
 		if (goodData == null || goodData.length == 0) {
 			throw new IllegalArgumentException("goodData must not be null or empty");
@@ -562,6 +544,37 @@ public class DHPSFU implements PlugIn {
 		double angleMin = Arrays.stream(filteredData).mapToDouble(row -> row[angleIndex]).min().orElse(0.0);
 		double angleMax = Arrays.stream(filteredData).mapToDouble(row -> row[angleIndex]).max().orElse(0.0);
 		double[] angleRange = { angleMin, angleMax };
+
+		// Generate the polynomial fit curve points
+		final int points = 200; // Number of points to generate for the plot
+
+		double[] coefficientsZ = dz;
+
+		double[] angleArray = IntStream.rangeClosed(0, points)
+				.mapToDouble(i -> angleMin + i * (angleMax - angleMin) / points).toArray();
+		double[] zArray = new double[angleArray.length];
+
+		for (int i = 0; i < angleArray.length; i++) {
+			zArray[i] = polyval(coefficientsZ, angleArray[i]);
+		}
+
+		double zMax = Arrays.stream(zArray).max().getAsDouble();
+		double zMin = Arrays.stream(zArray).min().getAsDouble();
+
+		Plot plot = new Plot("Calibration Curve", "Angle (Radian)", "Z (nm)");
+		plot.setLimits(angleMin, angleMax, zMin, zMax);
+
+		plot.setColor(Color.RED);
+		plot.addPoints(IntStream.range(0, filteredData.length).mapToDouble(i -> filteredData[i][angleIndex]).toArray(),
+				IntStream.range(0, filteredData.length).mapToDouble(i -> filteredData[i][frameIndex] * calibStep)
+						.toArray(),
+				Plot.CIRCLE);
+
+		plot.setColor(Color.BLACK);
+		plot.setLineWidth(1);
+		plot.addPoints(angleArray, zArray, Plot.LINE);
+		plot.show();
+
 		return new FittingParas(dx, dy, dz, dd, dr, angleRange);
 	} // End of polyFitting
 
@@ -588,7 +601,6 @@ public class DHPSFU implements PlugIn {
 		s.getI();
 		int[] frame = s.frame;
 		float[] x = s.x;
-		// System.out.println(frame);
 		float[] y = s.y;
 		float[] intensity = s.intensity;
 		List<double[]> filteredData = new ArrayList<>();
@@ -730,29 +742,6 @@ public class DHPSFU implements PlugIn {
 		xyzN.add(xN);
 		xyzN.add(yN);
 		xyzN.add(zN);
-
-		// plot
-		// Generate a series of z values within the desired range
-		final int points = 200; // Number of points to generate for the plot
-		double angleMin = fittingParas.getAngleRange()[0];
-		double angleMax = fittingParas.getAngleRange()[1];
-
-		double[] coefficientsZ = fittingParas.getDz();
-		double[] angleArray = IntStream.rangeClosed(0, points)
-				.mapToDouble(i -> angleMin + i * (angleMax - angleMin) / points).toArray();
-		double[] zArray = new double[angleArray.length];
-
-		for (int i = 0; i < angleArray.length; i++) {
-			zArray[i] = polyval(coefficientsZ, angleArray[i]);
-		}
-
-		double zMax = Arrays.stream(zArray).max().getAsDouble();
-
-		Plot plot = new Plot("Calibration curve", "Angle (Radian)", "Z (nm)");
-		plot.setLimits(angleMin, angleMax, zMin, zMax);
-		plot.addPoints(angleArray, zArray, Plot.LINE);
-
-		plot.show();
 
 		return xyzN;
 	} // End of calculateCoordinates

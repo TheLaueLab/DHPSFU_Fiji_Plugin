@@ -72,6 +72,7 @@ import org.apache.commons.math3.stat.regression.OLSMultipleLinearRegression;
 import com.opencsv.exceptions.CsvValidationException;
 
 import java.awt.Button;
+import java.awt.Color;
 import java.awt.FlowLayout;
 import java.awt.Label;
 import java.awt.Panel;
@@ -694,7 +695,30 @@ public class MultiBeadsDHPSFU implements PlugIn {
 		double[] dd = polyFit(filteredData, angleCorrIndex, avgDistanceIndex, 1, 1, 8);
 		double[] dr = polyFit(filteredData, angleCorrIndex, ratioIndex, 1, 1, 8);
 
+		final int points = 200;
+		double[] coefficientsZ = dz;
+		double[] angleArray = IntStream.rangeClosed(0, points)
+				.mapToDouble(i -> angleMin + i * (angleMax - angleMin) / points).toArray();
+		double[] zArray = new double[angleArray.length];
+		for (int i = 0; i < angleArray.length; i++) {
+			zArray[i] = polyval(coefficientsZ, angleArray[i]);
+		}
+		double zMax = Arrays.stream(zArray).max().getAsDouble();
+		double zMin = Arrays.stream(zArray).min().getAsDouble();
+		Plot plot = new Plot("Calibration Curve", "Angle (Radian)", "Z (nm)");
+		plot.setLimits(angleMin, angleMax, zMin, zMax);
+		plot.setColor(Color.RED);
+		plot.addPoints(
+				IntStream.range(0, filteredData.length).mapToDouble(i -> filteredData[i][angleCorrIndex]).toArray(),
+				IntStream.range(0, filteredData.length).mapToDouble(i -> filteredData[i][frameIndex] * calibStep)
+						.toArray(),
+				Plot.CIRCLE);
 		
+		plot.setColor(Color.BLACK);
+		plot.setLineWidth(1);
+		plot.addPoints(angleArray, zArray, Plot.LINE);
+
+		plot.show();
 
 		return new FittingParas(dx, dy, dz, dd, dr, angleRange);
 	} // End of polyFitting
@@ -848,27 +872,22 @@ public class MultiBeadsDHPSFU implements PlugIn {
 				}
 			}
 		}
-		// Convert lists to arrays
 		double[] xArray = x.stream().mapToDouble(Double::doubleValue).toArray();
 		double[] yArray = y.stream().mapToDouble(Double::doubleValue).toArray();
 		double[] angleArray = angle.stream().mapToDouble(Double::doubleValue).toArray();
 
-		// Reshape arrays for prediction
 		double[][] xyArray = new double[xArray.length][2];
 		for (int i = 0; i < xArray.length; i++) {
 			xyArray[i][0] = xArray[i];
 			xyArray[i][1] = yArray[i];
 		}
 
-		// Adjust angles using the regression model
 		for (int i = 0; i < angleArray.length; i++) {
 			double predictedAngle = intercept + coefficientX * xyArray[i][0] + coefficientY * xyArray[i][1];
 			angleArray[i] -= predictedAngle;
 		}
 
-		// Update the angle list with the adjusted values
 		angle = Arrays.stream(angleArray).boxed().collect(Collectors.toList());
-
 		processedResult.add(frames);
 		processedResult.add(dists);
 		processedResult.add(x);
@@ -903,29 +922,6 @@ public class MultiBeadsDHPSFU implements PlugIn {
 		xyzN.add(xN);
 		xyzN.add(yN);
 		xyzN.add(zN);
-
-		// plot
-		// Generate a series of z values within the desired range
-		final int points = 200; // Number of points to generate for the plot
-		double angleMin = fittingParas.getAngleRange()[0];
-		double angleMax = fittingParas.getAngleRange()[1];
-
-		double[] coefficientsZ = fittingParas.getDz();
-		double[] angleArray = IntStream.rangeClosed(0, points)
-				.mapToDouble(i -> angleMin + i * (angleMax - angleMin) / points).toArray();
-		double[] zArray = new double[angleArray.length];
-
-		for (int i = 0; i < angleArray.length; i++) {
-			zArray[i] = polyval(coefficientsZ, angleArray[i]);
-		}
-
-		double zMax = Arrays.stream(zArray).max().getAsDouble();
-
-		Plot plot = new Plot("Calibration curve", "Angle (Radian)", "Z (nm)");
-		plot.setLimits(angleMin, angleMax, zMin, zMax);
-		plot.addPoints(angleArray, zArray, Plot.LINE);
-
-		plot.show();
 
 		return xyzN;
 	} // End of calculateCoordinates
@@ -1120,8 +1116,8 @@ public class MultiBeadsDHPSFU implements PlugIn {
 		double[][] filteredData = filterData(profile, regressionParameters, generalParas);
 
 		FittingParas fittingParas = polyFitting(filteredData, generalParas);
-		System.out.println("concatenatedData: " + concatenatedData.length);
-		System.out.println("filteredData: " + filteredData.length);
+		// System.out.println("concatenatedData: " + concatenatedData.length);
+		// System.out.println("filteredData: " + filteredData.length);
 		// Load the data:
 		MemoryPeakResults PeakfitData = ResultsManager.loadInputResults(name2, false, null, null);
 		if (MemoryPeakResults.isEmpty(PeakfitData)) {
