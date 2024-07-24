@@ -30,6 +30,7 @@ package uk.ac.cam.dhpsfu.plugins;
 
 import ij.IJ;
 import ij.Macro;
+import ij.Prefs;
 import ij.measure.ResultsTable;
 import ij.plugin.PlugIn;
 import ij.plugin.frame.Recorder;
@@ -98,6 +99,16 @@ public class BlinkingCorrection implements PlugIn {
 		// gd.addCheckbox("Is data unit in Pixel?", PixUnit);
 		// String[] formats = { "Pixel", "nm" };
 		// gd.addChoice("Distance Unit", formats, formats[0]);
+		double pxSize = Prefs.get("BlinkingCorrection.pxSize", 210.0);
+		int numDimension = (int) Prefs.get("BlinkingCorrection.numDimension", 3);
+		double maxJumpDist = Prefs.get("BlinkingCorrection.maxJumpDist", 300);
+		int maxFrameGap = (int) Prefs.get("BlinkingCorrection.maxFrameGap", 50);
+		int minNumPos = (int) Prefs.get("BlinkingCorrection.minNumPos", 1);
+		boolean saveToFile = Prefs.get("BlinkingCorrection.saveToFile", false);
+		boolean saveInfoToFile = Prefs.get("BlinkingCorrection.saveInfoToFile", false);
+		boolean saveAssignedTrack = Prefs.get("BlinkingCorrection.saveAssignedTrack", false);
+		String saveDirectory = Prefs.get("BlinkingCorrection.saveDirectory", "--Please_Select--");
+		
 		gd.addNumericField("Pixel_size", pxSize, 1);
 		gd.addNumericField("Dimensions", numDimension, 0);
 		gd.addNumericField("MaxJumpDist", maxJumpDist, 0);
@@ -184,6 +195,19 @@ public class BlinkingCorrection implements PlugIn {
 			name1 = input;
 		}
 
+		Prefs.set("BlinkingCorrection.pxSize", pxSize);
+		Prefs.set("BlinkingCorrection.numDimension", numDimension);
+		Prefs.set("BlinkingCorrection.maxJumpDist", maxJumpDist);
+		Prefs.set("BlinkingCorrection.maxFrameGap", maxFrameGap);
+		Prefs.set("BlinkingCorrection.minNumPos", minNumPos);
+		Prefs.set("BlinkingCorrection.saveToFile", saveToFile);
+		Prefs.set("BlinkingCorrection.saveInfoToFile", saveInfoToFile);
+		Prefs.set("BlinkingCorrection.saveAssignedTrack", saveAssignedTrack);
+		Prefs.set("BlinkingCorrection.saveDirectory", saveDirectory);
+
+		// Ensure the preferences are saved to disk
+		Prefs.savePreferences();
+		
 		StringBuilder command = new StringBuilder();
 		command.append("run(\"Blinking Correction\", ");
 		command.append("\"Input=").append(input).append(" ");

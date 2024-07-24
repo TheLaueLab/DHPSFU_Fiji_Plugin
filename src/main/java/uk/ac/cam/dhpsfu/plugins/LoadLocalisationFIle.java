@@ -44,6 +44,7 @@ import java.util.List;
 import java.util.SplittableRandom;
 import ij.IJ;
 import ij.Macro;
+import ij.Prefs;
 import ij.gui.DialogListener;
 import ij.gui.GenericDialog;
 import ij.measure.ResultsTable;
@@ -215,17 +216,19 @@ public class LoadLocalisationFIle implements PlugIn, DialogListener {
 	private boolean showDialog() {
 
 		GenericDialog gd = new GenericDialog(TITLE);
-
 		gd.addMessage("File directory:");
 		gd.addFileField("File_directory", dataPath); // Use updated dataPath
 		gd.addChoice("Data_format", new String[] { "Peakfit", "DHPSFU" }, fileType); // Use updated fileType
 		gd.addChoice("File_format", new String[] { ".xls", ".3d" }, savingFormat); // Use updated savingFormat
+		
+		double pxSize = Prefs.get("LoadLocalisationFIle.pxSize", 210.0);
+		
 		gd.addNumericField("Pixel_size_(nm)", pxSize, 1); // Use updated pxSize
 	    gd.addCheckbox("Manually_set_column_index", ifManualIndex); // Use updated ifManualIndex
 	    
 		String[] formats3 = { ".3d", ".csv", ".xls" };
-		addChoicePanel(gd, "Manual_input_format", formats3, manualFormat, choices);
-		addFieldPanel(gd, "Header",  skipLines);
+		addChoicePanel(gd, "Manual file format", formats3, manualFormat, choices);
+		addFieldPanel(gd, "Header (no. of rows)",  skipLines);
 		addFieldPanel(gd, "Frame", frameIndex);
 		addFieldPanel(gd, "X", xIndex);
 		addFieldPanel(gd, "Y", yIndex);
@@ -312,7 +315,7 @@ public class LoadLocalisationFIle implements PlugIn, DialogListener {
 		        fileIndex.setzIndex(zIndex);
 		        fileIndex.setIntensityIndex(intensityIndex);
 		        fileIndex.setPrecisionIndex(precisionIndex);
-
+	
 				// Include these parameters only if manual index is true
 		        command.append(" Manual_input_format=").append(manualFormat).append(" ");
 				command.append("Header=").append(skipLines).append(" ");
@@ -325,6 +328,9 @@ public class LoadLocalisationFIle implements PlugIn, DialogListener {
 			}
 
 			command.append("\");");
+	        Prefs.set("LoadLocalisationFIle.pxSize", pxSize);
+	        Prefs.savePreferences();
+
 
 			if (Recorder.record) {
 				Recorder.recordString(command.toString());

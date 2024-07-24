@@ -90,6 +90,7 @@ import uk.ac.sussex.gdsc.smlm.results.PeakResult;
 import java.util.stream.Collectors;
 import ij.ImageStack;
 import ij.Macro;
+import ij.Prefs;
 import ij.process.FloatProcessor;
 
 public class DriftCorrection implements PlugIn {
@@ -149,6 +150,19 @@ public class DriftCorrection implements PlugIn {
 		gd.addMessage("Select Ref image from File Directory ");
 		gd.addFilenameField(".tif_File_directory", "--Please_Select--");
 		// parameters
+		boolean wl_occasional = Prefs.get("DriftCorrection.wl_occasional", true);
+		boolean correction_twice = Prefs.get("DriftCorrection.correction_twice", true);
+		String drift_averaging = Prefs.get("DriftCorrection.drift_averaging", "Average_image");
+		double px_size = Prefs.get("DriftCorrection.px_size", 210.0);
+		double upFactor = Prefs.get("DriftCorrection.upFactor", 100.0);
+		double burst = Prefs.get("DriftCorrection.burst",20.0);
+		double cycle = Prefs.get("DriftCorrection.cycle", 500.0);
+		boolean save_DC_WL = Prefs.get("DriftCorrection.save_DC_WL", false);
+		String ref_save_directory = Prefs.get("DriftCorrection.ref_save_directory", "--Please_Select--");
+		boolean saveToFile = Prefs.get("DriftCorrection.saveToFile", false);
+		String data_save_directory = Prefs.get("DriftCorrection.data_save_directory", "--Please_Select--");
+		String saving_format = Prefs.get("DriftCorrection.saving_format", ".3d");
+		
 		gd.addCheckbox("Ref occasional", dc_paras.wl_occasional);
 		gd.addCheckbox("Drift correction twice", dc_paras.correction_twice);
 		// Checkbox flip_x = gd.addAndGetCheckbox("Flip FOV in x ", dc_paras.flip_x);
@@ -279,6 +293,23 @@ public class DriftCorrection implements PlugIn {
 		dc_generalParas.setBurst(burst);
 		dc_generalParas.setCycle(cycle);
 
+		// Save the preferences
+		Prefs.set("DriftCorrection.wl_occasional", wl_occasional);
+		Prefs.set("DriftCorrection.correction_twice", correction_twice);
+		Prefs.set("DriftCorrection.drift_averaging", drift_averaging);
+		Prefs.set("DriftCorrection.px_size", px_size);
+		Prefs.set("DriftCorrection.upFactor", upFactor);
+		Prefs.set("DriftCorrection.burst", burst);
+		Prefs.set("DriftCorrection.cycle", cycle);
+		Prefs.set("DriftCorrection.save_DC_WL", save_DC_WL);
+		Prefs.set("DriftCorrection.ref_save_directory", ref_save_directory);
+		Prefs.set("DriftCorrection.saveToFile", saveToFile);
+		Prefs.set("DriftCorrection.data_save_directory", data_save_directory);
+		Prefs.set("DriftCorrection.saving_format", saving_format);
+
+		// Ensure the preferences are saved to disk
+		Prefs.savePreferences();
+		
 		StringBuilder command = new StringBuilder();
 		command.append("run(\"Drift Correction\", ");
 		command.append("\"Data_input=").append(threed_memory).append(" ");

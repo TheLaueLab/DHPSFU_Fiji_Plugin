@@ -30,11 +30,14 @@ package uk.ac.cam.dhpsfu.plugins;
 
 import ij.IJ;
 import ij.ImageJ;
+import ij.ImagePlus;
 import ij.Macro;
+import ij.Prefs;
 import ij.gui.Plot;
 import ij.measure.ResultsTable;
 import ij.plugin.PlugIn;
 import ij.plugin.frame.Recorder;
+import ij.process.ImageProcessor;
 
 import java.io.File;
 import java.net.URISyntaxException;
@@ -74,6 +77,7 @@ import com.opencsv.exceptions.CsvValidationException;
 import java.awt.Button;
 import java.awt.Color;
 import java.awt.FlowLayout;
+import java.awt.Font;
 import java.awt.Label;
 import java.awt.Panel;
 import java.awt.TextField;
@@ -124,7 +128,7 @@ public class MultiBeadsDHPSFU implements PlugIn {
 	private static String savePath = "C:/Users/yw525/Documents/test_data_may2024/test_Analysis/Peakfit/DHPSFU";
 	private static List<String> dataNames;
 	private String savingFormat = ".3d";
-	private boolean saveToFile = true;
+	private boolean saveToFile;
 
 	@Override
 	public void run(String arg) {
@@ -166,6 +170,22 @@ public class MultiBeadsDHPSFU implements PlugIn {
 		if (arg == null || arg.length() == 0) { // Assuming no arguments means manual mode
 			ResultsManager.addInput(gd, input2, InputSource.MEMORY);
 		}
+		double pxSize = Prefs.get("MultiBeadsDHPSFU.pxSize", 210.0);
+		double calibStep = Prefs.get("MultiBeadsDHPSFU.calibStep", 33.3);
+		double precisionCutoff = Prefs.get("MultiBeadsDHPSFU.precisionCutoff", 30.0);
+		String fittingMode = Prefs.get("MultiBeadsDHPSFU.fittingMode", "Frame");
+		double rangeToFitFrom = Prefs.get("MultiBeadsDHPSFU.rangeToFitFrom", 5);
+		double rangeToFitTo = Prefs.get("MultiBeadsDHPSFU.rangeToFitTo", 114.0);
+		boolean enableFilterCalibRange = Prefs.get("MultiBeadsDHPSFU.enableFilterCalibRange", true);
+		boolean enableFilterDistance = Prefs.get("MultiBeadsDHPSFU.enableFilterDistance", true);
+		double initialDistanceFilterFrom = Prefs.get("MultiBeadsDHPSFU.initialDistanceFilterFrom", 3.0);
+		double initialDistanceFilterTo = Prefs.get("MultiBeadsDHPSFU.initialDistanceFilterTo", 8.0);
+		double distanceDev = Prefs.get("MultiBeadsDHPSFU.distanceDev", 0.2);
+		boolean enableFilterIntensityRatio = Prefs.get("MultiBeadsDHPSFU.enableFilterIntensityRatio", true);
+		double intensityDev = Prefs.get("MultiBeadsDHPSFU.intensityDev", 1);
+		boolean saveToFile = Prefs.get("MultiBeadsDHPSFU.saveToFile", false);
+		String savingFormat = Prefs.get("MultiBeadsDHPSFU.savingFormat", ".3d");
+
 		gd.addNumericField("Pixel size (nm)", pxSize, 1);
 		gd.addNumericField("Calibration step (nm)", calibStep, 1);
 		gd.addNumericField("Precision cutoff (nm)", precisionCutoff, 1);
@@ -269,6 +289,25 @@ public class MultiBeadsDHPSFU implements PlugIn {
 		filterParas.setDistanceDev(distanceDev);
 		filterParas.setEnableFilterIntensityRatio(enableFilterIntensityRatio);
 		filterParas.setIntensityDev(intensityDev);
+
+		Prefs.set("MultiBeadsDHPSFU.pxSize", pxSize);
+		Prefs.set("MultiBeadsDHPSFU.calibStep", calibStep);
+		Prefs.set("MultiBeadsDHPSFU.precisionCutoff", precisionCutoff);
+		Prefs.set("MultiBeadsDHPSFU.fittingMode", fittingMode);
+		Prefs.set("MultiBeadsDHPSFU.rangeToFitFrom", rangeToFitFrom);
+		Prefs.set("MultiBeadsDHPSFU.rangeToFitTo", rangeToFitTo);
+		Prefs.set("MultiBeadsDHPSFU.enableFilterCalibRange", enableFilterCalibRange);
+		Prefs.set("MultiBeadsDHPSFU.enableFilterDistance", enableFilterDistance);
+		Prefs.set("MultiBeadsDHPSFU.initialDistanceFilterFrom", initialDistanceFilterFrom);
+		Prefs.set("MultiBeadsDHPSFU.initialDistanceFilterTo", initialDistanceFilterTo);
+		Prefs.set("MultiBeadsDHPSFU.distanceDev", distanceDev);
+		Prefs.set("MultiBeadsDHPSFU.enableFilterIntensityRatio", enableFilterIntensityRatio);
+		Prefs.set("MultiBeadsDHPSFU.intensityDev", intensityDev);
+		Prefs.set("MultiBeadsDHPSFU.saveToFile", saveToFile);
+		Prefs.set("MultiBeadsDHPSFU.savingFormat", savingFormat);
+
+		// Ensure the preferences are saved to disk
+		Prefs.savePreferences();
 
 		StringBuilder command = new StringBuilder();
 		command.append("run(\"DHPSFU-MultiBeads\", ");
@@ -695,30 +734,184 @@ public class MultiBeadsDHPSFU implements PlugIn {
 		double[] dd = polyFit(filteredData, angleCorrIndex, avgDistanceIndex, 1, 1, 8);
 		double[] dr = polyFit(filteredData, angleCorrIndex, ratioIndex, 1, 1, 8);
 
+		double fMin = Arrays.stream(fnormArr).min().orElse((int) 0.0);
+		double fMax = Arrays.stream(fnormArr).max().orElse((int) 0.0);
+		double xMax = Arrays.stream(xnormArr).max().orElse(0.0);
+		double xMin = Arrays.stream(xnormArr).min().orElse(0.0);
+		double yMax = Arrays.stream(ynormArr).max().orElse(0.0);
+		double yMin = Arrays.stream(ynormArr).min().orElse(0.0);
+		double sepMax = Arrays.stream(filteredData).mapToDouble(row -> row[avgDistanceIndex]).max().orElse(0.0);
+		double sepMin = Arrays.stream(filteredData).mapToDouble(row -> row[avgDistanceIndex]).min().orElse(0.0);
+		double intMax = Arrays.stream(filteredData).mapToDouble(row -> row[ratioIndex]).max().orElse(0.0);
+		double intMin = Arrays.stream(filteredData).mapToDouble(row -> row[ratioIndex]).min().orElse(0.0);
+
+		// Generate the polynomial fit curve points
 		final int points = 200;
-		double[] coefficientsZ = dz;
 		double[] angleArray = IntStream.rangeClosed(0, points)
 				.mapToDouble(i -> angleMin + i * (angleMax - angleMin) / points).toArray();
 		double[] zArray = new double[angleArray.length];
 		for (int i = 0; i < angleArray.length; i++) {
-			zArray[i] = polyval(coefficientsZ, angleArray[i]);
+			zArray[i] = polyval(dz, angleArray[i]);
 		}
+		double[] frameArray = IntStream.rangeClosed(0, points).mapToDouble(i -> fMin + i * (fMax - fMin) / points)
+				.toArray();
+		double[] xArray = new double[angleArray.length];
+		// System.out.print(frameArray);
+		for (int i = 0; i < angleArray.length; i++) {
+			xArray[i] = polyval(dx, frameArray[i] * calibStep);
+		}
+		double[] yArray = new double[angleArray.length];
+		for (int i = 0; i < angleArray.length; i++) {
+			yArray[i] = polyval(dy, frameArray[i] * calibStep);
+		}
+		double[] sepArray = new double[angleArray.length];
+		for (int i = 0; i < angleArray.length; i++) {
+			sepArray[i] = polyval(dd, angleArray[i]);
+		}
+		double[] intArray = new double[angleArray.length];
+		for (int i = 0; i < angleArray.length; i++) {
+			intArray[i] = polyval(dr, angleArray[i]);
+		}
+
 		double zMax = Arrays.stream(zArray).max().getAsDouble();
 		double zMin = Arrays.stream(zArray).min().getAsDouble();
-		Plot plot = new Plot("Calibration Curve", "Angle (Radian)", "Z (nm)");
-		plot.setLimits(angleMin, angleMax, zMin, zMax);
-		plot.setColor(Color.RED);
-		plot.addPoints(
-				IntStream.range(0, filteredData.length).mapToDouble(i -> filteredData[i][angleCorrIndex]).toArray(),
-				IntStream.range(0, filteredData.length).mapToDouble(i -> filteredData[i][frameIndex] * calibStep)
-						.toArray(),
-				Plot.CIRCLE);
-		
-		plot.setColor(Color.BLACK);
-		plot.setLineWidth(1);
-		plot.addPoints(angleArray, zArray, Plot.LINE);
+//  xN = (X_arr - (np.polyval(fitting_paras[0], zN) - np.polyval(fitting_paras[0], zmin) )) * general_paras[0] # Calibrate X by Z, convert into nm
 
-		plot.show();
+		// Create subplots
+		int width = 680;
+		int height = 400;
+		int separation = 0;
+		int margin = 10;
+		ImagePlus[] subplots = new ImagePlus[5];
+		for (int i = 0; i < 5; i++) {
+			subplots[i] = IJ.createImage("Subplot " + (i + 1), "RGB black", width + 2 * margin, height + 2 * margin, 1);
+			ImageProcessor ip = subplots[i].getProcessor();
+			ip.setColor(Color.WHITE);
+			ip.fill();
+			ip.setColor(Color.BLACK);
+			Font titleFont = new Font("SansSerif", Font.PLAIN, 20);
+			Font axisFont = new Font("SansSerif", Font.BOLD, 25);
+			switch (i) {
+			case 0:
+				Plot plot = new Plot("Variation in X", "Z (nm)", "Normalised X midpoint (px)");
+				plot.setLimits(zMin, zMax, xMin, xMax);
+				plot.setFont(titleFont);
+				plot.setXLabelFont(axisFont);
+				plot.setYLabelFont(axisFont);
+				plot.setColor(Color.RED);
+				plot.addPoints(
+						IntStream.range(0, filteredData.length).mapToDouble(j -> fnormArr[j] * calibStep).toArray(),
+						xnormArr, Plot.CIRCLE);
+				plot.setColor(Color.BLACK);
+				plot.setLineWidth(1);
+				plot.addPoints(zArray, xArray, Plot.LINE);
+				ImagePlus plotImage = plot.getImagePlus();
+				ImageProcessor plotProcessor = plotImage.getProcessor().convertToRGB();
+				ImageProcessor resizedPlotProcessor = plotProcessor.resize(width * 2, height * 2);
+				ip.insert(resizedPlotProcessor.resize(width, height), margin, margin);
+				break;
+			case 1:
+				Plot plot2 = new Plot("Variation in Y", "Z (nm)", "Normalised Y midpoint (px)");
+				plot2.setLimits(zMin, zMax, yMin, yMax);
+				plot2.setFont(titleFont);
+				plot2.setXLabelFont(axisFont);
+				plot2.setYLabelFont(axisFont);
+				plot2.setColor(Color.RED);
+				plot2.addPoints(
+						IntStream.range(0, filteredData.length).mapToDouble(j -> fnormArr[j] * calibStep).toArray(),
+						ynormArr, Plot.CIRCLE);
+				plot2.setColor(Color.BLACK);
+				plot2.setLineWidth(1);
+				plot2.addPoints(zArray, yArray, Plot.LINE);
+				ImagePlus plotImage2 = plot2.getImagePlus();
+				ImageProcessor plotProcessor2 = plotImage2.getProcessor().convertToRGB();
+				ImageProcessor resizedPlotProcessor2 = plotProcessor2.resize(width * 2, height * 2);
+				ip.insert(resizedPlotProcessor2.resize(width, height), margin, margin);
+				break;
+			case 2:
+				Plot plot3 = new Plot("Calibration Curve", "Z (nm)", "Angle (Radian)");
+				plot3.setLimits(zMin, zMax, angleMin, angleMax);
+				plot3.setFont(titleFont);
+				plot3.setXLabelFont(axisFont);
+				plot3.setYLabelFont(axisFont);
+				plot3.setColor(Color.RED);
+				plot3.addPoints(
+						IntStream.range(0, filteredData.length)
+								.mapToDouble(j -> filteredData[j][frameIndex] * calibStep).toArray(),
+						IntStream.range(0, filteredData.length).mapToDouble(j -> filteredData[j][angleCorrIndex])
+								.toArray(),
+						Plot.CIRCLE);
+				plot3.setColor(Color.BLACK);
+				plot3.setLineWidth(1);
+				plot3.addPoints(zArray, angleArray, Plot.LINE);
+				ImagePlus plotImage3 = plot3.getImagePlus();
+				ImageProcessor plotProcessor3 = plotImage3.getProcessor().convertToRGB();
+				ImageProcessor resizedPlotProcessor3 = plotProcessor3.resize(width * 2, height * 2);
+				ip.insert(resizedPlotProcessor3.resize(width, height), margin, margin);
+				break;
+			case 3:
+				Plot plot4 = new Plot("Calibration Curve", "Z (nm)", "Lobe separation (px)");
+				plot4.setLimits(zMin, zMax, sepMin, sepMax);
+				plot4.setFont(titleFont);
+				plot4.setXLabelFont(axisFont);
+				plot4.setYLabelFont(axisFont);
+				plot4.setColor(Color.RED);
+				plot4.addPoints(
+						IntStream.range(0, filteredData.length)
+								.mapToDouble(j -> filteredData[j][frameIndex] * calibStep).toArray(),
+						IntStream.range(0, filteredData.length).mapToDouble(j -> filteredData[j][avgDistanceIndex])
+								.toArray(),
+						Plot.CIRCLE);
+				plot4.setColor(Color.BLACK);
+				plot4.setLineWidth(1);
+				plot4.addPoints(zArray, sepArray, Plot.LINE);
+				ImagePlus plotImage4 = plot4.getImagePlus();
+				ImageProcessor plotProcessor4 = plotImage4.getProcessor().convertToRGB();
+				ImageProcessor resizedPlotProcessor4 = plotProcessor4.resize(width * 2, height * 2);
+				ip.insert(resizedPlotProcessor4.resize(width, height), margin, margin);
+				break;
+			case 4:
+				Plot plot5 = new Plot("Calibration Curve", "Z (nm)", "Intensity ratio");
+				plot5.setLimits(zMin, zMax, intMin, intMax);
+				plot5.setFont(titleFont);
+				plot5.setXLabelFont(axisFont);
+				plot5.setYLabelFont(axisFont);
+				plot5.setColor(Color.RED);
+				plot5.addPoints(
+						IntStream.range(0, filteredData.length)
+								.mapToDouble(j -> filteredData[j][frameIndex] * calibStep).toArray(),
+						IntStream.range(0, filteredData.length).mapToDouble(j -> filteredData[j][ratioIndex]).toArray(),
+						Plot.CIRCLE);
+				plot5.setColor(Color.BLACK);
+				plot5.setLineWidth(1);
+				plot5.addPoints(zArray, intArray, Plot.LINE);
+				ImagePlus plotImage5 = plot5.getImagePlus();
+				ImageProcessor plotProcessor5 = plotImage5.getProcessor().convertToRGB();
+				ImageProcessor resizedPlotProcessor5 = plotProcessor5.resize(width * 2, height * 2);
+				ip.insert(resizedPlotProcessor5.resize(width, height), margin, margin);
+				break;
+			}
+		}
+
+		int totalWidth = 2 * (width + 2 * margin) + separation;
+		int totalHeight = 3 * (height + 2 * margin) + separation * 2;
+		ImagePlus canvas = IJ.createImage("Calibration plots", "RGB black", totalWidth, totalHeight, 1);
+		ImageProcessor canvasProcessor = canvas.getProcessor();
+		canvasProcessor.setColor(Color.WHITE);
+		canvasProcessor.fill();
+		int xOffset = 0;
+		int yOffset = 0;
+		for (int i = 0; i < 5; i++) {
+			ImageProcessor ip = subplots[i].getProcessor();
+			canvasProcessor.insert(ip, xOffset, yOffset);
+			xOffset += width + 2 * margin + separation;
+			if (xOffset >= totalWidth) {
+				xOffset = 0;
+				yOffset += height + 2 * margin + separation;
+			}
+		}
+		canvas.updateAndDraw();
+		canvas.show();
 
 		return new FittingParas(dx, dy, dz, dd, dr, angleRange);
 	} // End of polyFitting
