@@ -96,36 +96,36 @@ public class DHPSFU implements PlugIn {
 	 * Parameters for DHPSFU
 	 */
 	// General parameters
-	private double pxSize = 210; // Pixel size in nm
-	private double precisionCutoff = 30; // precision cutoff in nm
-	private double calibStep = 33.3; // Step length of calibration in nm
-	private String fittingMode = "Frame"; // Fitting mode, can be 'Frame', 'Angle', or 'Z'. Default is 'Frame'
-	private int[] rangeToFit = { 5, 114 }; // Range for fitting. Units: 'Z' mode in nm; 'Angle' mode in degrees; 'Frame'
+	private static double pxSize = 210; // Pixel size in nm
+	private static double precisionCutoff = 30; // precision cutoff in nm
+	private static double calibStep = 33.3; // Step length of calibration in nm
+	private static String fittingMode = "Frame"; // Fitting mode, can be 'Frame', 'Angle', or 'Z'. Default is 'Frame'
+	private static int[] rangeToFit = { 5, 114 }; // Range for fitting. Units: 'Z' mode in nm; 'Angle' mode in degrees; 'Frame'
 											// mode in number. Default is (1, 97) in frames
-	private int[] initialDistanceFilter = { 3, 8 }; // Minimum and maximum distance between a pair of dots in px
-	private int frameNumber = 10000;
-	GeneralParas generalParas = new GeneralParas(pxSize, precisionCutoff, calibStep, fittingMode, rangeToFit,
+	private static int[] initialDistanceFilter = { 3, 8 }; // Minimum and maximum distance between a pair of dots in px
+	private static int frameNumber = 10000;
+	static GeneralParas generalParas = new GeneralParas(pxSize, precisionCutoff, calibStep, fittingMode, rangeToFit,
 			initialDistanceFilter, frameNumber);
 
 	// Filtering parameters
-	private boolean enableFilters = true; // true if enable all filters
-	private boolean enableFilterCalibRange = true; // remove localisations out of the angular range of calibration; if
+	private static boolean enableFilters = true; // true if enable all filters
+	private static boolean enableFilterCalibRange = true; // remove localisations out of the angular range of calibration; if
 													// False,
-	private boolean enableFilterDistance = true; // remove dots with unexpected distances
-	private double distanceDev = 0.2; // relative deviation of the distance between dots, compared to calibration
-	private boolean enableFilterIntensityRatio = true; // filter based on the ratio of intensities between the dots
-	private double intensityDev = 1; // relative deviation of the intensity difference between dots, compared to
+	private static boolean enableFilterDistance = true; // remove dots with unexpected distances
+	private static double distanceDev = 0.2; // relative deviation of the distance between dots, compared to calibration
+	private static boolean enableFilterIntensityRatio = true; // filter based on the ratio of intensities between the dots
+	private static double intensityDev = 1; // relative deviation of the intensity difference between dots, compared to
 										// calibration
-	FilterParas filterParas = new FilterParas(enableFilters, enableFilterCalibRange, enableFilterDistance, distanceDev,
+	static FilterParas filterParas = new FilterParas(enableFilters, enableFilterCalibRange, enableFilterDistance, distanceDev,
 			enableFilterIntensityRatio, intensityDev);
 	// Data paths
 	private static String calibPath = "C:\\Users\\yw525\\Documents\\test_data_may2024\\calib\\calib.xls";
 	private static String dataPath = "C:\\Users\\yw525\\Documents\\test_data_may2024\\test\\Peakfit\\slice0.tif.trim.results.xls";
 	private static String savePath;
-	private String savingFormat = ".3d";
+	private static String savingFormat = ".3d";
 
 	// Extra options
-	private boolean saveToFile;
+	private static boolean saveToFile = true;
 
 	@Override
 	public void run(String arg) {
@@ -160,7 +160,7 @@ public class DHPSFU implements PlugIn {
 		double distanceDev = Prefs.get("DHPSFU.distanceDev", 0.2);
 		boolean enableFilterIntensityRatio = Prefs.get("DHPSFU.enableFilterIntensityRatio", true);
 		double intensityDev = Prefs.get("DHPSFU.intensityDev", 1);
-		boolean saveToFile = Prefs.get("DHPSFU.saveToFile", false);
+		saveToFile = Prefs.get("DHPSFU.saveToFile", true);
 		String savingFormat = Prefs.get("DHPSFU.savingFormat", ".3d");
 		
 		gd.addNumericField("Pixel size (nm)", pxSize, 1);
@@ -233,13 +233,14 @@ public class DHPSFU implements PlugIn {
 			fittingMode = gd.getNextChoice();
 //			IJ.log("Fitting=" + fittingMode);
 			enableFilterCalibRange = gd.getNextBoolean();
-			// IJ.log("enableFilterCalibRange=" + enableFilterCalibRange);
+
 			enableFilterDistance = gd.getNextBoolean();
 			// IJ.log("enableFilterDistance=" + enableFilterDistance);
 			enableFilterIntensityRatio = gd.getNextBoolean();
 			// IJ.log("enableFilterIntensityRatio=" + enableFilterIntensityRatio);
 			saveToFile = gd.getNextBoolean();
-			// IJ.log("saveToFile=" + saveToFile);
+			System.out.println("saveToFile1=" + saveToFile);
+			
 			savePath = gd.getNextString();
 			// IJ.log("savePath=" + savePath);
 			savingFormat = gd.getNextChoice();
@@ -258,6 +259,7 @@ public class DHPSFU implements PlugIn {
 				enableFilterDistance = getCheckboxFieldValue(checkboxFields, 1);
 				enableFilterIntensityRatio = getCheckboxFieldValue(checkboxFields, 2);
 				saveToFile = getCheckboxFieldValue(checkboxFields, 3);
+				//IJ.log("saveToFile2=" + saveToFile);
 			}
 
 			Vector<?> stringFields = gd.getStringFields();
@@ -276,7 +278,8 @@ public class DHPSFU implements PlugIn {
 
 		name1 = input;
 		name2 = input2;
-
+	    
+	    
 		generalParas.setPxSize(pxSize);
 		generalParas.setCalibStep(calibStep);
 		generalParas.setPrecisionCutoff(precisionCutoff);
@@ -434,7 +437,7 @@ public class DHPSFU implements PlugIn {
 	} // End of getResults
 
 	// Remove bad frames which do not have 2 and only 2 localisations.
-	private List<Integer> removeBadFrame(int[] frame) {
+	private static List<Integer> removeBadFrame(int[] frame) {
 		int frameNum = Arrays.stream(frame).max().getAsInt();
 		System.out.println("No. of calibration frames = " + frameNum);
 		List<Integer> frameList = Arrays.stream(frame).boxed().collect(Collectors.toList());
@@ -446,7 +449,7 @@ public class DHPSFU implements PlugIn {
 	} // End of removeBadFrame
 
 	// Remove values from data arrays corresponding to bad frames
-	private float[][] removeValuesForBadFrames(List<Integer> badFrames, int[] frame, float[] x, float[] y,
+	private static float[][] removeValuesForBadFrames(List<Integer> badFrames, int[] frame, float[] x, float[] y,
 			float[] intensity, double[] precisions) {
 		// Convert badFrames to a Set for efficient lookup
 		Set<Integer> badFramesSet = new HashSet<>(badFrames);
@@ -470,7 +473,7 @@ public class DHPSFU implements PlugIn {
 
 	// Calculate the x, y, distance, intensity, intensity ration and angle of the
 	// given dataset.
-	private double[][] DHPSFUCalculation(float[][] goodData) {
+	private static double[][] DHPSFUCalculation(float[][] goodData) {
 		if (goodData == null || goodData.length == 0) {
 			throw new IllegalArgumentException("goodData must not be null or empty");
 		}
@@ -519,7 +522,7 @@ public class DHPSFU implements PlugIn {
 	} // End of DHPSFUCalculation
 
 	// Filter the calibration data
-	private double[][] filterData(double[][] calculated, GeneralParas generalParas) {
+	private static double[][] filterData(double[][] calculated, GeneralParas generalParas) {
 		if (calculated == null || calculated.length == 0) {
 			throw new IllegalArgumentException("calculated must not be null or empty");
 		}
@@ -563,7 +566,7 @@ public class DHPSFU implements PlugIn {
 	} // End of filterData
 
 	// Polynomial fit of the calibData
-	private FittingParas polyFitting(double[][] filteredData, GeneralParas generalParas) {
+	private static FittingParas polyFitting(double[][] filteredData, GeneralParas generalParas) {
 		if (filteredData == null || filteredData.length == 0) {
 			throw new IllegalArgumentException("filteredData must not be null or empty");
 		}
@@ -776,7 +779,7 @@ public class DHPSFU implements PlugIn {
 	} // End of polyFitting
 
 	// PolynomialCurveFitter
-	private double[] polyFit(double[][] data, int xIndex, int yIndex, double calibStep, double calibStep2, int degree) {
+	private static double[] polyFit(double[][] data, int xIndex, int yIndex, double calibStep, double calibStep2, int degree) {
 		WeightedObservedPoints obs = new WeightedObservedPoints();
 		for (double[] row : data) {
 			double x = row[xIndex] * calibStep;
@@ -787,7 +790,7 @@ public class DHPSFU implements PlugIn {
 	} // End of polyFit
 
 	// Filter out peakfit data above the precision cutoff
-	private double[][] filterDataByPrecision(MemoryPeakResults PeakfitData, double precisionCutoff) {
+	private static double[][] filterDataByPrecision(MemoryPeakResults PeakfitData, double precisionCutoff) {
 		PrecisionResultProcedure p = new PrecisionResultProcedure(PeakfitData);
 		p.getPrecision(true);
 		double[] precisions = p.precisions;
@@ -819,7 +822,7 @@ public class DHPSFU implements PlugIn {
 		return DataFilteredPrecision;
 	} // End of filterDataByPrecision
 
-	private Set<Integer> getUniqueFrames(double[][] DataFilteredPrecision) {
+	private static Set<Integer> getUniqueFrames(double[][] DataFilteredPrecision) {
 		Set<Integer> uniqueFrames = new LinkedHashSet<>();
 		for (double[] row : DataFilteredPrecision) {
 			uniqueFrames.add((int) row[0]);
@@ -832,7 +835,7 @@ public class DHPSFU implements PlugIn {
 		return uniqueFrames;
 	} // End of getUniqueFrames
 
-	private List<double[]> filterDataByFrame(double[][] data, int frame) {
+	private static List<double[]> filterDataByFrame(double[][] data, int frame) {
 		List<double[]> filteredData = new ArrayList<>();
 		for (double[] row : data) {
 			if ((int) row[0] == frame) {
@@ -843,7 +846,7 @@ public class DHPSFU implements PlugIn {
 	} // End of filterDataByFrame
 
 	// Calculate the Euclidean Distance with given XY coordinates
-	private double[][] calculateDistances(double[][] xyCoord) {
+	private static double[][] calculateDistances(double[][] xyCoord) {
 		int n = xyCoord.length;
 		double[][] distances = new double[n][n];
 		EuclideanDistance euclideanDistance = new EuclideanDistance();
@@ -856,7 +859,7 @@ public class DHPSFU implements PlugIn {
 	} // End of calculateDistances
 
 	// Process the peakfit data using general parameters
-	private List<List<Double>> processData(double[][] DataFilteredPrecision, GeneralParas generalParas) {
+	private static List<List<Double>> processData(double[][] DataFilteredPrecision, GeneralParas generalParas) {
 		Set<Integer> uniqueFrames = getUniqueFrames(DataFilteredPrecision);
 		List<List<Double>> processedResult = new ArrayList<>();
 		List<Double> frames = new ArrayList<>();
@@ -919,7 +922,7 @@ public class DHPSFU implements PlugIn {
 	} // End of processData
 
 	// Calculate the xyz coordinates from the polynomial fit
-	private List<List<Double>> calculateCoordinates(List<List<Double>> processedResult, FittingParas fittingParas,
+	private static List<List<Double>> calculateCoordinates(List<List<Double>> processedResult, FittingParas fittingParas,
 			GeneralParas generalParas) {
 		double zMin = polyval(fittingParas.getDz(), fittingParas.getAngleRange()[0]);
 		// double zMax = polyval(fittingParas.getDz(), fittingParas.getAngleRange()[1]);
@@ -943,7 +946,7 @@ public class DHPSFU implements PlugIn {
 		return xyzN;
 	} // End of calculateCoordinates
 
-	private double polyval(double[] coefficients, double x) {
+	private static double polyval(double[] coefficients, double x) {
 		double result = 0;
 		for (int i = 0; i < coefficients.length; i++) {
 			result += coefficients[i] * Math.pow(x, i);
@@ -952,8 +955,9 @@ public class DHPSFU implements PlugIn {
 	} // End of polyval
 
 	// Filtering the peakfit data with different filters and parameters
-	private List<List<Double>> filterPeakfitData(List<List<Double>> processedResult, List<List<Double>> xyzN,
+	private static List<List<Double>> filterPeakfitData(List<List<Double>> processedResult, List<List<Double>> xyzN,
 			FilterParas filterParas, FittingParas fittingParas) {
+		
 		int[] marker = new int[processedResult.get(0).size()];
 		Arrays.fill(marker, 1);
 		if (filterParas.isEnableFilters()) {
@@ -1020,7 +1024,7 @@ public class DHPSFU implements PlugIn {
 //     }   // End of getSavePath
 
 	// Save the final filtered result to .3D file
-	private void saveTo3D(List<List<Double>> filteredPeakResult, String fileName, String savingFormat) {
+	private static void saveTo3D(List<List<Double>> filteredPeakResult, String fileName, String savingFormat) {
 		String name = fileName + "_DH";
 		Path outputPath;
 		if (savingFormat == ".3d") {
@@ -1051,7 +1055,7 @@ public class DHPSFU implements PlugIn {
 	} // End of saveTo3D
 
 	// View the result in a table in imageJ
-	private void view3DResult(List<List<Double>> filteredPeakResult) {
+	private static void view3DResult(List<List<Double>> filteredPeakResult) {
 		double[][] doubleFilteredPeakResult = toDouble(filteredPeakResult);
 		double[] frame = doubleFilteredPeakResult[4];
 		double[] x = doubleFilteredPeakResult[0];
@@ -1067,7 +1071,7 @@ public class DHPSFU implements PlugIn {
 		t.show("DHPSFU results");
 	} // End of view3DResult
 
-	private MemoryPeakResults saveToMemory(String input, List<List<Double>> filteredPeakResult) {
+	private static MemoryPeakResults saveToMemory(String input, List<List<Double>> filteredPeakResult) {
 		String name = input + "_DH";
 		double[][] doubleFilteredPeakResult = toDouble(filteredPeakResult);
 		double[] frame = doubleFilteredPeakResult[4];
@@ -1096,7 +1100,7 @@ public class DHPSFU implements PlugIn {
 	} // End of view3DResult
 
 	// Main function for DHPSFU
-	private void DH_calibration() {
+	private static void DH_calibration() {
 		long startTime = System.currentTimeMillis();
 		// Processing the calibration data
 		MemoryPeakResults results = ResultsManager.loadInputResults(name1, false, null, null);
@@ -1132,10 +1136,10 @@ public class DHPSFU implements PlugIn {
 		List<List<Double>> xyzN = calculateCoordinates(processedResult, fittingParas, generalParas);
 		// plotPolynomial(xyzN);
 		List<List<Double>> filteredPeakResult = filterPeakfitData(processedResult, xyzN, filterParas, fittingParas);
-
 		// Save files
-		if (saveToFile == true) {
+		if (saveToFile) {
 			saveTo3D(filteredPeakResult, input2, savingFormat);
+			IJ.log("Saved " + name2 + " to directoy.");
 		}
 
 		// View localisation
@@ -1162,7 +1166,7 @@ public class DHPSFU implements PlugIn {
 	} // End of DH_calibration
 
 	// Convert the List<List<Double>> object into double [][]
-	private double[][] toDouble(List<List<Double>> list) {
+	private static double[][] toDouble(List<List<Double>> list) {
 		int rows = list.size();
 		int cols = list.get(0).size();
 		return IntStream.range(0, cols)
