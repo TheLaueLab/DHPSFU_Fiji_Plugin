@@ -736,11 +736,11 @@ public class MultiBeadsDHPSFU implements PlugIn {
 		Arrays.stream(filteredData).mapToInt(row -> (int) row[frameIndex]).toArray();
 
 		// Fitting
-		double[] dx = polyFit2(IntStream.of(fnormArr).mapToDouble(f -> f * calibStep).toArray(), xnormArr, 5);
-		double[] dy = polyFit2(IntStream.of(fnormArr).mapToDouble(f -> f * calibStep).toArray(), ynormArr, 5);
-		double[] dz = polyFit(filteredData, angleCorrIndex, frameIndex, 1, calibStep, 5);
-		double[] dd = polyFit(filteredData, angleCorrIndex, avgDistanceIndex, 1, 1, 8);
-		double[] dr = polyFit(filteredData, angleCorrIndex, ratioIndex, 1, 1, 8);
+		double[] dx = polyFit2(IntStream.of(fnormArr).mapToDouble(f -> f * calibStep).toArray(), xnormArr, 20);
+		double[] dy = polyFit2(IntStream.of(fnormArr).mapToDouble(f -> f * calibStep).toArray(), ynormArr, 20);
+		double[] dz = polyFit(filteredData, angleCorrIndex, frameIndex, 1, calibStep, 20);
+		double[] dd = polyFit(filteredData, angleCorrIndex, avgDistanceIndex, 1, 1, 20);
+		double[] dr = polyFit(filteredData, angleCorrIndex, ratioIndex, 1, 1, 20);
 
 		double fMin = Arrays.stream(fnormArr).min().orElse((int) 0.0);
 		double fMax = Arrays.stream(fnormArr).max().orElse((int) 0.0);

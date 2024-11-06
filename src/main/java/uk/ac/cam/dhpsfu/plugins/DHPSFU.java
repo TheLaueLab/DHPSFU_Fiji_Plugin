@@ -583,11 +583,11 @@ public class DHPSFU implements PlugIn {
 		int avgDistanceIndex = 3;
 		int ratioIndex = 5;
 		// Fitting
-		double[] dx = polyFit(filteredData, frameIndex, avgXIndex, calibStep, 1, 5);
-		double[] dy = polyFit(filteredData, frameIndex, avgYIndex, calibStep, 1, 5);
-		double[] dz = polyFit(filteredData, angleIndex, frameIndex, 1, calibStep, 5);
-		double[] dd = polyFit(filteredData, angleIndex, avgDistanceIndex, 1, 1, 8);
-		double[] dr = polyFit(filteredData, angleIndex, ratioIndex, 1, 1, 8);
+		double[] dx = polyFit(filteredData, frameIndex, avgXIndex, calibStep, 1, 20);
+		double[] dy = polyFit(filteredData, frameIndex, avgYIndex, calibStep, 1, 20);
+		double[] dz = polyFit(filteredData, angleIndex, frameIndex, 1, calibStep, 20);
+		double[] dd = polyFit(filteredData, angleIndex, avgDistanceIndex, 1, 1, 20);
+		double[] dr = polyFit(filteredData, angleIndex, ratioIndex, 1, 1, 20);
 		
 		// Axis limit 
 		double angleMin = Arrays.stream(filteredData).mapToDouble(row -> row[angleIndex]).min().orElse(0.0);
