@@ -100,8 +100,9 @@ public class DHPSFU implements PlugIn {
 	private static double precisionCutoff = 30; // precision cutoff in nm
 	private static double calibStep = 33.3; // Step length of calibration in nm
 	private static String fittingMode = "Frame"; // Fitting mode, can be 'Frame', 'Angle', or 'Z'. Default is 'Frame'
-	private static int[] rangeToFit = { 5, 114 }; // Range for fitting. Units: 'Z' mode in nm; 'Angle' mode in degrees; 'Frame'
-											// mode in number. Default is (1, 97) in frames
+	private static int[] rangeToFit = { 5, 114 }; // Range for fitting. Units: 'Z' mode in nm; 'Angle' mode in degrees;
+													// 'Frame'
+	// mode in number. Default is (1, 97) in frames
 	private static int[] initialDistanceFilter = { 3, 8 }; // Minimum and maximum distance between a pair of dots in px
 	private static int frameNumber = 10000;
 	static GeneralParas generalParas = new GeneralParas(pxSize, precisionCutoff, calibStep, fittingMode, rangeToFit,
@@ -109,15 +110,17 @@ public class DHPSFU implements PlugIn {
 
 	// Filtering parameters
 	private static boolean enableFilters = true; // true if enable all filters
-	private static boolean enableFilterCalibRange = true; // remove localisations out of the angular range of calibration; if
-													// False,
+	private static boolean enableFilterCalibRange = true; // remove localisations out of the angular range of
+															// calibration; if
+	// False,
 	private static boolean enableFilterDistance = true; // remove dots with unexpected distances
 	private static double distanceDev = 0.2; // relative deviation of the distance between dots, compared to calibration
-	private static boolean enableFilterIntensityRatio = true; // filter based on the ratio of intensities between the dots
+	private static boolean enableFilterIntensityRatio = true; // filter based on the ratio of intensities between the
+																// dots
 	private static double intensityDev = 1; // relative deviation of the intensity difference between dots, compared to
-										// calibration
-	static FilterParas filterParas = new FilterParas(enableFilters, enableFilterCalibRange, enableFilterDistance, distanceDev,
-			enableFilterIntensityRatio, intensityDev);
+	// calibration
+	static FilterParas filterParas = new FilterParas(enableFilters, enableFilterCalibRange, enableFilterDistance,
+			distanceDev, enableFilterIntensityRatio, intensityDev);
 	// Data paths
 	private static String calibPath = "C:\\Users\\yw525\\Documents\\test_data_may2024\\calib\\calib.xls";
 	private static String dataPath = "C:\\Users\\yw525\\Documents\\test_data_may2024\\test\\Peakfit\\slice0.tif.trim.results.xls";
@@ -146,7 +149,7 @@ public class DHPSFU implements PlugIn {
 		if (arg == null || arg.length() == 0) { // Assuming no arguments means manual mode
 			ResultsManager.addInput(gd, input, InputSource.MEMORY);
 		}
-		
+
 		double pxSize = Prefs.get("DHPSFU.pxSize", 210.0);
 		double calibStep = Prefs.get("DHPSFU.calibStep", 33.3);
 		double precisionCutoff = Prefs.get("DHPSFU.precisionCutoff", 30.0);
@@ -162,7 +165,7 @@ public class DHPSFU implements PlugIn {
 		double intensityDev = Prefs.get("DHPSFU.intensityDev", 1);
 		saveToFile = Prefs.get("DHPSFU.saveToFile", true);
 		String savingFormat = Prefs.get("DHPSFU.savingFormat", ".3d");
-		
+
 		gd.addNumericField("Pixel size (nm)", pxSize, 1);
 		gd.addNumericField("Calibration step (nm)", calibStep, 1);
 		gd.addNumericField("Precision cutoff (nm)", precisionCutoff, 1);
@@ -240,7 +243,7 @@ public class DHPSFU implements PlugIn {
 			// IJ.log("enableFilterIntensityRatio=" + enableFilterIntensityRatio);
 			saveToFile = gd.getNextBoolean();
 			System.out.println("saveToFile1=" + saveToFile);
-			
+
 			savePath = gd.getNextString();
 			// IJ.log("savePath=" + savePath);
 			savingFormat = gd.getNextChoice();
@@ -259,7 +262,7 @@ public class DHPSFU implements PlugIn {
 				enableFilterDistance = getCheckboxFieldValue(checkboxFields, 1);
 				enableFilterIntensityRatio = getCheckboxFieldValue(checkboxFields, 2);
 				saveToFile = getCheckboxFieldValue(checkboxFields, 3);
-				//IJ.log("saveToFile2=" + saveToFile);
+				// IJ.log("saveToFile2=" + saveToFile);
 			}
 
 			Vector<?> stringFields = gd.getStringFields();
@@ -278,8 +281,7 @@ public class DHPSFU implements PlugIn {
 
 		name1 = input;
 		name2 = input2;
-	    
-	    
+
 		generalParas.setPxSize(pxSize);
 		generalParas.setCalibStep(calibStep);
 		generalParas.setPrecisionCutoff(precisionCutoff);
@@ -309,11 +311,9 @@ public class DHPSFU implements PlugIn {
 		Prefs.set("DHPSFU.saveToFile", saveToFile);
 		Prefs.set("DHPSFU.savingFormat", savingFormat);
 
-		
 		// Ensure the preferences are saved to disk
 		Prefs.savePreferences();
 
-		
 		StringBuilder command = new StringBuilder();
 		command.append("run(\"DHPSFU\", ");
 		command.append("\"Calib_input=").append(input).append(" ");
@@ -588,8 +588,8 @@ public class DHPSFU implements PlugIn {
 		double[] dz = polyFit(filteredData, angleIndex, frameIndex, 1, calibStep, 20);
 		double[] dd = polyFit(filteredData, angleIndex, avgDistanceIndex, 1, 1, 20);
 		double[] dr = polyFit(filteredData, angleIndex, ratioIndex, 1, 1, 20);
-		
-		// Axis limit 
+
+		// Axis limit
 		double angleMin = Arrays.stream(filteredData).mapToDouble(row -> row[angleIndex]).min().orElse(0.0);
 		double angleMax = Arrays.stream(filteredData).mapToDouble(row -> row[angleIndex]).max().orElse(0.0);
 		double[] angleRange = { angleMin, angleMax };
@@ -604,9 +604,8 @@ public class DHPSFU implements PlugIn {
 		double intMax = Arrays.stream(filteredData).mapToDouble(row -> row[ratioIndex]).max().orElse(0.0);
 		double intMin = Arrays.stream(filteredData).mapToDouble(row -> row[ratioIndex]).min().orElse(0.0);
 
-
 		// Generate the polynomial fit curve points
-		final int points = 200; 
+		final int points = 200;
 		double[] angleArray = IntStream.rangeClosed(0, points)
 				.mapToDouble(i -> angleMin + i * (angleMax - angleMin) / points).toArray();
 		double[] zArray = new double[angleArray.length];
@@ -639,17 +638,17 @@ public class DHPSFU implements PlugIn {
 		// Create subplots
 		int width = 680;
 		int height = 400;
-		int separation = 0; 
-		int margin = 10; 
+		int separation = 0;
+		int margin = 10;
 		ImagePlus[] subplots = new ImagePlus[5];
 		for (int i = 0; i < 5; i++) {
 			subplots[i] = IJ.createImage("Subplot " + (i + 1), "RGB black", width + 2 * margin, height + 2 * margin, 1);
 			ImageProcessor ip = subplots[i].getProcessor();
 			ip.setColor(Color.WHITE);
 			ip.fill();
-			ip.setColor(Color.BLACK); 
-			Font titleFont = new Font("SansSerif", Font.PLAIN, 20); 
-			Font axisFont = new Font("SansSerif", Font.BOLD, 25); 
+			ip.setColor(Color.BLACK);
+			Font titleFont = new Font("SansSerif", Font.PLAIN, 20);
+			Font axisFont = new Font("SansSerif", Font.BOLD, 25);
 			switch (i) {
 			case 0:
 				Plot plot = new Plot("Variation in X", "Z (nm)", "X midpoint (px)");
@@ -669,7 +668,7 @@ public class DHPSFU implements PlugIn {
 				ImagePlus plotImage = plot.getImagePlus();
 				ImageProcessor plotProcessor = plotImage.getProcessor().convertToRGB();
 				ImageProcessor resizedPlotProcessor = plotProcessor.resize(width * 2, height * 2);
-				ip.insert(resizedPlotProcessor.resize(width, height), margin, margin); 
+				ip.insert(resizedPlotProcessor.resize(width, height), margin, margin);
 				break;
 			case 1:
 				Plot plot2 = new Plot("Variation in Y", "Z (nm)", "Y midpoint (px)");
@@ -689,7 +688,7 @@ public class DHPSFU implements PlugIn {
 				ImagePlus plotImage2 = plot2.getImagePlus();
 				ImageProcessor plotProcessor2 = plotImage2.getProcessor().convertToRGB();
 				ImageProcessor resizedPlotProcessor2 = plotProcessor2.resize(width * 2, height * 2);
-				ip.insert(resizedPlotProcessor2.resize(width, height), margin, margin); 
+				ip.insert(resizedPlotProcessor2.resize(width, height), margin, margin);
 				break;
 			case 2:
 				Plot plot3 = new Plot("Calibration Curve", "Z (nm)", "Angle (Radian)");
@@ -709,7 +708,7 @@ public class DHPSFU implements PlugIn {
 				ImagePlus plotImage3 = plot3.getImagePlus();
 				ImageProcessor plotProcessor3 = plotImage3.getProcessor().convertToRGB();
 				ImageProcessor resizedPlotProcessor3 = plotProcessor3.resize(width * 2, height * 2);
-				ip.insert(resizedPlotProcessor3.resize(width, height), margin, margin); 
+				ip.insert(resizedPlotProcessor3.resize(width, height), margin, margin);
 				break;
 			case 3:
 				Plot plot4 = new Plot("Calibration Curve", "Z (nm)", "Lobe separation (px)");
@@ -730,7 +729,7 @@ public class DHPSFU implements PlugIn {
 				ImagePlus plotImage4 = plot4.getImagePlus();
 				ImageProcessor plotProcessor4 = plotImage4.getProcessor().convertToRGB();
 				ImageProcessor resizedPlotProcessor4 = plotProcessor4.resize(width * 2, height * 2);
-				ip.insert(resizedPlotProcessor4.resize(width, height), margin, margin); 
+				ip.insert(resizedPlotProcessor4.resize(width, height), margin, margin);
 				break;
 			case 4:
 				Plot plot5 = new Plot("Calibration Curve", "Z (nm)", "Intensity ratio");
@@ -750,13 +749,13 @@ public class DHPSFU implements PlugIn {
 				ImagePlus plotImage5 = plot5.getImagePlus();
 				ImageProcessor plotProcessor5 = plotImage5.getProcessor().convertToRGB();
 				ImageProcessor resizedPlotProcessor5 = plotProcessor5.resize(width * 2, height * 2);
-				ip.insert(resizedPlotProcessor5.resize(width, height), margin, margin); 
+				ip.insert(resizedPlotProcessor5.resize(width, height), margin, margin);
 				break;
 			}
 		}
 
 		int totalWidth = 2 * (width + 2 * margin) + separation;
-		int totalHeight = 3 * (height + 2 * margin) + separation * 2; 
+		int totalHeight = 3 * (height + 2 * margin) + separation * 2;
 		ImagePlus canvas = IJ.createImage("Calibration plots", "RGB black", totalWidth, totalHeight, 1);
 		ImageProcessor canvasProcessor = canvas.getProcessor();
 		canvasProcessor.setColor(Color.WHITE);
@@ -779,7 +778,8 @@ public class DHPSFU implements PlugIn {
 	} // End of polyFitting
 
 	// PolynomialCurveFitter
-	private static double[] polyFit(double[][] data, int xIndex, int yIndex, double calibStep, double calibStep2, int degree) {
+	private static double[] polyFit(double[][] data, int xIndex, int yIndex, double calibStep, double calibStep2,
+			int degree) {
 		WeightedObservedPoints obs = new WeightedObservedPoints();
 		for (double[] row : data) {
 			double x = row[xIndex] * calibStep;
@@ -869,11 +869,16 @@ public class DHPSFU implements PlugIn {
 		List<Double> angle = new ArrayList<>();
 		List<Double> ratio = new ArrayList<>();
 		List<Double> intensity = new ArrayList<>();
+		List<Double> XYerror = new ArrayList<>();
+		List<Double> AngleError = new ArrayList<>();
 		for (int frame : uniqueFrames) {
 			List<double[]> frameData = filterDataByFrame(DataFilteredPrecision, frame);
 			double[] xs = frameData.stream().mapToDouble(row -> row[1]).toArray();
 			double[] ys = frameData.stream().mapToDouble(row -> row[2]).toArray();
 			double[] ints = frameData.stream().mapToDouble(row -> row[3]).toArray();
+
+			double[] errors = frameData.stream().mapToDouble(row -> row[4]).toArray();
+
 			double[][] coordinates = new double[frameData.size()][2];
 			for (int i = 0; i < frameData.size(); i++) {
 				coordinates[i][0] = xs[i];
@@ -896,9 +901,22 @@ public class DHPSFU implements PlugIn {
 						double angleVal = Math.atan2(ys[j] - ys[i], xs[j] - xs[i]);
 						double avgX = (xs[i] + xs[j]) / 2;
 						double avgY = (ys[i] + ys[j]) / 2;
+						double errorXY = Math.sqrt(Math.pow(errors[i], 2) + Math.pow(errors[j], 2)) / 2;
+						// System.out.println("x" + avgX);
 						if (angleVal < 0) {
 							angleVal += Math.PI;
 						}
+						double XX = xs[j] - xs[i];
+						double YY = ys[j] - ys[i];
+						double dXX = errorXY/generalParas.getPxSize();
+						double dYY = dXX;
+						double dAngle = Math
+								.sqrt(Math.pow(XX, 2) * Math.pow(dYY, 2) + Math.pow(YY, 2) * Math.pow(dXX, 2))
+								/ (Math.pow(XX, 2) + Math.pow(YY, 2));
+						if (dAngle > 2) {
+							dAngle = Math.PI - dAngle;
+						}
+
 						// System.out.println(frame);
 						frames.add((double) frame);
 						dists.add(distances[i][j]);
@@ -907,10 +925,14 @@ public class DHPSFU implements PlugIn {
 						angle.add(angleVal);
 						ratio.add(ratioVal);
 						intensity.add(intensityVal);
+						XYerror.add(errorXY);
+						AngleError.add(dAngle);
 					}
 				}
 			}
 		}
+
+		System.out.println("XYerror " + XYerror);
 		processedResult.add(frames);
 		processedResult.add(dists);
 		processedResult.add(x);
@@ -918,16 +940,23 @@ public class DHPSFU implements PlugIn {
 		processedResult.add(angle);
 		processedResult.add(ratio);
 		processedResult.add(intensity);
+		processedResult.add(XYerror);
+		processedResult.add(AngleError);
 		return processedResult;
 	} // End of processData
 
 	// Calculate the xyz coordinates from the polynomial fit
-	private static List<List<Double>> calculateCoordinates(List<List<Double>> processedResult, FittingParas fittingParas,
-			GeneralParas generalParas) {
+	private static List<List<Double>> calculateCoordinates(List<List<Double>> processedResult,
+			FittingParas fittingParas, GeneralParas generalParas) {
 		double zMin = polyval(fittingParas.getDz(), fittingParas.getAngleRange()[0]);
 		// double zMax = polyval(fittingParas.getDz(), fittingParas.getAngleRange()[1]);
 		List<Double> zN = processedResult.get(4).stream().map(angle -> polyval(fittingParas.getDz(), angle))
 				.collect(Collectors.toList());
+		List<Double> errorZ = processedResult.get(8).stream().map(angle -> Math
+				.abs(polyval(fittingParas.getDz(), angle + Math.PI / 2) - polyval(fittingParas.getDz(), Math.PI / 2)))
+				.collect(Collectors.toList());
+		System.out.println("error in z " + errorZ);
+
 		List<Double> xN = new ArrayList<>();
 		List<Double> yN = new ArrayList<>();
 		for (int i = 0; i < processedResult.get(2).size(); i++) {
@@ -942,6 +971,9 @@ public class DHPSFU implements PlugIn {
 		xyzN.add(xN);
 		xyzN.add(yN);
 		xyzN.add(zN);
+		xyzN.add(processedResult.get(7));
+		xyzN.add(processedResult.get(7));
+		xyzN.add(errorZ);
 
 		return xyzN;
 	} // End of calculateCoordinates
@@ -957,7 +989,7 @@ public class DHPSFU implements PlugIn {
 	// Filtering the peakfit data with different filters and parameters
 	private static List<List<Double>> filterPeakfitData(List<List<Double>> processedResult, List<List<Double>> xyzN,
 			FilterParas filterParas, FittingParas fittingParas) {
-		
+
 		int[] marker = new int[processedResult.get(0).size()];
 		Arrays.fill(marker, 1);
 		if (filterParas.isEnableFilters()) {
@@ -996,6 +1028,9 @@ public class DHPSFU implements PlugIn {
 		processedResultWithZN.add(xyzN.get(0));
 		processedResultWithZN.add(xyzN.get(1));
 		processedResultWithZN.add(xyzN.get(2));
+		processedResultWithZN.add(xyzN.get(3));
+		processedResultWithZN.add(xyzN.get(4));
+		processedResultWithZN.add(xyzN.get(5));
 		processedResultWithZN.add(processedResult.get(6));
 		processedResultWithZN.add(processedResult.get(0));
 		List<List<Double>> filteredPeakResult = IntStream.range(0, processedResult.get(0).size())
@@ -1025,15 +1060,40 @@ public class DHPSFU implements PlugIn {
 
 	// Save the final filtered result to .3D file
 	private static void saveTo3D(List<List<Double>> filteredPeakResult, String fileName, String savingFormat) {
+		List<List<Double>> selectedColumns = new ArrayList<>();
+
+		// Iterate through each row in filteredPeakResult
+		for (List<Double> row : filteredPeakResult) {
+			// Select columns 0, 1, 2, 6, and 7
+			List<Double> newRow = new ArrayList<>();
+			newRow.add(row.get(0));
+			newRow.add(row.get(1));
+			newRow.add(row.get(2));
+			newRow.add(row.get(6));
+			newRow.add(row.get(7));
+			selectedColumns.add(newRow);
+		}
+		// filteredPeakResult
+		System.out.println(selectedColumns);
+
 		String name = fileName + "_DH";
 		Path outputPath;
+		Path outputPath2;
 		if (savingFormat == ".3d") {
 			outputPath = Paths.get(savePath, name + savingFormat);
 			try (BufferedWriter writer = Files.newBufferedWriter(outputPath)) {
-				for (List<Double> row : filteredPeakResult) {
+				for (List<Double> row : selectedColumns) {
 					String csvRow = row.stream().map(Object::toString).collect(Collectors.joining("\t"));
 					writer.write(csvRow);
 					writer.newLine();
+				}
+				outputPath2 = Paths.get(savePath, name + ".3dlp");
+				try (BufferedWriter writer2 = Files.newBufferedWriter(outputPath2)) {
+					for (List<Double> row : filteredPeakResult) {
+						String csvRow2 = row.stream().map(Object::toString).collect(Collectors.joining("\t"));
+						writer2.write(csvRow2);
+						writer2.newLine();
+					}
 				}
 			} catch (IOException e) {
 				System.err.println("Error writing to file: " + name);

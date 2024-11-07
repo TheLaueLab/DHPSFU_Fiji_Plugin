@@ -1025,6 +1025,8 @@ public class MultiBeadsDHPSFU implements PlugIn {
 		List<Double> angle = new ArrayList<>();
 		List<Double> ratio = new ArrayList<>();
 		List<Double> intensity = new ArrayList<>();
+		List<Double> XYerror = new ArrayList<>();
+		List<Double> AngleError = new ArrayList<>();
 		double intercept = regressionParameters[0];
 		double coefficientX = regressionParameters[1];
 		double coefficientY = regressionParameters[2];
@@ -1033,6 +1035,7 @@ public class MultiBeadsDHPSFU implements PlugIn {
 			double[] xs = frameData.stream().mapToDouble(row -> row[1]).toArray();
 			double[] ys = frameData.stream().mapToDouble(row -> row[2]).toArray();
 			double[] ints = frameData.stream().mapToDouble(row -> row[3]).toArray();
+			double[] errors = frameData.stream().mapToDouble(row -> row[4]).toArray();
 			double[][] coordinates = new double[frameData.size()][2];
 			for (int i = 0; i < frameData.size(); i++) {
 				coordinates[i][0] = xs[i];
@@ -1058,9 +1061,23 @@ public class MultiBeadsDHPSFU implements PlugIn {
 						double angleVal = Math.atan2(ys[j] - ys[i], xs[j] - xs[i]);
 						double avgX = (xs[i] + xs[j]) / 2;
 						double avgY = (ys[i] + ys[j]) / 2;
+						double errorXY = Math.sqrt(Math.pow(errors[i], 2) + Math.pow(errors[j], 2)) / 2;
+						// System.out.println("x" + avgX);
 						if (angleVal < 0) {
 							angleVal += Math.PI;
 						}
+						double XX = xs[j] - xs[i];
+						double YY = ys[j] - ys[i];
+						double dXX = errorXY/generalParas.getPxSize();
+						double dYY = dXX;
+						double dAngle = Math
+								.sqrt(Math.pow(XX, 2) * Math.pow(dYY, 2) + Math.pow(YY, 2) * Math.pow(dXX, 2))
+								/ (Math.pow(XX, 2) + Math.pow(YY, 2));
+						if (dAngle > 2) {
+							dAngle = Math.PI - dAngle;
+						}
+
+						// System.out.println(frame);
 						frames.add((double) frame);
 						dists.add(distances[i][j]);
 						x.add(avgX);
@@ -1068,7 +1085,9 @@ public class MultiBeadsDHPSFU implements PlugIn {
 						angle.add(angleVal);
 						ratio.add(ratioVal);
 						intensity.add(intensityVal);
-
+						XYerror.add(errorXY);
+						AngleError.add(dAngle);
+						
 					}
 				}
 			}
@@ -1096,6 +1115,8 @@ public class MultiBeadsDHPSFU implements PlugIn {
 		processedResult.add(angle);
 		processedResult.add(ratio);
 		processedResult.add(intensity);
+		processedResult.add(XYerror);
+		processedResult.add(AngleError);
 		System.out.println("Processed result line= " + processedResult.get(0).size());
 
 		return processedResult;
@@ -1108,9 +1129,12 @@ public class MultiBeadsDHPSFU implements PlugIn {
 
 		List<Double> zN = processedResult.get(4).stream().map(angle -> polyval(fittingParas.getDz(), angle))
 				.collect(Collectors.toList());
+		List<Double> errorZ = processedResult.get(8).stream().map(angle -> Math
+				.abs(polyval(fittingParas.getDz(), angle + Math.PI / 2) - polyval(fittingParas.getDz(), Math.PI / 2)))
+				.collect(Collectors.toList());
+		
 		List<Double> xN = new ArrayList<>();
 		List<Double> yN = new ArrayList<>();
-
 		for (int i = 0; i < processedResult.get(2).size(); i++) {
 			xN.add((processedResult.get(2).get(i)
 					- (polyval(fittingParas.getDx(), zN.get(i)) - polyval(fittingParas.getDx(), zMin)))
@@ -1123,7 +1147,9 @@ public class MultiBeadsDHPSFU implements PlugIn {
 		xyzN.add(xN);
 		xyzN.add(yN);
 		xyzN.add(zN);
-
+		xyzN.add(processedResult.get(7));
+		xyzN.add(processedResult.get(7));
+		xyzN.add(errorZ);
 		return xyzN;
 	} // End of calculateCoordinates
 
@@ -1179,6 +1205,9 @@ public class MultiBeadsDHPSFU implements PlugIn {
 		processedResultWithZN.add(xyzN.get(0));
 		processedResultWithZN.add(xyzN.get(1));
 		processedResultWithZN.add(xyzN.get(2));
+		processedResultWithZN.add(xyzN.get(3));
+		processedResultWithZN.add(xyzN.get(4));
+		processedResultWithZN.add(xyzN.get(5));
 		processedResultWithZN.add(processedResult.get(6));
 		processedResultWithZN.add(processedResult.get(0));
 
@@ -1195,16 +1224,38 @@ public class MultiBeadsDHPSFU implements PlugIn {
 	} // End of filterPeakfitData
 
 	private static void saveTo3D(List<List<Double>> filteredPeakResult, String fileName, String savingFormat) {
+		List<List<Double>> selectedColumns = new ArrayList<>();
+
+		// Iterate through each row in filteredPeakResult
+		for (List<Double> row : filteredPeakResult) {
+			// Select columns 0, 1, 2, 6, and 7
+			List<Double> newRow = new ArrayList<>();
+			newRow.add(row.get(0));
+			newRow.add(row.get(1));
+			newRow.add(row.get(2));
+			newRow.add(row.get(6));
+			newRow.add(row.get(7));
+			selectedColumns.add(newRow);
+		}
 		String name = fileName + "_DH";
 		// Path outputPath = Paths.get(fileName);
 		Path outputPath;
+		Path outputPath2;
 		if (savingFormat == ".3d") {
 			outputPath = Paths.get(savePath, name + savingFormat);
 			try (BufferedWriter writer = Files.newBufferedWriter(outputPath)) {
-				for (List<Double> row : filteredPeakResult) {
+				for (List<Double> row : selectedColumns) {
 					String csvRow = row.stream().map(Object::toString).collect(Collectors.joining("\t"));
 					writer.write(csvRow);
 					writer.newLine();
+				}
+				outputPath2 = Paths.get(savePath, name + ".3dlp");
+				try (BufferedWriter writer2 = Files.newBufferedWriter(outputPath2)) {
+					for (List<Double> row : filteredPeakResult) {
+						String csvRow2 = row.stream().map(Object::toString).collect(Collectors.joining("\t"));
+						writer2.write(csvRow2);
+						writer2.newLine();
+					}
 				}
 			} catch (IOException e) {
 				System.err.println("Error writing to file: " + name);
