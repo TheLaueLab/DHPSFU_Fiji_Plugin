@@ -78,7 +78,7 @@ public class LoadLocalisationFIle implements PlugIn, DialogListener {
 	// private boolean saveToFile = true;
 	private String savingFormat = "xls";
 
-	private static double pxSize = 210;
+	private static double pxSize=210;
 	// column index
 	private int frameIndex = 0;
 	private int xIndex = 9;
@@ -221,7 +221,7 @@ public class LoadLocalisationFIle implements PlugIn, DialogListener {
 		gd.addChoice("Data_format", new String[] { "Peakfit", "DHPSFU" }, fileType); // Use updated fileType
 		gd.addChoice("File_format", new String[] { ".xls", ".3d" }, savingFormat); // Use updated savingFormat
 		
-		double pxSize = Prefs.get("LoadLocalisationFIle.pxSize", 210.0);
+		//double pxSize = Prefs.get("LoadLocalisationFIle.pxSize", 210.0);
 		
 		gd.addNumericField("Pixel_size_(nm)", pxSize, 1); // Use updated pxSize
 	    gd.addCheckbox("Manually_set_column_index", ifManualIndex); // Use updated ifManualIndex

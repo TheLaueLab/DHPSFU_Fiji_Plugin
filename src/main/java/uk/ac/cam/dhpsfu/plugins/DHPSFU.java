@@ -97,7 +97,7 @@ public class DHPSFU implements PlugIn {
 	 */
 	// General parameters
 	private static double pxSize = 210; // Pixel size in nm
-	private static double precisionCutoff = 30; // precision cutoff in nm
+	private static double precisionCutoff; // precision cutoff in nm
 	private static double calibStep = 33.3; // Step length of calibration in nm
 	private static String fittingMode = "Frame"; // Fitting mode, can be 'Frame', 'Angle', or 'Z'. Default is 'Frame'
 	private static int[] rangeToFit = { 5, 114 }; // Range for fitting. Units: 'Z' mode in nm; 'Angle' mode in degrees;
@@ -122,8 +122,10 @@ public class DHPSFU implements PlugIn {
 	static FilterParas filterParas = new FilterParas(enableFilters, enableFilterCalibRange, enableFilterDistance,
 			distanceDev, enableFilterIntensityRatio, intensityDev);
 	// Data paths
-	private static String calibPath = "C:\\Users\\yw525\\Documents\\test_data_may2024\\calib\\calib.xls";
-	private static String dataPath = "C:\\Users\\yw525\\Documents\\test_data_may2024\\test\\Peakfit\\slice0.tif.trim.results.xls";
+	//private static String calibPath = "C:\\Users\\yw525\\Documents\\test_data_may2024\\calib\\calib.xls";
+	//private static String dataPath = "C:\\Users\\yw525\\Documents\\test_data_may2024\\test\\Peakfit\\slice0.tif.trim.results.xls";
+	private static String calibPath = "C:\\Users\\yw525\\Documents\\test_data_may2024\\simcalib2\\CalibBead1.results.xls";
+	private static String dataPath = "C:\\Users\\yw525\\Documents\\test_data_may2024\\VarInt_SB5_noc5_1-81_noisy24000.tif.results.xls";
 	private static String savePath;
 	private static String savingFormat = ".3d";
 
@@ -166,9 +168,9 @@ public class DHPSFU implements PlugIn {
 		saveToFile = Prefs.get("DHPSFU.saveToFile", true);
 		String savingFormat = Prefs.get("DHPSFU.savingFormat", ".3d");
 
-		gd.addNumericField("Pixel size (nm)", pxSize, 1);
-		gd.addNumericField("Calibration step (nm)", calibStep, 1);
-		gd.addNumericField("Precision cutoff (nm)", precisionCutoff, 1);
+		gd.addNumericField("Pixel size (nm)", pxSize, 2);
+		gd.addNumericField("Calibration step (nm)", calibStep, 2);
+		gd.addNumericField("Precision cutoff (nm)", precisionCutoff, 2);
 		gd.addChoice("Fitting mode", new String[] { "Frame", "Angle (degree)", "Z" }, fittingMode);
 		gd.addNumericField("Range to fit (from):", rangeToFit[0], 0);
 		gd.addNumericField("Range to fit (to)", rangeToFit[1], 0);
@@ -177,9 +179,9 @@ public class DHPSFU implements PlugIn {
 		gd.addCheckbox("Enable filter distance", enableFilterDistance);
 		gd.addNumericField("Initial distance filter (from)", initialDistanceFilter[0], 0);
 		gd.addNumericField("Initial distance filter (to)", initialDistanceFilter[1], 0);
-		gd.addNumericField("Distance deviation", distanceDev, 1);
+		gd.addNumericField("Distance deviation", distanceDev, 2);
 		gd.addCheckbox("Enable filter intensity ratio", enableFilterIntensityRatio);
-		gd.addNumericField("Intensity deviation", intensityDev, 1);
+		gd.addNumericField("Intensity deviation", intensityDev, 2);
 		gd.addMessage("File output:");
 		gd.addCheckbox("Saving to file", saveToFile);
 		gd.addDirectoryField("Save_directory", "--Please_Select--");
@@ -583,12 +585,16 @@ public class DHPSFU implements PlugIn {
 		int avgDistanceIndex = 3;
 		int ratioIndex = 5;
 		// Fitting
-		double[] dx = polyFit(filteredData, frameIndex, avgXIndex, calibStep, 1, 20);
-		double[] dy = polyFit(filteredData, frameIndex, avgYIndex, calibStep, 1, 20);
-		double[] dz = polyFit(filteredData, angleIndex, frameIndex, 1, calibStep, 20);
-		double[] dd = polyFit(filteredData, angleIndex, avgDistanceIndex, 1, 1, 20);
-		double[] dr = polyFit(filteredData, angleIndex, ratioIndex, 1, 1, 20);
-
+		double[] dx = polyFit(filteredData, frameIndex, avgXIndex, calibStep, 1, 5);
+		double[] dy = polyFit(filteredData, frameIndex, avgYIndex, calibStep, 1, 5);
+		double[] dz = polyFit(filteredData, angleIndex,frameIndex, 1, calibStep, 5);
+		double[] dd = polyFit(filteredData, angleIndex, avgDistanceIndex, 1, 1, 8);
+		double[] dr = polyFit(filteredData, angleIndex, ratioIndex, 1, 1, 8);
+		//IJ.log("dx ="+ Arrays.toString(dx));
+		//IJ.log("dy ="+ Arrays.toString(dy));
+		//IJ.log("dz ="+ Arrays.toString(dz));
+		//IJ.log("dd ="+ Arrays.toString(dd));
+		//IJ.log("dr ="+ Arrays.toString(dr));
 		// Axis limit
 		double angleMin = Arrays.stream(filteredData).mapToDouble(row -> row[angleIndex]).min().orElse(0.0);
 		double angleMax = Arrays.stream(filteredData).mapToDouble(row -> row[angleIndex]).max().orElse(0.0);
@@ -632,9 +638,13 @@ public class DHPSFU implements PlugIn {
 			intArray[i] = polyval(dr, angleArray[i]);
 		}
 
+		double[] ffArray = new double[angleArray.length];
+		for (int i = 0; i < angleArray.length; i++) {
+			ffArray[i] = frameArray[i] * calibStep;
+		}
+
 		double zMax = Arrays.stream(zArray).max().getAsDouble();
 		double zMin = Arrays.stream(zArray).min().getAsDouble();
-
 		// Create subplots
 		int width = 680;
 		int height = 400;
@@ -664,7 +674,7 @@ public class DHPSFU implements PlugIn {
 						Plot.CIRCLE);
 				plot.setColor(Color.BLACK);
 				plot.setLineWidth(1);
-				plot.addPoints(zArray, xArray, Plot.LINE);
+				plot.addPoints(ffArray, xArray, Plot.LINE);
 				ImagePlus plotImage = plot.getImagePlus();
 				ImageProcessor plotProcessor = plotImage.getProcessor().convertToRGB();
 				ImageProcessor resizedPlotProcessor = plotProcessor.resize(width * 2, height * 2);
@@ -684,7 +694,7 @@ public class DHPSFU implements PlugIn {
 						Plot.CIRCLE);
 				plot2.setColor(Color.BLACK);
 				plot2.setLineWidth(1);
-				plot2.addPoints(zArray, yArray, Plot.LINE);
+				plot2.addPoints(ffArray, yArray, Plot.LINE);
 				ImagePlus plotImage2 = plot2.getImagePlus();
 				ImageProcessor plotProcessor2 = plotImage2.getProcessor().convertToRGB();
 				ImageProcessor resizedPlotProcessor2 = plotProcessor2.resize(width * 2, height * 2);
@@ -780,21 +790,24 @@ public class DHPSFU implements PlugIn {
 	// PolynomialCurveFitter
 	private static double[] polyFit(double[][] data, int xIndex, int yIndex, double calibStep, double calibStep2,
 			int degree) {
+		
+		
 		WeightedObservedPoints obs = new WeightedObservedPoints();
 		for (double[] row : data) {
 			double x = row[xIndex] * calibStep;
 			double y = row[yIndex] * calibStep2;
-			obs.add(1.0, x, y);
+			//obs.add(1.0, x, y);
+			obs.add(x, y);
 		}
 		return PolynomialCurveFitter.create(degree).fit(obs.toList());
 	} // End of polyFit
 
 	// Filter out peakfit data above the precision cutoff
-	private static double[][] filterDataByPrecision(MemoryPeakResults PeakfitData, double precisionCutoff) {
+	private static double[][] filterDataByPrecision(MemoryPeakResults PeakfitData, GeneralParas generalParas ) {
 		PrecisionResultProcedure p = new PrecisionResultProcedure(PeakfitData);
 		p.getPrecision(true);
+		double precisionCutoff = generalParas.getPrecisionCutoff();  
 		double[] precisions = p.precisions;
-		System.out.println("Precision = " + precisions.length);
 		StandardResultProcedure s = new StandardResultProcedure(PeakfitData, DistanceUnit.PIXEL, IntensityUnit.PHOTON);
 		PeakfitData.getCalibration();
 		s.getTxy();
@@ -804,6 +817,7 @@ public class DHPSFU implements PlugIn {
 		float[] y = s.y;
 		float[] intensity = s.intensity;
 		List<double[]> filteredData = new ArrayList<>();
+		
 		for (int i = 0; i < precisions.length; i++) {
 			if (precisions[i] < precisionCutoff) {
 				double[] row = new double[5];
@@ -815,10 +829,12 @@ public class DHPSFU implements PlugIn {
 				filteredData.add(row);
 			}
 		}
+		//IJ.log("Filterdata: " + filteredData.size());
 		double[][] DataFilteredPrecision = new double[filteredData.size()][5];
 		for (int i = 0; i < filteredData.size(); i++) {
 			DataFilteredPrecision[i] = filteredData.get(i);
 		}
+		//IJ.log("Number of rows: " + DataFilteredPrecision.length);
 		return DataFilteredPrecision;
 	} // End of filterDataByPrecision
 
@@ -827,11 +843,11 @@ public class DHPSFU implements PlugIn {
 		for (double[] row : DataFilteredPrecision) {
 			uniqueFrames.add((int) row[0]);
 		}
-		System.out.println("Unique Frames: " + uniqueFrames.size());
+		//System.out.println("Unique Frames: " + uniqueFrames.size());
 		for (int frameValue : uniqueFrames) {
 			System.out.print(frameValue + " ");
 		}
-		System.out.println();
+		//System.out.println();
 		return uniqueFrames;
 	} // End of getUniqueFrames
 
@@ -932,7 +948,7 @@ public class DHPSFU implements PlugIn {
 			}
 		}
 
-		System.out.println("XYerror " + XYerror);
+		//IJ.log("XYerror " + XYerror.size());
 		processedResult.add(frames);
 		processedResult.add(dists);
 		processedResult.add(x);
@@ -1117,11 +1133,11 @@ public class DHPSFU implements PlugIn {
 	// View the result in a table in imageJ
 	private static void view3DResult(List<List<Double>> filteredPeakResult) {
 		double[][] doubleFilteredPeakResult = toDouble(filteredPeakResult);
-		double[] frame = doubleFilteredPeakResult[4];
+		double[] frame = doubleFilteredPeakResult[7];
 		double[] x = doubleFilteredPeakResult[0];
 		double[] y = doubleFilteredPeakResult[1];
 		double[] z = doubleFilteredPeakResult[2];
-		double[] intensity = doubleFilteredPeakResult[3];
+		double[] intensity = doubleFilteredPeakResult[6];
 		ResultsTable t = new ResultsTable();
 		t.setValues("X (nm)", x);
 		t.setValues("Y (nm)", y);
@@ -1134,11 +1150,11 @@ public class DHPSFU implements PlugIn {
 	private static MemoryPeakResults saveToMemory(String input, List<List<Double>> filteredPeakResult) {
 		String name = input + "_DH";
 		double[][] doubleFilteredPeakResult = toDouble(filteredPeakResult);
-		double[] frame = doubleFilteredPeakResult[4];
+		double[] frame = doubleFilteredPeakResult[7];
 		double[] x = doubleFilteredPeakResult[0];
 		double[] y = doubleFilteredPeakResult[1];
 		double[] z = doubleFilteredPeakResult[2];
-		double[] intensity = doubleFilteredPeakResult[3];
+		double[] intensity = doubleFilteredPeakResult[6];
 		MemoryPeakResults finalResult = new MemoryPeakResults();
 		for (int i = 0; i < frame.length; i++) {
 			float[] parameters = new float[7];
@@ -1191,7 +1207,7 @@ public class DHPSFU implements PlugIn {
 			IJ.error(TITLE, "No peakfit results could be loaded");
 			return;
 		}
-		double[][] DataFilteredPrecision = filterDataByPrecision(PeakfitData, precisionCutoff);
+		double[][] DataFilteredPrecision = filterDataByPrecision(PeakfitData, generalParas);
 		List<List<Double>> processedResult = processData(DataFilteredPrecision, generalParas);
 		List<List<Double>> xyzN = calculateCoordinates(processedResult, fittingParas, generalParas);
 		// plotPolynomial(xyzN);
