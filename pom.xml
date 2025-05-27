@@ -12,7 +12,7 @@
 
   <groupId>uk.ac.cam.dhpsfu</groupId>
   <artifactId>dhpsfu_</artifactId>
-  <version>0.1.0</version>
+  <version>0.1.1</version>
 
   <name>DHPSFU IJ Plugin</name>
   <description>Double Helix PSF SMLM analysis tool.</description>
