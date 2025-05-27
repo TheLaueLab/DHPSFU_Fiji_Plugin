@@ -32,6 +32,7 @@ public class GeneralParas {
 	public double pxSize = 210; // nm
 	public double precisionCutoff = 100; // precision cutoff in nm
 	public double calibStep = 33.3; // step length of calibration in nm
+	public int polyDegree = 20; // Polynomial fitting degree
 	public String fittingMode = "Frame"; // fitting mode, can be 'Frame', 'Angle', or 'Z'. Default is 'Frame'
 	public int[] rangeToFit = { 5, 114 }; // range for fitting. Units: 'Z' mode in nm; 'Angle' mode in degrees; 'Frame'
 											// mode in number. Default is (1, 97) in frames
@@ -39,10 +40,11 @@ public class GeneralParas {
 	public int frameNumber = 10000;
 
 	public GeneralParas(double pxSize, double precisionCutoff, double calibStep, String fittingMode, int[] rangeToFit,
-			int[] initialDistanceFilter, int frameNumber) {
+			int[] initialDistanceFilter, int frameNumber, int polyDegree) {
 		this.pxSize = pxSize;
 		this.precisionCutoff = precisionCutoff;
 		this.calibStep = calibStep;
+		this.polyDegree = polyDegree;
 		this.fittingMode = fittingMode;
 		this.rangeToFit = rangeToFit;
 		this.initialDistanceFilter = initialDistanceFilter;
@@ -71,6 +73,14 @@ public class GeneralParas {
 
 	public void setCalibStep(double calibStep) {
 		this.calibStep = calibStep;
+	}
+	
+	public int getPolyDegree() {
+		return polyDegree;
+	}
+
+	public void setPolyDegree(int polyDegree) {
+		this.polyDegree = polyDegree;
 	}
 
 	public String getFittingMode() {

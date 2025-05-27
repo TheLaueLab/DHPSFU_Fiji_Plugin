@@ -98,6 +98,7 @@ public class DHPSFU implements PlugIn {
 	// General parameters
 	private static double pxSize = 210; // Pixel size in nm
 	private static double precisionCutoff; // precision cutoff in nm
+	private static int polyDegree = 20; // Pixel size in nm
 	private static double calibStep = 33.3; // Step length of calibration in nm
 	private static String fittingMode = "Frame"; // Fitting mode, can be 'Frame', 'Angle', or 'Z'. Default is 'Frame'
 	private static int[] rangeToFit = { 5, 114 }; // Range for fitting. Units: 'Z' mode in nm; 'Angle' mode in degrees;
@@ -106,7 +107,7 @@ public class DHPSFU implements PlugIn {
 	private static int[] initialDistanceFilter = { 3, 8 }; // Minimum and maximum distance between a pair of dots in px
 	private static int frameNumber = 10000;
 	static GeneralParas generalParas = new GeneralParas(pxSize, precisionCutoff, calibStep, fittingMode, rangeToFit,
-			initialDistanceFilter, frameNumber);
+			initialDistanceFilter, frameNumber,polyDegree);
 
 	// Filtering parameters
 	private static boolean enableFilters = true; // true if enable all filters
@@ -155,6 +156,7 @@ public class DHPSFU implements PlugIn {
 		double pxSize = Prefs.get("DHPSFU.pxSize", 210.0);
 		double calibStep = Prefs.get("DHPSFU.calibStep", 33.3);
 		double precisionCutoff = Prefs.get("DHPSFU.precisionCutoff", 30.0);
+		int polyDegree = (int) Prefs.get("DHPSFU.polyDegree", 20);
 		String fittingMode = Prefs.get("DHPSFU.fittingMode", "Frame");
 		double rangeToFitFrom = Prefs.get("DHPSFU.rangeToFitFrom", 5.0);
 		double rangeToFitTo = Prefs.get("DHPSFU.rangeToFitTo", 114.0);
@@ -171,6 +173,7 @@ public class DHPSFU implements PlugIn {
 		gd.addNumericField("Pixel size (nm)", pxSize, 2);
 		gd.addNumericField("Calibration step (nm)", calibStep, 2);
 		gd.addNumericField("Precision cutoff (nm)", precisionCutoff, 2);
+		gd.addNumericField("Polynomial fitting degree", polyDegree, 0);
 		gd.addChoice("Fitting mode", new String[] { "Frame", "Angle (degree)", "Z" }, fittingMode);
 		gd.addNumericField("Range to fit (from):", rangeToFit[0], 0);
 		gd.addNumericField("Range to fit (to)", rangeToFit[1], 0);
@@ -227,12 +230,13 @@ public class DHPSFU implements PlugIn {
 			pxSize = getNumericFieldValue(numericFields, 0);
 			calibStep = getNumericFieldValue(numericFields, 1);
 			precisionCutoff = getNumericFieldValue(numericFields, 2);
-			rangeToFit[0] = (int) getNumericFieldValue(numericFields, 3);
-			rangeToFit[1] = (int) getNumericFieldValue(numericFields, 4);
-			initialDistanceFilter[0] = (int) getNumericFieldValue(numericFields, 5);
-			initialDistanceFilter[1] = (int) getNumericFieldValue(numericFields, 6);
-			distanceDev = getNumericFieldValue(numericFields, 7);
-			intensityDev = getNumericFieldValue(numericFields, 8);
+			polyDegree = (int) getNumericFieldValue(numericFields, 3);
+			rangeToFit[0] = (int) getNumericFieldValue(numericFields, 4);
+			rangeToFit[1] = (int) getNumericFieldValue(numericFields, 5);
+			initialDistanceFilter[0] = (int) getNumericFieldValue(numericFields, 6);
+			initialDistanceFilter[1] = (int) getNumericFieldValue(numericFields, 7);
+			distanceDev = getNumericFieldValue(numericFields, 8);
+			intensityDev = getNumericFieldValue(numericFields, 9);
 		}
 		if (arg == null || arg.length() == 0) {
 			fittingMode = gd.getNextChoice();
@@ -287,6 +291,7 @@ public class DHPSFU implements PlugIn {
 		generalParas.setPxSize(pxSize);
 		generalParas.setCalibStep(calibStep);
 		generalParas.setPrecisionCutoff(precisionCutoff);
+		generalParas.setPolyDegree(polyDegree);
 		generalParas.setFittingMode(fittingMode);
 		generalParas.setRangeToFit(rangeToFit);
 		generalParas.setAngleRange(initialDistanceFilter);
@@ -300,6 +305,7 @@ public class DHPSFU implements PlugIn {
 		Prefs.set("DHPSFU.pxSize", pxSize);
 		Prefs.set("DHPSFU.calibStep", calibStep);
 		Prefs.set("DHPSFU.precisionCutoff", precisionCutoff);
+		Prefs.set("DHPSFU.polyDegree", polyDegree);
 		Prefs.set("DHPSFU.fittingMode", fittingMode);
 		Prefs.set("DHPSFU.rangeToFitFrom", rangeToFitFrom);
 		Prefs.set("DHPSFU.rangeToFitTo", rangeToFitTo);
@@ -323,6 +329,7 @@ public class DHPSFU implements PlugIn {
 		command.append("Pixel_size=").append(pxSize).append(" ");
 		command.append("Calibration_step=").append(calibStep).append(" ");
 		command.append("Precision_cutoff=").append(precisionCutoff).append(" ");
+		command.append("Polynomial_degree=").append(polyDegree).append(" ");
 		command.append("Fitting_mode=").append(fittingMode).append(" ");
 		command.append("Range_to_fit_from=").append(rangeToFit[0]).append(" ");
 		command.append("Range_to_fit_to=").append(rangeToFit[1]).append(" ");
@@ -578,6 +585,7 @@ public class DHPSFU implements PlugIn {
 			}
 		}
 		double calibStep = generalParas.getCalibStep();
+		int polyDegree = generalParas.getPolyDegree();
 		int angleIndex = 6;
 		int frameIndex = 0;
 		int avgXIndex = 1;
@@ -585,11 +593,11 @@ public class DHPSFU implements PlugIn {
 		int avgDistanceIndex = 3;
 		int ratioIndex = 5;
 		// Fitting
-		double[] dx = polyFit(filteredData, frameIndex, avgXIndex, calibStep, 1, 5);
-		double[] dy = polyFit(filteredData, frameIndex, avgYIndex, calibStep, 1, 5);
-		double[] dz = polyFit(filteredData, angleIndex,frameIndex, 1, calibStep, 5);
-		double[] dd = polyFit(filteredData, angleIndex, avgDistanceIndex, 1, 1, 8);
-		double[] dr = polyFit(filteredData, angleIndex, ratioIndex, 1, 1, 8);
+		double[] dx = polyFit(filteredData, frameIndex, avgXIndex, calibStep, 1, polyDegree);
+		double[] dy = polyFit(filteredData, frameIndex, avgYIndex, calibStep, 1, polyDegree);
+		double[] dz = polyFit(filteredData, angleIndex,frameIndex, 1, calibStep, polyDegree);
+		double[] dd = polyFit(filteredData, angleIndex, avgDistanceIndex, 1, 1, polyDegree);
+		double[] dr = polyFit(filteredData, angleIndex, ratioIndex, 1, 1, polyDegree);
 		//IJ.log("dx ="+ Arrays.toString(dx));
 		//IJ.log("dy ="+ Arrays.toString(dy));
 		//IJ.log("dz ="+ Arrays.toString(dz));

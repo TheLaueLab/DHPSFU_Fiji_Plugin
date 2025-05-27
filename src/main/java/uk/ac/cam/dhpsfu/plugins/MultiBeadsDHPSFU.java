@@ -102,6 +102,7 @@ public class MultiBeadsDHPSFU implements PlugIn {
 	private static double pxSize = 210; // Pixel size in nm
 	private static double precisionCutoff = 30; // precision cutoff in nm
 	private static double calibStep = 33.3; // Step length of calibration in nm
+	private static int polyDegree = 20; // Pixel size in nm
 	private static String fittingMode = "Frame"; // Fitting mode, can be 'Frame', 'Angle', or 'Z'. Default is 'Frame'
 	private static int[] rangeToFit = { 5, 114 }; // Range for fitting. Units: 'Z' mode in nm; 'Angle' mode in degrees;
 													// 'Frame'
@@ -109,7 +110,7 @@ public class MultiBeadsDHPSFU implements PlugIn {
 	private static int[] initialDistanceFilter = { 3, 8 }; // Minimum and maximum distance between a pair of dots in px
 	private static int frameNumber = 10000;
 	static GeneralParas generalParas = new GeneralParas(pxSize, precisionCutoff, calibStep, fittingMode, rangeToFit,
-			initialDistanceFilter, frameNumber);
+			initialDistanceFilter, frameNumber,polyDegree);
 
 	// Filtering parameters
 	private static boolean enableFilters = true; // true if enable all filters

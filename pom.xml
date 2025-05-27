@@ -12,7 +12,7 @@
 
   <groupId>uk.ac.cam.dhpsfu</groupId>
   <artifactId>dhpsfu_</artifactId>
-  <version>0.1.0-SNAPSHOT</version>
+  <version>0.1.0</version>
 
   <name>DHPSFU IJ Plugin</name>
   <description>Double Helix PSF SMLM analysis tool.</description>
@@ -33,8 +33,8 @@
 
   <developers>
     <developer>
-      <id>laue</id>
-      <name>Laue</name>
+      <id>Ziwei Zhang</id>
+      <name>Ziwei Zhang</name>
       <url>https://www.bioc.cam.ac.uk/laue</url>
       <roles>
         <!-- See https://imagej.net/contribute/governance#scijava-team-roles -->
@@ -72,7 +72,7 @@
 	  <scijava.app.directory> C:\Users\yw525\Desktop\desktop_files\superrescode\fiji-win64-GDSCSMLM2\Fiji.app\Fiji.app </scijava.app.directory> <!-- directory of fiji -->
     <license.licenseName>bsd_2</license.licenseName>
     <license.copyrightOwners>Laue Lab</license.copyrightOwners>
-    <gdsc.smlm.ij.version>1.1</gdsc.smlm.ij.version>
+    <gdsc.smlm.ij.version>2.0</gdsc.smlm.ij.version>
   </properties>
 
   <dependencyManagement>

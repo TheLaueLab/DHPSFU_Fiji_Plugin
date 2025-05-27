@@ -65,10 +65,10 @@ public class BlinkingCorrection implements PlugIn {
 	// private static String PixUnit = "Pixel";
 
 	// Parameters for blinking correctio
-	private int numDimension = 3; // Pixel size in nm
-	private double maxJumpDist = 300; // precision cutoff in nm
-	private int maxFrameGap = 50; // Step length of calibration in nm
-	private int minNumPos = 1; // Fitting mode, can be 'Frame', 'Angle', or 'Z'. Default is 'Frame'
+	private int numDimension = 3; // number of dimension
+	private double maxJumpDist = 300; // maximun jump distance in nm
+	private int maxFrameGap = 50; // maximum frame jump
+	private int minNumPos = 1; // minimum number of locs to be considered as a track
 	private static double pxSize = 210;
 
 	private static String savePath;
