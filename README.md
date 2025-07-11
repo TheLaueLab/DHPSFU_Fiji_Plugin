@@ -15,14 +15,6 @@ Requires a DH calibration file and a 2D data file.
 
 Outputs the 3D coordinates into a tab-separated file (.3d) in “x y z Intensity Frame” format.  
 
-- DHPSFU-Multibeads:
-
-On top of DHPSFU, corrects lateral spatial variation of the DH across the FOV.
-
-Requires multiple calibration files from different parts of the imaging FOV. 
-
-Outputs the 3D coordinates into a tab-separated file (.3d) in “x y z Intensity Frame” format.  
-
 - Drift Correction:
 
 Corrects drift during acquisition using cross-correlation of images of the same imaging sample. 
@@ -61,6 +53,11 @@ To install the plugins using Fiji (an ImageJ distribution) just follow the
 instructions [How_to_follow_a_3rd_party_update_site](http://fiji.sc/How_to_follow_a_3rd_party_update_site)
 and add the DHPSFU update site. All the plugins will appear under the 'Plugins > DHPSFU' menu.
 
+Example
+------------
+
+We have provided an example calibration stack and an experimental image stack, along with complete instructions for the analysis procedure.
+Please refer to the 'Example' folder for detailed guidance.
 
 Documentation
 -------------
