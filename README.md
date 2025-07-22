@@ -52,12 +52,13 @@ The DHPSFU plugins are distributed using an ImageJ2/Fiji update site.
 To install the plugins using Fiji (an ImageJ distribution) just follow the
 instructions [How_to_follow_a_3rd_party_update_site](http://fiji.sc/How_to_follow_a_3rd_party_update_site)
 and add the DHPSFU update site. All the plugins will appear under the 'Plugins > DHPSFU' menu.
+For detailed instruction, refer to the 'User Guide for DHPSFU.pdf'. 
 
 Example
 ------------
 
 We have provided an example calibration stack and an experimental image stack, along with complete instructions for the analysis procedure.
-Please refer to the 'Example' folder for detailed guidance.
+Please refer to the 'Example' folder for the data and the 'User Guide for DHPSFU.pdf' for instructions.
 
 Documentation
 -------------
