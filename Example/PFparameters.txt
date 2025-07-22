@@ -1,0 +1,84 @@
+{
+  "notes": [""],
+  "calibration": {
+    "distanceCalibration": {
+      "nmPerPixel": 207.0
+    },
+    "timeCalibration": {
+      "exposureTime": 20.0
+    },
+    "intensityCalibration": {
+      "countPerPhoton": 1.0
+    },
+    "cameraCalibration": {
+      "cameraType": "EMCCD",
+      "readNoise": 2.0,
+      "bias": 1.0,
+      "cameraModelName": "[None]",
+      "quantumEfficiency": 0.95
+    }
+  },
+  "fitEngineSettings": {
+    "fitSettings": {
+      "fitSolverSettings": {
+        "maxIterations": 20,
+        "relativeThreshold": 1.0E-6,
+        "absoluteThreshold": 1.0E-16,
+        "parameterRelativeThreshold": 0.001,
+        "parameterAbsoluteThreshold": 1.0E-6,
+        "lambda": 10.0,
+        "maxFunctionEvaluations": 2000,
+        "clampValues": [10.0, 1000.0, 1.0, 1.0, 10.0, 3.0, 3.0, 3.141592653589793],
+        "lineSearchMethod": "PARTIAL_IGNORE"
+      },
+      "filterSettings": {
+        "shiftFactor": 0.98,
+        "signalStrength": 1.28,
+        "minPhotons": 1.0,
+        "precisionThreshold": 8.0,
+        "minWidthFactor": 0.52,
+        "maxWidthFactor": 2.0,
+        "precisionMethod": "MORTENSEN_LOCAL_BACKGROUND"
+      }
+    },
+    "noiseMethod": "QUICK_RESIDUALS_LEAST_MEAN_OF_SQUARES",
+    "dataFilterSettings": {
+      "dataFilterType": "DIFFERENCE",
+      "dataFilters": [{
+        "parameters": [{
+          "value": 0.7
+        }]
+      }, {
+        "parameters": [{
+          "value": 1.5
+        }]
+      }]
+    },
+    "search": {
+      "value": 0.98
+    },
+    "border": {
+      "value": 1.16
+    },
+    "fitting": {
+      "value": 2.74
+    },
+    "includeNeighbours": true,
+    "neighbourHeightThreshold": 0.66,
+    "residualsThreshold": 1.0,
+    "duplicateDistance": {
+      "value": 0.88,
+      "absolute": true
+    },
+    "failuresLimit": 3,
+    "passRate": 0.5
+  },
+  "psf": {
+    "psfType": "ONE_AXIS_GAUSSIAN_2D",
+    "parameters": [{
+      "name": "S",
+      "unit": "DISTANCE",
+      "value": 1.4
+    }]
+  }
+}
